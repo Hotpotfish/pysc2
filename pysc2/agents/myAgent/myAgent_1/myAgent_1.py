@@ -1,16 +1,13 @@
 from queue import Queue
+
+import pysc2.agents.myAgent.myAgent_2.macro_operation as macro_operation
+
 from absl import app
-
-import pysc2.agents.myAgent.macro_operation as macro_operation
-
 from pysc2.agents import base_agent
-from pysc2.env import sc2_env
-from pysc2.lib import actions
-from pysc2.lib import features
-import pysc2.agents.myAgent.smart_actions as sa
-import pysc2.agents.myAgent.q_learing_table as q_learing_table
-import matplotlib.pyplot as plt
-import numpy as np
+from pysc2.lib import actions, features
+from pysc2.env import sc2_env, run_loop
+import pysc2.agents.myAgent.myAgent_2.smart_actions as sa
+import pysc2.agents.myAgent.myAgent_2.q_learing_table as q_learing_table
 
 _NO_OP = actions.FUNCTIONS.no_op.id
 _NOT_QUEUED = [0]
@@ -154,14 +151,15 @@ class myAgent(base_agent.BaseAgent):
 
 def main(unused_argv):
     agent1 = myAgent()
-    agent2 = myAgent()
+
 
     try:
         while True:
             with sc2_env.SC2Env(
                     map_name="Flat96",
                     players=[sc2_env.Agent(race=sc2_env.Race.terran, name='agent1'),
-                             sc2_env.Agent(race=sc2_env.Race.terran, name='agent2'),],
+                             sc2_env.Bot(sc2_env.Race.protoss,
+                                         sc2_env.Difficulty.very_easy)],
 
                     agent_interface_format=features.AgentInterfaceFormat(
                         feature_dimensions=features.Dimensions(screen=macro_operation.screenSize,
@@ -169,39 +167,18 @@ def main(unused_argv):
                         action_space=actions.ActionSpace.RAW,
                         camera_width_world_units=macro_operation.screenSize,
                         use_unit_counts=True,
-                        raw_resolution=macro_operation.minimapSize,
+                        use_raw_units=True,
+                        raw_resolution=macro_operation.screenSize,
 
                     ),
 
                     step_mul=8,
                     game_steps_per_episode=0,
                     realtime=False,
-                    visualize=False,
+                    visualize=True,
 
             ) as env:
-
-                agent1.setup(env.observation_spec(), env.action_spec())
-                agent2.setup(env.observation_spec(), env.action_spec())
-                timesteps = env.reset()
-                agent1.reset()
-                agent2.reset()
-
-                while True:
-                    step_actions = [agent1.step(timesteps[0]),
-                                    agent2.step(timesteps[1])]
-                    # if timesteps[0].last():
-                    #     agent1.figureData = np.array(agent1.figureData)
-                    #     plt.plot(agent1.figureData[:, 0], agent1.figureData[:, 1])
-                    #     plt.plot(agent1.figureData[:, 0], agent1.figureData[:, 2])
-                    #
-                    #     agent2.figureData = np.array(agent2.figureData)
-                    #     plt.plot(agent2.figureData[:, 0], agent2.figureData[:, 1])
-                    #     plt.plot(agent2.figureData[:, 0], agent2.figureData[:, 2])
-                    #
-                    #     plt.show()
-                    #
-                    #     break
-                    timesteps = env.step(step_actions)
+                run_loop.run_loop([agent1], env)
 
     except KeyboardInterrupt:
         pass
