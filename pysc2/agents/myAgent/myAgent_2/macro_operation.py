@@ -12,8 +12,9 @@ mapSzie = 256
 
 
 def chooseARandomPlace(input_x, input_y):
-    add_y = random.randint(-10, 10)
-    add_x = random.randint(-10, 10)
+    offset = 20
+    add_y = random.randint(-offset, offset)
+    add_x = random.randint(-offset, offset)
 
     if input_x + add_x >= mapSzie:
 
@@ -93,11 +94,67 @@ def harvest_minerals(obs):
                                units.Neutral.RichMineralField,
                                units.Neutral.RichMineralField750
                            ]]
+        if len(mineral_patches) == 0:
+            return actions.RAW_FUNCTIONS.no_op()
         scv = random.choice(idle_scvs)
         distances = get_distances(obs, mineral_patches, (scv.x, scv.y))
         mineral_patch = mineral_patches[np.argmin(distances)]
         return actions.RAW_FUNCTIONS.Harvest_Gather_unit(
-            "queued", scv.tag, mineral_patch.tag)
+            "now", scv.tag, mineral_patch.tag)
+    return actions.RAW_FUNCTIONS.no_op()
+
+
+def harvest_VespeneGeyser(obs):
+    scvs = get_my_units_by_type(obs, units.Terran.SCV)
+    idle_scvs = [scv for scv in scvs if scv.order_length == 0]
+    if len(idle_scvs) > 0:
+        VespeneGeyser_patches = get_my_completed_units_by_type(obs, units.Terran.Refinery) \
+                                + get_my_completed_units_by_type(obs, units.Terran.RefineryRich)
+        scv = random.choice(idle_scvs)
+        distances = get_distances(obs, VespeneGeyser_patches, (scv.x, scv.y))
+        VespeneGeyser_patch = VespeneGeyser_patches[np.argmin(distances)]
+        return actions.RAW_FUNCTIONS.Harvest_Gather_unit(
+            "now", scv.tag, VespeneGeyser_patch.tag)
+    return actions.RAW_FUNCTIONS.no_op()
+
+
+def build_refinery(obs):
+    commandCenters = get_my_units_by_type(obs, units.Terran.CommandCenter)
+    if len(commandCenters) > 0:
+        commandCenter = commandCenters[random.randint(0, len(commandCenters) - 1)]
+        scvs = get_my_units_by_type(obs, units.Terran.SCV)
+        if (obs.observation.player.minerals >= 75 and len(scvs) > 0):
+            VespeneGeyser_patches = [unit for unit in obs.observation.raw_units
+                                     if unit.unit_type in [
+                                         units.Neutral.ProtossVespeneGeyser,
+                                         units.Neutral.PurifierVespeneGeyser,
+                                         units.Neutral.RichVespeneGeyser,
+                                         units.Neutral.ShakurasVespeneGeyser,
+                                         units.Neutral.VespeneGeyser,
+                                     ] and unit.health_ratio == 255]
+            if len(VespeneGeyser_patches) == 0:
+                return actions.RAW_FUNCTIONS.no_op()
+
+            refineries = get_my_units_by_type(obs, units.Terran.Refinery)
+
+            if len(refineries) == 0:
+                scv = random.choice(scvs)
+                distances = get_distances(obs, VespeneGeyser_patches, (commandCenter.x, commandCenter.y))
+                VespeneGeyser_patch = VespeneGeyser_patches[np.argmin(distances)]
+                return actions.RAW_FUNCTIONS.Build_Refinery_pt(
+                    "now", scv.tag, VespeneGeyser_patch.tag)
+            else:
+                for i in range(len(VespeneGeyser_patches)):
+                    for j in range(len(refineries)):
+                        if VespeneGeyser_patches[i].x == refineries[j].x and \
+                                VespeneGeyser_patches[i].y == refineries[j].y:
+                            break
+                    scv = random.choice(scvs)
+                    VespeneGeyser_patch = VespeneGeyser_patches[i]
+                    return actions.RAW_FUNCTIONS.Build_Refinery_pt(
+                        "now", scv.tag, VespeneGeyser_patch.tag)
+
+
     return actions.RAW_FUNCTIONS.no_op()
 
 
@@ -110,8 +167,7 @@ def build_supply_depot(obs):
             supply_depot_xy = chooseARandomPlace(commandCenter.x, commandCenter.y)
             distances = get_distances(obs, scvs, supply_depot_xy)
             scv = scvs[np.argmin(distances)]
-            return actions.RAW_FUNCTIONS.Build_SupplyDepot_pt(
-                "queued", scv.tag, supply_depot_xy)
+            return actions.RAW_FUNCTIONS.Build_SupplyDepot_pt("now", scv.tag, supply_depot_xy)
     return actions.RAW_FUNCTIONS.no_op()
 
 
@@ -129,7 +185,18 @@ def build_barracks(obs):
             distances = get_distances(obs, scvs, barracks_xy)
             scv = scvs[np.argmin(distances)]
             return actions.RAW_FUNCTIONS.Build_Barracks_pt(
-                "queued", scv.tag, barracks_xy)
+                "now", scv.tag, barracks_xy)
+    return actions.RAW_FUNCTIONS.no_op()
+
+
+def train_scv(obs):
+    completed_commandCenters = get_my_completed_units_by_type(obs, units.Terran.CommandCenter)
+    free_supply = (obs.observation.player.food_cap - obs.observation.player.food_used)
+    if (len(completed_commandCenters) > 0 and obs.observation.player.minerals >= 50 and free_supply > 0):
+        commandCenters = get_my_units_by_type(obs, units.Terran.CommandCenter)
+        commandCenter = commandCenters[random.randint(0, len(commandCenters) - 1)]
+        if commandCenter.order_length < 5:
+            return actions.RAW_FUNCTIONS.Train_SCV_quick("now", commandCenter.tag)
     return actions.RAW_FUNCTIONS.no_op()
 
 
@@ -156,8 +223,8 @@ def attack(obs):
             for i in range(len(marines)):
                 marine_xy = (marines[i].x, marines[i].y)
                 distances = get_distances(obs, enmies, marine_xy)
-                enmy = enmies[np.argmax(distances)]
-                attack_orders.append(actions.RAW_FUNCTIONS.Attack_pt("now", marines[i].tag, (enmy.x, enmy.y)))
+                enmy = enmies[np.argmin(distances)]
+                attack_orders.append(actions.RAW_FUNCTIONS.Attack_unit("now", marines[i].tag, enmy.tag))
             return attack_orders
 
         else:
