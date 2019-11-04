@@ -106,15 +106,21 @@ def harvest_minerals(obs):
 
 def harvest_VespeneGeyser(obs):
     scvs = get_my_units_by_type(obs, units.Terran.SCV)
-    idle_scvs = [scv for scv in scvs if scv.order_length == 0]
-    if len(idle_scvs) > 0:
-        VespeneGeyser_patches = get_my_completed_units_by_type(obs, units.Terran.Refinery) \
-                                + get_my_completed_units_by_type(obs, units.Terran.RefineryRich)
-        scv = random.choice(idle_scvs)
-        distances = get_distances(obs, VespeneGeyser_patches, (scv.x, scv.y))
-        VespeneGeyser_patch = VespeneGeyser_patches[np.argmin(distances)]
-        return actions.RAW_FUNCTIONS.Harvest_Gather_unit(
-            "now", scv.tag, VespeneGeyser_patch.tag)
+    # idle_scvs = [scv for scv in scvs if scv.order_length == 0]
+    VespeneGeyser_patches = get_my_completed_units_by_type(obs, units.Terran.Refinery) \
+                            + get_my_completed_units_by_type(obs, units.Terran.RefineryRich)
+    if len(scvs) > 0 and len(VespeneGeyser_patches) > 0:
+        for i in range(len(VespeneGeyser_patches)):
+            if VespeneGeyser_patches[i].assigned_harvesters < VespeneGeyser_patches[i].ideal_harvesters:
+                scv = random.choice(scvs)
+                return actions.RAW_FUNCTIONS.Harvest_Gather_unit(
+                    "now", scv.tag, VespeneGeyser_patches[i].tag)
+
+        # scv = random.choice(scvs)
+        # distances = get_distances(obs, VespeneGeyser_patches, (scv.x, scv.y))
+        # VespeneGeyser_patch = VespeneGeyser_patches[np.argmin(distances)]
+        # return actions.RAW_FUNCTIONS.Harvest_Gather_unit(
+        #     "now", scv.tag, VespeneGeyser_patch.tag)
     return actions.RAW_FUNCTIONS.no_op()
 
 
@@ -153,7 +159,6 @@ def build_refinery(obs):
                     VespeneGeyser_patch = VespeneGeyser_patches[i]
                     return actions.RAW_FUNCTIONS.Build_Refinery_pt(
                         "now", scv.tag, VespeneGeyser_patch.tag)
-
 
     return actions.RAW_FUNCTIONS.no_op()
 

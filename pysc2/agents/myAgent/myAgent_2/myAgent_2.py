@@ -60,13 +60,13 @@ class myAgent(base_agent.BaseAgent):
 
         return sa.smart_actions[rl_action](obs)
 
-#
+
 # def main(unused_argv):
 #     agent1 = myAgent()
 #
 #     try:
 #         with sc2_env.SC2Env(
-#                 map_name="DefeatRoaches",
+#                 map_name="FindAndDefeatZerglings",
 #                 players=[sc2_env.Agent(sc2_env.Race.terran),],
 #                          # sc2_env.Bot(sc2_env.Race.protoss,
 #                          #             sc2_env.Difficulty.very_easy)],
@@ -79,7 +79,7 @@ class myAgent(base_agent.BaseAgent):
 #                     raw_resolution=macro_operation.mapSzie,
 #                     use_unit_counts=True
 #                 ),
-#                 step_mul=8,
+#                 step_mul=0.00001,
 #                 disable_fog=False,
 #                 visualize=True,
 #                 realtime=True
