@@ -137,7 +137,7 @@ def build_refinery(obs):
                                          units.Neutral.RichVespeneGeyser,
                                          units.Neutral.ShakurasVespeneGeyser,
                                          units.Neutral.VespeneGeyser,
-                                     ] and unit.health_ratio == 255]
+                                     ]]
             if len(VespeneGeyser_patches) == 0:
                 return actions.RAW_FUNCTIONS.no_op()
 
@@ -149,14 +149,17 @@ def build_refinery(obs):
                 VespeneGeyser_patch = VespeneGeyser_patches[np.argmin(distances)]
                 return actions.RAW_FUNCTIONS.Build_Refinery_pt(
                     "now", scv.tag, VespeneGeyser_patch.tag)
-            else:
-                for i in range(len(VespeneGeyser_patches)):
-                    for j in range(len(refineries)):
-                        if VespeneGeyser_patches[i].x == refineries[j].x and \
-                                VespeneGeyser_patches[i].y == refineries[j].y:
+            elif len(refineries) < len(commandCenters) * 2:
+                for i in range(len(refineries)):
+                    for j in range(len(VespeneGeyser_patches)):
+                        if refineries[i].x == VespeneGeyser_patches[j].x and \
+                                refineries[i].y == VespeneGeyser_patches[j].y:
+                            VespeneGeyser_patches.pop(j)
+                            j -= 1
                             break
                     scv = random.choice(scvs)
-                    VespeneGeyser_patch = VespeneGeyser_patches[i]
+                    distances = get_distances(obs, VespeneGeyser_patches, (commandCenter.x, commandCenter.y))
+                    VespeneGeyser_patch = VespeneGeyser_patches[np.argmin(distances)]
                     return actions.RAW_FUNCTIONS.Build_Refinery_pt(
                         "now", scv.tag, VespeneGeyser_patch.tag)
 
