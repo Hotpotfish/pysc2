@@ -1,15 +1,18 @@
-from tensorflow.python.keras.engine.network import Network
+import pysc2.agents.myAgent.myAgent_3.macro_operation as mo
 import tensorflow as tf
 
 
-class vgg16():
+class VGG16():
 
-    def __init__(self, mu, sigma):
+    def __init__(self, mu, sigma, layerSize, outSize):
         self.mu = mu
         self.sigma = sigma
+        self.layerSize = layerSize
+        self.outSize = outSize
+
         self._build_graph()
 
-    def _build_graph(self, network_name='Lenet'):
+    def _build_graph(self, network_name='VGG16'):
         self._setup_placeholders_graph()
         self._build_network_graph(network_name)
         self._compute_loss_graph()
@@ -18,9 +21,8 @@ class vgg16():
         self.merged_summary = tf.summary.merge_all()
 
     def _setup_placeholders_graph(self):
-        self.x = tf.placeholder("float", shape=[None, 32, 32, 1], name='x')
-        self.y_ = tf.placeholder("float", shape=[None, 10], name='y_')
-        self.keep_prob = tf.placeholder("float", name='keep_prob')
+        self.x = tf.placeholder("float", shape=[None, self.layerSize, self.layerSize, 1], name='x')
+        self.y = tf.placeholder("float", shape=[None, self.outSize], name='y')
 
     def _cnn_layer(self, scope_name, W_name, b_name, x, filter_shape, conv_strides, padding_tag='VALID'):
         with tf.variable_scope(scope_name):
@@ -34,20 +36,17 @@ class vgg16():
             conv = tf.nn.conv2d(x, conv_W,
                                 strides=conv_strides,
                                 padding=padding_tag) + conv_b
-            tf.summary.histogram('weights', conv_W)
-            tf.summary.histogram('biases', conv_b)
-            tf.summary.histogram('activations', conv)
+
             return conv
 
     def _pooling_layer(self, scope_name, x, pool_ksize, pool_strides, padding_tag='VALID'):
         with tf.variable_scope(scope_name):
             pool = tf.nn.avg_pool(x, pool_ksize, pool_strides, padding=padding_tag)
-            tf.summary.histogram('Pooling', pool)
             return pool
 
     def _fully_connected_layer(self, scope_name, W_name, b_name, x, W_shape):
         with tf.variable_scope(scope_name):
-            x = tf.reshape(x, [-1, 14 * 14 * 6])
+            x = tf.reshape(x, [-1, W_shape[0]])
             w = tf.get_variable(W_name,
                                 dtype=tf.float32,
                                 initializer=tf.truncated_normal(shape=W_shape, mean=self.mu,
@@ -57,40 +56,93 @@ class vgg16():
                                 initializer=tf.zeros(W_shape[1]))
 
             r = tf.add(tf.matmul(x, w), b)
-            tf.summary.histogram('full_connected', r)
+
         return r
 
     def _build_network_graph(self, scope_name):
-        with tf.variable_scope(scope_name):
-            conv1 = self._cnn_layer('layer_1_conv', 'conv1_w', 'conv1_b', self.x, (5, 5, 1, 6), [1, 1, 1, 1])
-            self.conv1 = tf.nn.relu(conv1)
-            self.pool1 = self._pooling_layer('layer_1_pooling', self.conv1, [1, 2, 2, 1], [1, 2, 2, 1])
-            self.logits = self._fully_connected_layer('full_connected', 'full_connected_w', 'full_connected_b',
-                                                      self.pool1, (14 * 14 * 6, 10))
+        with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
+            self.conv1_1 = tf.nn.relu(
+                self._cnn_layer('layer_1_1_conv', 'conv_w', 'conv_b', self.x, (3, 3, 3, 64), [1, 1, 1, 1],
+                                padding_tag='SAME'))
+
+            self.conv1_2 = tf.nn.relu(
+                self._cnn_layer('layer_1_2_conv', 'conv_w', 'conv_b', self.conv1_1, (3, 3, 64, 64), [1, 1, 1, 1],
+                                padding_tag='SAME'))
+
+            self.pool1 = self._pooling_layer('layer_1_pooling', self.conv1_2, [1, 2, 2, 1], [1, 2, 2, 1])
+
+            self.conv2_1 = tf.nn.relu(
+                self._cnn_layer('layer_2_1_conv', 'conv_w', 'conv_b', self.pool1, (3, 3, 64, 128), [1, 1, 1, 1],
+                                padding_tag='SAME'))
+
+            self.conv2_2 = tf.nn.relu(
+                self._cnn_layer('layer_2_2_conv', 'conv_w', 'conv_b', self.conv2_1, (3, 3, 128, 128), [1, 1, 1, 1],
+                                padding_tag='SAME'))
+
+            self.pool2 = self._pooling_layer('layer_2_pooling', self.conv2_2, [1, 2, 2, 1], [1, 2, 2, 1])
+
+            self.conv3_1 = tf.nn.relu(
+                self._cnn_layer('layer_3_1_conv', 'conv_w', 'conv_b', self.pool2, (3, 3, 128, 256), [1, 1, 1, 1],
+                                padding_tag='SAME'))
+            self.conv3_2 = tf.nn.relu(
+                self._cnn_layer('layer_3_2_conv', 'conv_w', 'conv_b', self.conv3_1, (3, 3, 256, 256), [1, 1, 1, 1],
+                                padding_tag='SAME'))
+            self.conv3_3 = tf.nn.relu(
+                self._cnn_layer('layer_3_3_conv', 'conv_w', 'conv_b', self.conv3_2, (3, 3, 256, 256), [1, 1, 1, 1],
+                                padding_tag='SAME'))
+
+            self.pool3 = self._pooling_layer('layer_3_pooling', self.conv3_3, [1, 2, 2, 1], [1, 2, 2, 1])
+
+            self.conv4_1 = tf.nn.relu(
+                self._cnn_layer('layer_4_1_conv', 'conv_w', 'conv_b', self.pool3, (3, 3, 256, 512), [1, 1, 1, 1],
+                                padding_tag='SAME'))
+            self.conv4_2 = tf.nn.relu(
+                self._cnn_layer('layer_4_2_conv', 'conv_w', 'conv_b', self.conv4_1, (3, 3, 512, 512), [1, 1, 1, 1],
+                                padding_tag='SAME'))
+            self.conv4_3 = tf.nn.relu(
+                self._cnn_layer('layer_4_3_conv', 'conv_w', 'conv_b', self.conv4_2, (3, 3, 512, 512), [1, 1, 1, 1],
+                                padding_tag='SAME'))
+
+            self.pool4 = self._pooling_layer('layer_4_pooling', self.conv4_3, [1, 2, 2, 1], [1, 2, 2, 1])
+
+            self.conv5_1 = tf.nn.relu(
+                self._cnn_layer('layer_5_1_conv', 'conv_w', 'conv_b', self.pool4, (3, 3, 512, 512), [1, 1, 1, 1],
+                                padding_tag='SAME'))
+            self.conv5_2 = tf.nn.relu(
+                self._cnn_layer('layer_5_2_conv', 'conv_w', 'conv_b', self.conv5_1, (3, 3, 512, 512), [1, 1, 1, 1],
+                                padding_tag='SAME'))
+
+            self.conv5_3 = tf.nn.relu(
+                self._cnn_layer('layer_5_3_conv', 'conv_w', 'conv_b', self.conv5_2, (3, 3, 512, 512), [1, 1, 1, 1],
+                                padding_tag='SAME'))
+
+            self.pool5 = self._pooling_layer('layer_5_pooling', self.conv5_3, [1, 2, 2, 1], [1, 2, 2, 1])
+
+            self.fc6 = tf.nn.relu(self._fully_connected_layer('full_connected6', 'full_connected_w', 'full_connected_b',
+                                                              self.pool5, (512 * 7 * 7, 4096)))
+            self.dropOut1 = tf.nn.dropout(self.fc6, 0.5)
+
+            self.fc7 = tf.nn.relu(self._fully_connected_layer('full_connected7', 'full_connected_w', 'full_connected_b',
+                                                              self.dropOut1, (4096, 4096)))
+            self.dropOut2 = tf.nn.dropout(self.fc7, 0.5)
+
+            self.logits = self._fully_connected_layer('full_connected8', 'full_connected_w', 'full_connected_b',
+                                                      self.dropOut2, (4096, 101))
 
             self.y_predicted = tf.nn.softmax(self.logits)
-            tf.summary.histogram("y_predicted", self.y_predicted)
 
     def _compute_loss_graph(self):
         with tf.name_scope("loss_function"):
-            loss = tf.nn.softmax_cross_entropy_with_logits(labels=self.y_, logits=self.logits)
+            loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.y, logits=self.logits)
             self.loss = tf.reduce_mean(loss)
-            tf.summary.scalar("cross_entropy", self.loss)
+            tf.summary.scalar("loss", self.loss)
 
     def _compute_acc_graph(self):
         with tf.name_scope("acc_function"):
             self.accuracy = \
-                tf.metrics.accuracy(labels=tf.argmax(self.y_, 1), predictions=tf.argmax(self.y_predicted, 1))[1]
-            tf.summary.scalar("cross_entropy", self.accuracy)
+                tf.metrics.accuracy(labels=tf.argmax(self.y, axis=1), predictions=tf.argmax(self.y_predicted, axis=1))[
+                    1]
+            tf.summary.scalar("accuracy", self.accuracy)
 
     def _create_train_op_graph(self):
-        # min = -0.001
-        # max = 0.001
-        # var_list = tf.trainable_variables()
-        # gradients = tf.train.AdamOptimizer(0.05).compute_gradients(self.loss, var_list)
-        # # 对梯度进行截断
-        # capped_gradients = [(tf.clip_by_value(grad, min, max), var) for grad, var in gradients if grad is not None]
-        # # 应用截断梯度来更新参数
-        # self.train_op = tf.train.AdamOptimizer(0.05).apply_gradients(capped_gradients)
-
-        self.train_op = tf.train.AdamOptimizer(0.05).minimize(self.loss)
+        self.train_op = tf.train.AdamOptimizer(learning_rate=0.1).minimize(self.loss)
