@@ -1,11 +1,6 @@
 import pysc2.agents.myAgent.myAgent_2.macro_operation as mc
 
-controllers = {
-    0: 'build',
-    1: 'train',
-    2: 'harvest',
-    3: 'attack',
-}
+
 
 build_controller = {
     0: mc.build_supply_depot,
@@ -25,7 +20,13 @@ harvest_controller = {
 
 attack_controller = {
     0: mc.attack,
+}
 
+controllers = {
+    0: build_controller,
+    1: train_controller,
+    2: harvest_controller,
+    3: attack_controller,
 }
 
 smart_actions = {
