@@ -74,7 +74,7 @@ setup(
         'six',
         'sk-video',
         'websocket-client',
-        'whichcraft',
+        'whichcraft', 'tensorflow'
     ],
     entry_points={
         'console_scripts': [

@@ -127,7 +127,7 @@ class VGG16():
             self.dropOut2 = tf.nn.dropout(self.fc7, 0.5)
 
             self.logits = self._fully_connected_layer('full_connected8', 'full_connected_w', 'full_connected_b',
-                                                      self.dropOut2, (4096, 101))
+                                                      self.dropOut2, (4096, self.outSize))
 
             self.y_predicted = tf.nn.softmax(self.logits)
 
