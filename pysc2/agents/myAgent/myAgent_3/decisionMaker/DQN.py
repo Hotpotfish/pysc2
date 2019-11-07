@@ -1,30 +1,19 @@
-import pysc2.agents.myAgent.myAgent_3.macro_operation as mo
+from collections import deque
+from random import random
+
+import pysc2.agents.myAgent.myAgent_3.net.vgg16 as vgg16
+import numpy as np
 import tensorflow as tf
 
+# Hyper Parameters for DQN
+GAMMA = 0.9  # discount factor for target Q
+INITIAL_EPSILON = 0.5  # starting value of epsilon
+FINAL_EPSILON = 0.01  # final value of epsilon
+REPLAY_SIZE = 10000  # experience replay buffer size
+BATCH_SIZE = 32  # size of minibatch
 
-class VGG16():
 
-    def __init__(self, mu, sigma, learning_rate, actiondim, mapSize, channels):
-        self.mu = mu
-        self.sigma = sigma
-        self.learning_rate = learning_rate
-        self.mapSize = mapSize
-        self.channels = channels
-        self.actiondim = actiondim
-
-        self._build_graph()
-
-    def _build_graph(self, network_name='VGG16'):
-        self._setup_placeholders_graph()
-        self._build_network_graph(network_name)
-        self._compute_loss_graph()
-        self._compute_acc_graph()
-        self._create_train_op_graph()
-        self.merged_summary = tf.summary.merge_all()
-
-    def _setup_placeholders_graph(self):
-        self.x = tf.placeholder("float", shape=[None, self.mapSize, self.mapSize, self.channels], name='x')
-        self.y = tf.placeholder("float", shape=[None, self.actiondim], name='y')
+class DQN():
 
     def _cnn_layer(self, scope_name, W_name, b_name, x, filter_shape, conv_strides, padding_tag='VALID'):
         with tf.variable_scope(scope_name):
@@ -61,10 +50,34 @@ class VGG16():
 
         return r
 
-    def _build_network_graph(self, scope_name):
-        with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
+    # DQN Agent
+    def __init__(self, mu, sigma, learning_rate, actiondim, mapSize, channels):  # 初始化
+        # init experience replay
+        self.replay_buffer = deque()
+        # init some parameters
+        # 神经网络参数
+        self.mu = mu
+        self.sigma = sigma
+        self.learning_rate = learning_rate
+
+        self.time_step = 0
+        self.epsilon = INITIAL_EPSILON
+
+        self.state_dim = [mapSize, mapSize, channels]
+        self.action_dim = actiondim
+
+        self.create_Q_network()
+        self.create_training_method()
+
+        # Init session
+        self.session = tf.InteractiveSession()
+        self.session.run(tf.initialize_all_variables())
+
+    def create_Q_network(self):  # 创建Q网络(vgg16结构)
+        self.state_input = tf.placeholder("float", shape=[None] + self.state_dim, name='state_input')
+        with tf.variable_scope(scope_name='vgg16', reuse=tf.AUTO_REUSE):
             self.conv1_1 = tf.nn.relu(
-                self._cnn_layer('layer_1_1_conv', 'conv_w', 'conv_b', self.x, (3, 3, self.channels, 64), [1, 1, 1, 1],
+                self._cnn_layer('layer_1_1_conv', 'conv_w', 'conv_b', self.state_input, (3, 3, 3, 64), [1, 1, 1, 1],
                                 padding_tag='SAME'))
 
             self.conv1_2 = tf.nn.relu(
@@ -129,22 +142,68 @@ class VGG16():
             self.dropOut2 = tf.nn.dropout(self.fc7, 0.5)
 
             self.logits = self._fully_connected_layer('full_connected8', 'full_connected_w', 'full_connected_b',
-                                                      self.dropOut2, (4096, self.actiondim))
+                                                      self.dropOut2, (4096, self.action_dim))
 
-            self.y_predicted = tf.nn.softmax(self.logits)
+            self.Q_value = tf.nn.softmax(self.logits)
 
-    def _compute_loss_graph(self):
-        with tf.name_scope("loss_function"):
-            loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.y, logits=self.logits)
-            self.loss = tf.reduce_mean(loss)
-            tf.summary.scalar("loss", self.loss)
+    def create_training_method(self):  # 创建训练方法
+        self.action_input = tf.placeholder("float", [None] + self.action_dim)  # one hot presentation
+        self.y_input = tf.placeholder("float", [None])
+        Q_action = tf.reduce_sum(tf.mul(self.Q_value, self.action_input), reduction_indices=1)
+        self.cost = tf.reduce_mean(tf.square(self.y_input - Q_action))
+        self.optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(self.cost)
 
-    def _compute_acc_graph(self):
-        with tf.name_scope("acc_function"):
-            self.accuracy = \
-                tf.metrics.accuracy(labels=tf.argmax(self.y, axis=1), predictions=tf.argmax(self.y_predicted, axis=1))[
-                    1]
-            tf.summary.scalar("accuracy", self.accuracy)
+    def perceive(self, state, action, reward, next_state, done):  # 感知存储信息
+        one_hot_action = np.zeros(self.action_dim)
+        one_hot_action[action] = 1
+        self.replay_buffer.append((state, one_hot_action, reward, next_state, done))
 
-    def _create_train_op_graph(self):
-        self.train_op = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.loss)
+        if len(self.replay_buffer) > REPLAY_SIZE:
+            self.replay_buffer.popleft()
+
+        if len(self.replay_buffer) > BATCH_SIZE:
+            self.train_Q_network()
+
+    def train_Q_network(self):  # 训练网络
+        self.time_step += 1
+        # Step 1: obtain random minibatch from replay memory
+        minibatch = random.sample(self.replay_buffer, BATCH_SIZE)
+        state_batch = [data[0] for data in minibatch]
+        action_batch = [data[1] for data in minibatch]
+        reward_batch = [data[2] for data in minibatch]
+        next_state_batch = [data[3] for data in minibatch]
+
+        # Step 2: calculate y
+        y_batch = []
+        Q_value_batch = self.Q_value.eval(feed_dict={self.state_input: next_state_batch})
+        for i in range(0, BATCH_SIZE):
+            done = minibatch[i][4]
+            if done:
+                y_batch.append(reward_batch[i])
+            else:
+                y_batch.append(reward_batch[i] + GAMMA * np.max(Q_value_batch[i]))
+
+        self.optimizer.run(feed_dict={
+            self.y_input: y_batch,
+            self.action_input: action_batch,
+            self.state_input: state_batch
+        })
+
+    def egreedy_action(self, state):  # 输出带随机的动作
+        Q_value = self.Q_value.eval(feed_dict={self.state_input: [state]})[0]
+        if random.random() <= self.epsilon:
+            return random.randint(0, self.action_dim - 1)
+        else:
+            return np.argmax(Q_value)
+
+        self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / 10000
+
+    def action(self, state):
+        return np.argmax(self.Q_value.eval(feed_dict={
+            self.state_input: [state]
+        })[0])
+
+    def action(self, state):
+        return np.argmax(self.Q_value.eval(feed_dict={
+            self.state_input: [state]
+        })[0])
