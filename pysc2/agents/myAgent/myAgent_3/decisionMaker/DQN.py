@@ -1,7 +1,6 @@
 from collections import deque
 from random import random
 
-import pysc2.agents.myAgent.myAgent_3.net.vgg16 as vgg16
 import numpy as np
 import tensorflow as tf
 
@@ -51,7 +50,7 @@ class DQN():
         return r
 
     # DQN Agent
-    def __init__(self, mu, sigma, learning_rate, actiondim, mapSize, channels):  # 初始化
+    def __init__(self, mu, sigma, learning_rate, actiondim, datadim):  # 初始化
         # init experience replay
         self.replay_buffer = deque()
         # init some parameters
@@ -63,7 +62,7 @@ class DQN():
         self.time_step = 0
         self.epsilon = INITIAL_EPSILON
 
-        self.state_dim = [mapSize, mapSize, channels]
+        self.state_dim = datadim
         self.action_dim = actiondim
 
         self.create_Q_network()
@@ -74,10 +73,11 @@ class DQN():
         self.session.run(tf.initialize_all_variables())
 
     def create_Q_network(self):  # 创建Q网络(vgg16结构)
-        self.state_input = tf.placeholder("float", shape=[None] + self.state_dim, name='state_input')
+        self.state_input = tf.placeholder("float", shape=self.state_dim, name='state_input')
         with tf.variable_scope(scope_name='vgg16', reuse=tf.AUTO_REUSE):
             self.conv1_1 = tf.nn.relu(
-                self._cnn_layer('layer_1_1_conv', 'conv_w', 'conv_b', self.state_input, (3, 3, 3, 64), [1, 1, 1, 1],
+                self._cnn_layer('layer_1_1_conv', 'conv_w', 'conv_b', self.state_input, (3, 3, self.state_dim[2], 64),
+                                [1, 1, 1, 1],
                                 padding_tag='SAME'))
 
             self.conv1_2 = tf.nn.relu(
@@ -175,7 +175,8 @@ class DQN():
 
         # Step 2: calculate y
         y_batch = []
-        Q_value_batch = self.Q_value.eval(feed_dict={self.state_input: next_state_batch})
+        Q_value_batch = self.session.run([self.Q_value], {self.state_input: next_state_batch})
+        # Q_value_batch = self.Q_value.eval(feed_dict={self.state_input: next_state_batch})
         for i in range(0, BATCH_SIZE):
             done = minibatch[i][4]
             if done:
@@ -190,20 +191,13 @@ class DQN():
         })
 
     def egreedy_action(self, state):  # 输出带随机的动作
-        Q_value = self.Q_value.eval(feed_dict={self.state_input: [state]})[0]
+        Q_value = self.session.run([self.Q_value], {self.state_input: [state]})
+        # self.Q_value.eval(feed_dict={self.state_input: [state]})[0]
+        self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / 10000
         if random.random() <= self.epsilon:
             return random.randint(0, self.action_dim - 1)
         else:
             return np.argmax(Q_value)
 
-        self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / 10000
-
     def action(self, state):
-        return np.argmax(self.Q_value.eval(feed_dict={
-            self.state_input: [state]
-        })[0])
-
-    def action(self, state):
-        return np.argmax(self.Q_value.eval(feed_dict={
-            self.state_input: [state]
-        })[0])
+        return np.argmax(self.Q_value.eval(feed_dict={self.state_input: [state]})[0])
