@@ -50,7 +50,7 @@ class DQN():
         return r
 
     # DQN Agent
-    def __init__(self, mu, sigma, learning_rate, actiondim, datadim):  # 初始化
+    def __init__(self, mu, sigma, learning_rate, actiondim, datadim, name):  # 初始化
         # init experience replay
         self.replay_buffer = deque()
         # init some parameters
@@ -65,91 +65,105 @@ class DQN():
         self.state_dim = datadim
         self.action_dim = actiondim
 
-        self.create_Q_network()
+        self.create_Q_network(name)
         self.create_training_method()
 
         # Init session
         self.session = tf.InteractiveSession()
         self.session.run(tf.initialize_all_variables())
 
-    def create_Q_network(self):  # 创建Q网络(vgg16结构)
+    def create_Q_network(self, name):  # 创建Q网络(vgg16结构)
         self.state_input = tf.placeholder("float", shape=self.state_dim, name='state_input')
-        with tf.variable_scope(scope_name='vgg16', reuse=tf.AUTO_REUSE):
+        with tf.variable_scope(name, reuse=tf.AUTO_REUSE):
+            # self.conv1_1 = tf.nn.relu(
+            #     self._cnn_layer('layer_1_1_conv', 'conv_w', 'conv_b', self.state_input, (3, 3, self.state_dim[3], 64),
+            #                     [1, 1, 1, 1],
+            #                     padding_tag='SAME'))
+            #
+            # self.conv1_2 = tf.nn.relu(
+            #     self._cnn_layer('layer_1_2_conv', 'conv_w', 'conv_b', self.conv1_1, (3, 3, 64, 64), [1, 1, 1, 1],
+            #                     padding_tag='SAME'))
+            #
+            # self.pool1 = self._pooling_layer('layer_1_pooling', self.conv1_2, [1, 2, 2, 1], [1, 2, 2, 1])
+            #
+            # self.conv2_1 = tf.nn.relu(
+            #     self._cnn_layer('layer_2_1_conv', 'conv_w', 'conv_b', self.pool1, (3, 3, 64, 128), [1, 1, 1, 1],
+            #                     padding_tag='SAME'))
+            #
+            # self.conv2_2 = tf.nn.relu(
+            #     self._cnn_layer('layer_2_2_conv', 'conv_w', 'conv_b', self.conv2_1, (3, 3, 128, 128), [1, 1, 1, 1],
+            #                     padding_tag='SAME'))
+            #
+            # self.pool2 = self._pooling_layer('layer_2_pooling', self.conv2_2, [1, 2, 2, 1], [1, 2, 2, 1])
+            #
+            # self.conv3_1 = tf.nn.relu(
+            #     self._cnn_layer('layer_3_1_conv', 'conv_w', 'conv_b', self.pool2, (3, 3, 128, 256), [1, 1, 1, 1],
+            #                     padding_tag='SAME'))
+            # self.conv3_2 = tf.nn.relu(
+            #     self._cnn_layer('layer_3_2_conv', 'conv_w', 'conv_b', self.conv3_1, (3, 3, 256, 256), [1, 1, 1, 1],
+            #                     padding_tag='SAME'))
+            # self.conv3_3 = tf.nn.relu(
+            #     self._cnn_layer('layer_3_3_conv', 'conv_w', 'conv_b', self.conv3_2, (3, 3, 256, 256), [1, 1, 1, 1],
+            #                     padding_tag='SAME'))
+            #
+            # self.pool3 = self._pooling_layer('layer_3_pooling', self.conv3_3, [1, 2, 2, 1], [1, 2, 2, 1])
+            #
+            # self.conv4_1 = tf.nn.relu(
+            #     self._cnn_layer('layer_4_1_conv', 'conv_w', 'conv_b', self.pool3, (3, 3, 256, 512), [1, 1, 1, 1],
+            #                     padding_tag='SAME'))
+            # self.conv4_2 = tf.nn.relu(
+            #     self._cnn_layer('layer_4_2_conv', 'conv_w', 'conv_b', self.conv4_1, (3, 3, 512, 512), [1, 1, 1, 1],
+            #                     padding_tag='SAME'))
+            # self.conv4_3 = tf.nn.relu(
+            #     self._cnn_layer('layer_4_3_conv', 'conv_w', 'conv_b', self.conv4_2, (3, 3, 512, 512), [1, 1, 1, 1],
+            #                     padding_tag='SAME'))
+            #
+            # self.pool4 = self._pooling_layer('layer_4_pooling', self.conv4_3, [1, 2, 2, 1], [1, 2, 2, 1])
+            #
+            # self.conv5_1 = tf.nn.relu(
+            #     self._cnn_layer('layer_5_1_conv', 'conv_w', 'conv_b', self.pool4, (3, 3, 512, 512), [1, 1, 1, 1],
+            #                     padding_tag='SAME'))
+            # self.conv5_2 = tf.nn.relu(
+            #     self._cnn_layer('layer_5_2_conv', 'conv_w', 'conv_b', self.conv5_1, (3, 3, 512, 512), [1, 1, 1, 1],
+            #                     padding_tag='SAME'))
+            #
+            # self.conv5_3 = tf.nn.relu(
+            #     self._cnn_layer('layer_5_3_conv', 'conv_w', 'conv_b', self.conv5_2, (3, 3, 512, 512), [1, 1, 1, 1],
+            #                     padding_tag='SAME'))
+            #
+            # self.pool5 = self._pooling_layer('layer_5_pooling', self.conv5_3, [1, 2, 2, 1], [1, 2, 2, 1])
+            #
+            # self.fc6 = tf.nn.relu(self._fully_connected_layer('full_connected6', 'full_connected_w', 'full_connected_b',
+            #                                                   self.pool5, (512 * 7 * 7, 4096)))
+            # self.dropOut1 = tf.nn.dropout(self.fc6, 0.5)
+            #
+            # self.fc7 = tf.nn.relu(self._fully_connected_layer('full_connected7', 'full_connected_w', 'full_connected_b',
+            #                                                   self.dropOut1, (4096, 4096)))
+            # self.dropOut2 = tf.nn.dropout(self.fc7, 0.5)
+            #
+            # self.logits = self._fully_connected_layer('full_connected8', 'full_connected_w', 'full_connected_b',
+            #                                           self.dropOut2, (4096, self.action_dim))
+
             self.conv1_1 = tf.nn.relu(
-                self._cnn_layer('layer_1_1_conv', 'conv_w', 'conv_b', self.state_input, (3, 3, self.state_dim[2], 64),
+                self._cnn_layer('layer_1_1_conv', 'conv_w', 'conv_b', self.state_input, (3, 3, self.state_dim[3], 64),
                                 [1, 1, 1, 1],
                                 padding_tag='SAME'))
 
-            self.conv1_2 = tf.nn.relu(
-                self._cnn_layer('layer_1_2_conv', 'conv_w', 'conv_b', self.conv1_1, (3, 3, 64, 64), [1, 1, 1, 1],
-                                padding_tag='SAME'))
-
-            self.pool1 = self._pooling_layer('layer_1_pooling', self.conv1_2, [1, 2, 2, 1], [1, 2, 2, 1])
-
-            self.conv2_1 = tf.nn.relu(
-                self._cnn_layer('layer_2_1_conv', 'conv_w', 'conv_b', self.pool1, (3, 3, 64, 128), [1, 1, 1, 1],
-                                padding_tag='SAME'))
-
-            self.conv2_2 = tf.nn.relu(
-                self._cnn_layer('layer_2_2_conv', 'conv_w', 'conv_b', self.conv2_1, (3, 3, 128, 128), [1, 1, 1, 1],
-                                padding_tag='SAME'))
-
-            self.pool2 = self._pooling_layer('layer_2_pooling', self.conv2_2, [1, 2, 2, 1], [1, 2, 2, 1])
-
-            self.conv3_1 = tf.nn.relu(
-                self._cnn_layer('layer_3_1_conv', 'conv_w', 'conv_b', self.pool2, (3, 3, 128, 256), [1, 1, 1, 1],
-                                padding_tag='SAME'))
-            self.conv3_2 = tf.nn.relu(
-                self._cnn_layer('layer_3_2_conv', 'conv_w', 'conv_b', self.conv3_1, (3, 3, 256, 256), [1, 1, 1, 1],
-                                padding_tag='SAME'))
-            self.conv3_3 = tf.nn.relu(
-                self._cnn_layer('layer_3_3_conv', 'conv_w', 'conv_b', self.conv3_2, (3, 3, 256, 256), [1, 1, 1, 1],
-                                padding_tag='SAME'))
-
-            self.pool3 = self._pooling_layer('layer_3_pooling', self.conv3_3, [1, 2, 2, 1], [1, 2, 2, 1])
-
-            self.conv4_1 = tf.nn.relu(
-                self._cnn_layer('layer_4_1_conv', 'conv_w', 'conv_b', self.pool3, (3, 3, 256, 512), [1, 1, 1, 1],
-                                padding_tag='SAME'))
-            self.conv4_2 = tf.nn.relu(
-                self._cnn_layer('layer_4_2_conv', 'conv_w', 'conv_b', self.conv4_1, (3, 3, 512, 512), [1, 1, 1, 1],
-                                padding_tag='SAME'))
-            self.conv4_3 = tf.nn.relu(
-                self._cnn_layer('layer_4_3_conv', 'conv_w', 'conv_b', self.conv4_2, (3, 3, 512, 512), [1, 1, 1, 1],
-                                padding_tag='SAME'))
-
-            self.pool4 = self._pooling_layer('layer_4_pooling', self.conv4_3, [1, 2, 2, 1], [1, 2, 2, 1])
-
-            self.conv5_1 = tf.nn.relu(
-                self._cnn_layer('layer_5_1_conv', 'conv_w', 'conv_b', self.pool4, (3, 3, 512, 512), [1, 1, 1, 1],
-                                padding_tag='SAME'))
-            self.conv5_2 = tf.nn.relu(
-                self._cnn_layer('layer_5_2_conv', 'conv_w', 'conv_b', self.conv5_1, (3, 3, 512, 512), [1, 1, 1, 1],
-                                padding_tag='SAME'))
-
-            self.conv5_3 = tf.nn.relu(
-                self._cnn_layer('layer_5_3_conv', 'conv_w', 'conv_b', self.conv5_2, (3, 3, 512, 512), [1, 1, 1, 1],
-                                padding_tag='SAME'))
-
-            self.pool5 = self._pooling_layer('layer_5_pooling', self.conv5_3, [1, 2, 2, 1], [1, 2, 2, 1])
+            self.pool1 = self._pooling_layer('layer_1_pooling', self.conv1_1, [1, 4, 4, 1], [1, 4, 4, 1])
 
             self.fc6 = tf.nn.relu(self._fully_connected_layer('full_connected6', 'full_connected_w', 'full_connected_b',
-                                                              self.pool5, (512 * 7 * 7, 4096)))
+                                                              self.pool1, (16 * 16 * 64, 4096)))
             self.dropOut1 = tf.nn.dropout(self.fc6, 0.5)
 
-            self.fc7 = tf.nn.relu(self._fully_connected_layer('full_connected7', 'full_connected_w', 'full_connected_b',
-                                                              self.dropOut1, (4096, 4096)))
-            self.dropOut2 = tf.nn.dropout(self.fc7, 0.5)
-
             self.logits = self._fully_connected_layer('full_connected8', 'full_connected_w', 'full_connected_b',
-                                                      self.dropOut2, (4096, self.action_dim))
+                                                      self.dropOut1, (4096, self.action_dim))
 
             self.Q_value = tf.nn.softmax(self.logits)
 
     def create_training_method(self):  # 创建训练方法
-        self.action_input = tf.placeholder("float", [None] + self.action_dim)  # one hot presentation
+        self.action_input = tf.placeholder("float", [None, self.action_dim])  # one hot presentation
         self.y_input = tf.placeholder("float", [None])
-        Q_action = tf.reduce_sum(tf.mul(self.Q_value, self.action_input), reduction_indices=1)
+        Q_action = tf.reduce_sum(tf.multiply(self.Q_value, self.action_input), reduction_indices=1)
         self.cost = tf.reduce_mean(tf.square(self.y_input - Q_action))
         self.optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(self.cost)
 

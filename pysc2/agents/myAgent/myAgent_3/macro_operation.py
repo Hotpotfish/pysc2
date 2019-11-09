@@ -8,7 +8,7 @@ import numpy as np
 _NOT_QUEUED = [0]
 _QUEUED = [1]
 
-mapSzie = 256
+mapSzie = 64
 
 
 def chooseARandomPlace(input_x, input_y):
