@@ -1,5 +1,5 @@
 from collections import deque
-from random import random
+import random
 
 import numpy as np
 import tensorflow as tf
@@ -9,7 +9,7 @@ GAMMA = 0.9  # discount factor for target Q
 INITIAL_EPSILON = 0.5  # starting value of epsilon
 FINAL_EPSILON = 0.01  # final value of epsilon
 REPLAY_SIZE = 10000  # experience replay buffer size
-BATCH_SIZE = 32  # size of minibatch
+BATCH_SIZE = 8  # size of minibatch
 
 
 class DQN():
@@ -170,7 +170,7 @@ class DQN():
     def perceive(self, state, action, reward, next_state, done):  # 感知存储信息
         one_hot_action = np.zeros(self.action_dim)
         one_hot_action[action] = 1
-        self.replay_buffer.append((state, one_hot_action, reward, next_state, done))
+        self.replay_buffer.append([state, one_hot_action, reward, next_state, done])
 
         if len(self.replay_buffer) > REPLAY_SIZE:
             self.replay_buffer.popleft()
@@ -182,14 +182,14 @@ class DQN():
         self.time_step += 1
         # Step 1: obtain random minibatch from replay memory
         minibatch = random.sample(self.replay_buffer, BATCH_SIZE)
-        state_batch = [data[0] for data in minibatch]
-        action_batch = [data[1] for data in minibatch]
-        reward_batch = [data[2] for data in minibatch]
-        next_state_batch = [data[3] for data in minibatch]
+        state_batch = np.squeeze(np.array([data[0] for data in minibatch]))
+        action_batch = np.squeeze(np.array([data[1] for data in minibatch]))
+        reward_batch = np.squeeze(np.array([data[2] for data in minibatch]))
+        next_state_batch = np.squeeze(np.array([data[3] for data in minibatch]))
 
         # Step 2: calculate y
         y_batch = []
-        Q_value_batch = self.session.run([self.Q_value], {self.state_input: next_state_batch})
+        Q_value_batch = np.squeeze(np.array(self.session.run([self.Q_value], {self.state_input: next_state_batch})))
         # Q_value_batch = self.Q_value.eval(feed_dict={self.state_input: next_state_batch})
         for i in range(0, BATCH_SIZE):
             done = minibatch[i][4]
@@ -205,13 +205,13 @@ class DQN():
         })
 
     def egreedy_action(self, state):  # 输出带随机的动作
-        Q_value = self.session.run([self.Q_value], {self.state_input: [state]})
+        Q_value = self.session.run([self.Q_value], {self.state_input: state})
         # self.Q_value.eval(feed_dict={self.state_input: [state]})[0]
         self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / 10000
-        if random.random() <= self.epsilon:
+        if np.random.uniform() <= self.epsilon:
             return random.randint(0, self.action_dim - 1)
         else:
             return np.argmax(Q_value)
 
     def action(self, state):
-        return np.argmax(self.Q_value.eval(feed_dict={self.state_input: [state]})[0])
+        return np.argmax(self.Q_value.eval(feed_dict={self.state_input: state})[0])

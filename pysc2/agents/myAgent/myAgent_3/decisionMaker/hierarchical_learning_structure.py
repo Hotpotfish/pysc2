@@ -22,7 +22,7 @@ class decision_maker():
 class hierarchical_learning_structure():
 
     def __init__(self):
-        self.topDataShape = (None, mo.mapSzie, mo.mapSzie, 10)
+        self.topDataShape = (None, mo.mapSzie, mo.mapSzie, 11)
         self.controllerDataShape = (None, mo.mapSzie, mo.mapSzie, 2)
         self.top_decision_maker = decision_maker(
             DQN(mu, sigma, learning_rate, len(sa.controllers), self.topDataShape, 'top_decision_maker'))
@@ -40,13 +40,14 @@ class hierarchical_learning_structure():
     def choose_controller(self, obs):
         self.top_decision_maker.current_state = self.get_top_observation(obs)
 
-        current_socre = obs.observation['ScoreCumulative'][0]
+        current_socre = obs.observation['score_cumulative'][0]
         if self.top_decision_maker.previous_action is not None:
             reward = current_socre - self.top_decision_maker.previous_sorce
             self.top_decision_maker.network.perceive(self.top_decision_maker.previous_state,
                                                      self.top_decision_maker.previous_action,
                                                      reward,
-                                                     self.top_decision_maker.current_state)
+                                                     self.top_decision_maker.current_state,
+                                                     obs.last())
 
         controller_number = self.top_decision_maker.network.egreedy_action(self.top_decision_maker.current_state)
 
@@ -63,7 +64,7 @@ class hierarchical_learning_structure():
     def choose_build_macro(self, obs):
         self.controllers[0].current_state = self.get_build_observation(obs)
 
-        current_socre = obs.observation['ScoreCumulative'][0]
+        current_socre = obs.observation['score_cumulative'][0]
         if self.controllers[0].previous_action is not None:
             reward = current_socre - self.controllers[0].previous_sorce
             self.controllers[0].network.perceive(self.controllers[0].previous_state,
@@ -86,7 +87,7 @@ class hierarchical_learning_structure():
     def choose_train_macro(self, obs):
         self.controllers[1].current_state = self.get_train_observation(obs)
 
-        current_socre = obs.observation['ScoreCumulative'][1]
+        current_socre = obs.observation['score_cumulative'][1]
         if self.controllers[1].previous_action is not None:
             reward = current_socre - self.controllers[1].previous_sorce
             self.controllers[1].network.perceive(self.controllers[1].previous_state,
@@ -109,7 +110,7 @@ class hierarchical_learning_structure():
     def choose_harvest_macro(self, obs):
         self.controllers[2].current_state = self.get_harvest_observation(obs)
 
-        current_socre = obs.observation['ScoreCumulative'][2]
+        current_socre = obs.observation['score_cumulative'][2]
         if self.controllers[2].previous_action is not None:
             reward = current_socre - self.controllers[2].previous_sorce
             self.controllers[2].network.perceive(self.controllers[2].previous_state,
@@ -132,7 +133,7 @@ class hierarchical_learning_structure():
     def choose_attack_macro(self, obs):
         self.controllers[3].current_state = self.get_attack_observation(obs)
 
-        current_socre = obs.observation['ScoreCumulative'][3]
+        current_socre = obs.observation['score_cumulative'][3]
         if self.controllers[3].previous_action is not None:
             reward = current_socre - self.controllers[1].previous_sorce
             self.controllers[3].network.perceive(self.controllers[3].previous_state,
@@ -140,7 +141,7 @@ class hierarchical_learning_structure():
                                                  reward,
                                                  self.controllers[3].current_state)
 
-        macro_number = self.controllers[1].network.egreedy_action(self.controllers[3].current_state)
+        macro_number = self.controllers[3].network.egreedy_action(self.controllers[3].current_state)
 
         self.top_decision_maker.previous_sorce = current_socre
         self.top_decision_maker.previous_state = self.top_decision_maker.current_state
