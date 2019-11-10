@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 _NOT_QUEUED = [0]
 _QUEUED = [1]
 
-mapSzie = 64
+mapSzie = 128
 
 
 def plt_soldiers(soldiers, color):
@@ -19,8 +19,8 @@ def plt_soldiers(soldiers, color):
 
 def automatic_formation(obs):
     soldiers = get_my_units_by_type(obs, units.Terran.Marine)
-    # plt_soldiers(soldiers, 1000.0)
-    # plt.show()
+    plt_soldiers(soldiers, 1000.0)
+    plt.show()
 
     soldier_count = len(soldiers)
 
@@ -45,7 +45,7 @@ def automatic_formation(obs):
 
             print('soldier:' + str(soldier.tag) + ' ')
 
-        # plt_soldiers(combat_team, float(loop * 100))
+        plt_soldiers(combat_team, float(loop * 100))
         combat_teams.append(combat_team)
 
         print('are in combat_team_' + str(loop))

@@ -75,74 +75,7 @@ class DQN():
     def create_Q_network(self, name):  # 创建Q网络(vgg16结构)
         self.state_input = tf.placeholder("float", shape=self.state_dim, name='state_input')
         with tf.variable_scope(name, reuse=tf.AUTO_REUSE):
-            # self.conv1_1 = tf.nn.relu(
-            #     self._cnn_layer('layer_1_1_conv', 'conv_w', 'conv_b', self.state_input, (3, 3, self.state_dim[3], 64),
-            #                     [1, 1, 1, 1],
-            #                     padding_tag='SAME'))
-            #
-            # self.conv1_2 = tf.nn.relu(
-            #     self._cnn_layer('layer_1_2_conv', 'conv_w', 'conv_b', self.conv1_1, (3, 3, 64, 64), [1, 1, 1, 1],
-            #                     padding_tag='SAME'))
-            #
-            # self.pool1 = self._pooling_layer('layer_1_pooling', self.conv1_2, [1, 2, 2, 1], [1, 2, 2, 1])
-            #
-            # self.conv2_1 = tf.nn.relu(
-            #     self._cnn_layer('layer_2_1_conv', 'conv_w', 'conv_b', self.pool1, (3, 3, 64, 128), [1, 1, 1, 1],
-            #                     padding_tag='SAME'))
-            #
-            # self.conv2_2 = tf.nn.relu(
-            #     self._cnn_layer('layer_2_2_conv', 'conv_w', 'conv_b', self.conv2_1, (3, 3, 128, 128), [1, 1, 1, 1],
-            #                     padding_tag='SAME'))
-            #
-            # self.pool2 = self._pooling_layer('layer_2_pooling', self.conv2_2, [1, 2, 2, 1], [1, 2, 2, 1])
-            #
-            # self.conv3_1 = tf.nn.relu(
-            #     self._cnn_layer('layer_3_1_conv', 'conv_w', 'conv_b', self.pool2, (3, 3, 128, 256), [1, 1, 1, 1],
-            #                     padding_tag='SAME'))
-            # self.conv3_2 = tf.nn.relu(
-            #     self._cnn_layer('layer_3_2_conv', 'conv_w', 'conv_b', self.conv3_1, (3, 3, 256, 256), [1, 1, 1, 1],
-            #                     padding_tag='SAME'))
-            # self.conv3_3 = tf.nn.relu(
-            #     self._cnn_layer('layer_3_3_conv', 'conv_w', 'conv_b', self.conv3_2, (3, 3, 256, 256), [1, 1, 1, 1],
-            #                     padding_tag='SAME'))
-            #
-            # self.pool3 = self._pooling_layer('layer_3_pooling', self.conv3_3, [1, 2, 2, 1], [1, 2, 2, 1])
-            #
-            # self.conv4_1 = tf.nn.relu(
-            #     self._cnn_layer('layer_4_1_conv', 'conv_w', 'conv_b', self.pool3, (3, 3, 256, 512), [1, 1, 1, 1],
-            #                     padding_tag='SAME'))
-            # self.conv4_2 = tf.nn.relu(
-            #     self._cnn_layer('layer_4_2_conv', 'conv_w', 'conv_b', self.conv4_1, (3, 3, 512, 512), [1, 1, 1, 1],
-            #                     padding_tag='SAME'))
-            # self.conv4_3 = tf.nn.relu(
-            #     self._cnn_layer('layer_4_3_conv', 'conv_w', 'conv_b', self.conv4_2, (3, 3, 512, 512), [1, 1, 1, 1],
-            #                     padding_tag='SAME'))
-            #
-            # self.pool4 = self._pooling_layer('layer_4_pooling', self.conv4_3, [1, 2, 2, 1], [1, 2, 2, 1])
-            #
-            # self.conv5_1 = tf.nn.relu(
-            #     self._cnn_layer('layer_5_1_conv', 'conv_w', 'conv_b', self.pool4, (3, 3, 512, 512), [1, 1, 1, 1],
-            #                     padding_tag='SAME'))
-            # self.conv5_2 = tf.nn.relu(
-            #     self._cnn_layer('layer_5_2_conv', 'conv_w', 'conv_b', self.conv5_1, (3, 3, 512, 512), [1, 1, 1, 1],
-            #                     padding_tag='SAME'))
-            #
-            # self.conv5_3 = tf.nn.relu(
-            #     self._cnn_layer('layer_5_3_conv', 'conv_w', 'conv_b', self.conv5_2, (3, 3, 512, 512), [1, 1, 1, 1],
-            #                     padding_tag='SAME'))
-            #
-            # self.pool5 = self._pooling_layer('layer_5_pooling', self.conv5_3, [1, 2, 2, 1], [1, 2, 2, 1])
-            #
-            # self.fc6 = tf.nn.relu(self._fully_connected_layer('full_connected6', 'full_connected_w', 'full_connected_b',
-            #                                                   self.pool5, (512 * 7 * 7, 4096)))
-            # self.dropOut1 = tf.nn.dropout(self.fc6, 0.5)
-            #
-            # self.fc7 = tf.nn.relu(self._fully_connected_layer('full_connected7', 'full_connected_w', 'full_connected_b',
-            #                                                   self.dropOut1, (4096, 4096)))
-            # self.dropOut2 = tf.nn.dropout(self.fc7, 0.5)
-            #
-            # self.logits = self._fully_connected_layer('full_connected8', 'full_connected_w', 'full_connected_b',
-            #                                           self.dropOut2, (4096, self.action_dim))
+
 
             self.conv1_1 = tf.nn.relu(
                 self._cnn_layer('layer_1_1_conv', 'conv_w', 'conv_b', self.state_input, (3, 3, self.state_dim[3], 64),
