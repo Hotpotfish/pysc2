@@ -11,6 +11,45 @@ _QUEUED = [1]
 mapSzie = 64
 
 
+def automatic_formation(obs):
+    soldiers = get_my_units_by_type(obs, units.Terran.Marine)
+
+    soldier_count = len(soldiers)
+
+    combat_teams = []
+
+    loop = 0
+
+    while soldier_count != 0:
+
+        # 战斗小组人数
+        combat_team_count = random.randint(1, soldier_count)
+
+        combat_team = []
+
+        # 筛选人员
+        for i in range(combat_team_count):
+            random_index = random.randint(0, len(soldiers) - 1)
+
+            soldier = soldiers.pop(random_index)
+
+            combat_team.append(soldier)
+
+            print('soldier:' + str(soldier.tag) + ' ')
+        combat_teams.append(combat_team)
+
+        print('are in combat_team_' + str(loop))
+        print('-------------------------------')
+        loop += 1
+        soldier_count -= combat_team_count
+
+    print()
+    print()
+    print()
+
+    return combat_teams
+
+
 def chooseARandomPlace(input_x, input_y):
     offset = 20
     add_y = random.randint(-offset, offset)
@@ -222,24 +261,50 @@ def train_marine(obs):
     return actions.RAW_FUNCTIONS.no_op()
 
 
+#
+# def attack(obs):
+#     marines = get_my_units_by_type(obs, units.Terran.Marine)
+#     if len(marines) > 0:
+#         enmies = find_any_enemy(obs)
+#         attack_orders = []
+#         if len(enmies) > 0:
+#             for i in range(len(marines)):
+#                 marine_xy = (marines[i].x, marines[i].y)
+#                 distances = get_distances(obs, enmies, marine_xy)
+#                 enmy = enmies[np.argmin(distances)]
+#                 attack_orders.append(actions.RAW_FUNCTIONS.Attack_unit("now", marines[i].tag, enmy.tag))
+#             return attack_orders
+#
+#         else:
+#             for i in range(len(marines)):
+#                 random_x = random.randint(0, mapSzie - 1)
+#                 random_y = random.randint(0, mapSzie - 1)
+#                 attack_orders.append(actions.RAW_FUNCTIONS.Move_pt("queued", marines[i].tag, (random_x, random_y)))
+#             return attack_orders
+#
+#     return actions.RAW_FUNCTIONS.no_op()
+
 def attack(obs):
-    marines = get_my_units_by_type(obs, units.Terran.Marine)
-    if len(marines) > 0:
+    combat_teams = automatic_formation(obs)
+    if len(combat_teams) > 0:
         enmies = find_any_enemy(obs)
         attack_orders = []
         if len(enmies) > 0:
-            for i in range(len(marines)):
-                marine_xy = (marines[i].x, marines[i].y)
+            for i in range(len(combat_teams)):
+                marine_xy = (combat_teams[i][0].x, combat_teams[i][0].y)
                 distances = get_distances(obs, enmies, marine_xy)
                 enmy = enmies[np.argmin(distances)]
-                attack_orders.append(actions.RAW_FUNCTIONS.Attack_unit("now", marines[i].tag, enmy.tag))
+                for j in range(len(combat_teams[i])):
+                    attack_orders.append(actions.RAW_FUNCTIONS.Attack_unit("now", combat_teams[i][j].tag, enmy.tag))
             return attack_orders
 
         else:
-            for i in range(len(marines)):
+            for i in range(len(combat_teams)):
                 random_x = random.randint(0, mapSzie - 1)
                 random_y = random.randint(0, mapSzie - 1)
-                attack_orders.append(actions.RAW_FUNCTIONS.Move_pt("queued", marines[i].tag, (random_x, random_y)))
+                for j in range(len(combat_teams[i])):
+                    attack_orders.append(
+                        actions.RAW_FUNCTIONS.Move_pt("queued", combat_teams[i][j].tag, (random_x, random_y)))
             return attack_orders
 
     return actions.RAW_FUNCTIONS.no_op()
