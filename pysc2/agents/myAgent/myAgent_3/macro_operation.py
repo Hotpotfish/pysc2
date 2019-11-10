@@ -4,6 +4,7 @@ from pysc2.lib import features
 from pysc2.lib import units
 from queue import Queue
 import numpy as np
+import matplotlib.pyplot as plt
 
 _NOT_QUEUED = [0]
 _QUEUED = [1]
@@ -11,8 +12,15 @@ _QUEUED = [1]
 mapSzie = 64
 
 
+def plt_soldiers(soldiers, color):
+    for i in range(len(soldiers)):
+        plt.scatter(soldiers[i].x, soldiers[i].y, c=color, cmap='coolwarm')
+
+
 def automatic_formation(obs):
     soldiers = get_my_units_by_type(obs, units.Terran.Marine)
+    # plt_soldiers(soldiers, 1000.0)
+    # plt.show()
 
     soldier_count = len(soldiers)
 
@@ -36,12 +44,15 @@ def automatic_formation(obs):
             combat_team.append(soldier)
 
             print('soldier:' + str(soldier.tag) + ' ')
+
+        # plt_soldiers(combat_team, float(loop * 100))
         combat_teams.append(combat_team)
 
         print('are in combat_team_' + str(loop))
         print('-------------------------------')
         loop += 1
         soldier_count -= combat_team_count
+    # plt.show()
 
     print()
     print()
