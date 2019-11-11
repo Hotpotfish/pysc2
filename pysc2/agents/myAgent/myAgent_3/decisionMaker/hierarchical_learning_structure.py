@@ -28,8 +28,7 @@ class hierarchical_learning_structure():
             DQN(mu, sigma, learning_rate, len(sa.controllers), self.topDataShape, 'top_decision_maker'))
         self.controllers = []
         for i in range(len(sa.controllers)):
-            self.controllers.append(decision_maker(
-                DQN(mu, sigma, learning_rate, len(sa.controllers[i]), self.controllerDataShape, 'controller' + str(i))))
+            self.controllers.append(decision_maker(DQN(mu, sigma, learning_rate, len(sa.controllers[i]), self.controllerDataShape, 'controller' + str(i))))
             print()
 
     def get_top_observation(self, obs):
@@ -135,7 +134,7 @@ class hierarchical_learning_structure():
 
         current_socre = obs.observation['score_cumulative'][3]
         if self.controllers[3].previous_action is not None:
-            reward = current_socre - self.controllers[1].previous_sorce
+            reward = current_socre - self.controllers[3].previous_sorce
             self.controllers[3].network.perceive(self.controllers[3].previous_state,
                                                  self.controllers[3].previous_action,
                                                  reward,

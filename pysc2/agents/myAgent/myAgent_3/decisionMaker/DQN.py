@@ -9,7 +9,7 @@ GAMMA = 0.9  # discount factor for target Q
 INITIAL_EPSILON = 0.5  # starting value of epsilon
 FINAL_EPSILON = 0.01  # final value of epsilon
 REPLAY_SIZE = 10000  # experience replay buffer size
-BATCH_SIZE = 300  # size of minibatch
+BATCH_SIZE = 32  # size of minibatch
 
 
 class DQN():
@@ -75,21 +75,19 @@ class DQN():
     def create_Q_network(self, name):  # 创建Q网络(vgg16结构)
         self.state_input = tf.placeholder("float", shape=self.state_dim, name='state_input')
         with tf.variable_scope(name, reuse=tf.AUTO_REUSE):
-
-
             self.conv1_1 = tf.nn.relu(
-                self._cnn_layer('layer_1_1_conv', 'conv_w', 'conv_b', self.state_input, (3, 3, self.state_dim[3], 64),
+                self._cnn_layer('layer_1_1_conv', 'conv_w', 'conv_b', self.state_input, (3, 3, self.state_dim[3], 8),
                                 [1, 1, 1, 1],
                                 padding_tag='SAME'))
 
             self.pool1 = self._pooling_layer('layer_1_pooling', self.conv1_1, [1, 4, 4, 1], [1, 4, 4, 1])
 
             self.fc6 = tf.nn.relu(self._fully_connected_layer('full_connected6', 'full_connected_w', 'full_connected_b',
-                                                              self.pool1, (16 * 16 * 64, 4096)))
+                                                              self.pool1, (self.pool1._shape[1] * self.pool1._shape[2] * self.pool1._shape[3], 1024)))
             self.dropOut1 = tf.nn.dropout(self.fc6, 0.5)
 
             self.logits = self._fully_connected_layer('full_connected8', 'full_connected_w', 'full_connected_b',
-                                                      self.dropOut1, (4096, self.action_dim))
+                                                      self.dropOut1, (1024, self.action_dim))
 
             self.Q_value = tf.nn.softmax(self.logits)
 
@@ -126,6 +124,8 @@ class DQN():
         # Step 2: calculate y
         y_batch = []
         Q_value_batch = np.array(self.session.run([self.Q_value], {self.state_input: next_state_batch}))
+        Q_value_batch = np.squeeze(Q_value_batch)
+
         # Q_value_batch = self.Q_value.eval(feed_dict={self.state_input: next_state_batch})
         for i in range(0, BATCH_SIZE):
             done = minibatch[i][4]
