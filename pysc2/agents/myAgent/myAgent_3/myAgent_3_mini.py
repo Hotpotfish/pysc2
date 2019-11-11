@@ -30,7 +30,7 @@ def main(unused_argv):
 
     try:
         with sc2_env.SC2Env(
-                map_name="DefeatRoaches",
+                map_name="FindAndDefeatZerglings",
                 players=[sc2_env.Agent(sc2_env.Race.terran), ],
                 # sc2_env.Bot(sc2_env.Race.protoss,
                 #             sc2_env.Difficulty.very_easy)],
@@ -43,10 +43,10 @@ def main(unused_argv):
                     raw_resolution=macro_operation.mapSzie,
                     use_unit_counts=True
                 ),
-                step_mul=8,
+                step_mul=0.001,
                 disable_fog=False,
                 visualize=True,
-                realtime=False
+                    realtime=True
 
         ) as env:
             run_loop.run_loop([agent1], env)

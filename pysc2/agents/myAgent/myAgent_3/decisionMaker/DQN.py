@@ -150,4 +150,4 @@ class DQN():
             return np.argmax(Q_value)
 
     def action(self, state):
-        return np.argmax(self.session.run([self.Q_value], {self.state_input: state}))
+        return np.argmax(self.session.run([self.Q_value], {self.state_input: state})[0])
