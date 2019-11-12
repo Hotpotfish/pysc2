@@ -1,10 +1,10 @@
 from queue import Queue
 
-import pysc2.agents.myAgent.myAgent_3.macro_operation as macro_operation
+import pysc2.agents.myAgent.myAgent_4.macro_operation as macro_operation
 
 from absl import app
 from pysc2.agents import base_agent
-from pysc2.agents.myAgent.myAgent_3.decisionMaker.hierarchical_learning_structure import hierarchical_learning_structure
+from pysc2.agents.myAgent.myAgent_4.decisionMaker.hierarchical_learning_structure import hierarchical_learning_structure
 
 from pysc2.lib import actions, features
 from pysc2.env import sc2_env, run_loop
@@ -19,10 +19,7 @@ class myAgent(base_agent.BaseAgent):
 
     def step(self, obs):
         super(myAgent, self).step(obs)
-
         action = self.hierarchical_learning_structure.make_choice(obs,'test')
-
-
 
         return action
 
