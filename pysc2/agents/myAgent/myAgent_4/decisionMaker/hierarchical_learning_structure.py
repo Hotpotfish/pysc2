@@ -25,16 +25,32 @@ class decision_maker():
 class hierarchical_learning_structure():
 
     def __init__(self):
-        self.topDataShape = (None, mo.mapSzie, mo.mapSzie, 11)
-        self.controllerDataShape = (None, mo.mapSzie, mo.mapSzie, 2)
+        self.DataShape = (None, mo.mapSzie, mo.mapSzie, 39)
+        # self.controllerDataShape = (None, mo.mapSzie, mo.mapSzie, 2)
         self.top_decision_maker = decision_maker(
-            DQN(mu, sigma, learning_rate, len(sa.controllers), self.topDataShape, 'top_decision_maker'))
+            DQN(mu, sigma, learning_rate, len(sa.controllers), self.DataShape, 'top_decision_maker'))
         self.controllers = []
         for i in range(len(sa.controllers)):
             self.controllers.append(decision_maker(
-                DQN(mu, sigma, learning_rate, len(sa.controllers[i]), self.controllerDataShape, 'controller' + str(i))))
+                DQN(mu, sigma, learning_rate, len(sa.controllers[i]), self.DataShape, 'controller' + str(i))))
             print()
 
+    def my_flatten(self,input_list):
+        output_list = []
+        while True:
+            if input_list == []:
+                break
+            for index, i in enumerate(input_list):
+
+                if type(i) == list:
+                    input_list = i + input_list[index + 1:]
+                    break
+                else:
+                    output_list.append(i)
+                    input_list.pop(index)
+                    break
+
+        return output_list
     def get_all_observation(self, obs):
         state_layers = []
         non_serial_layer = []
@@ -46,11 +62,14 @@ class hierarchical_learning_structure():
             if key == 'feature_minimap' or key == 'feature_screen':
                 for i in range(len(value)):
                     state_layers.append(np.array(value[i]))
+                continue
             if type(value) is not str:
                 value = value.tolist()
                 non_serial_layer.append(value)
+                # value = (np.array(value)).flatten()
+                # non_serial_layer.append(value)
 
-        non_serial_layer = np.array(non_serial_layer).flatten()
+        non_serial_layer = np.array(self.my_flatten(non_serial_layer))
         number = len(non_serial_layer)
         dataSize = pow(mo.mapSzie, 2)
         loop = int(number / dataSize) + 1
@@ -66,36 +85,8 @@ class hierarchical_learning_structure():
             layer[0:(number - i * dataSize)] = non_serial_layer[i * dataSize: number]
             layer = layer.reshape((mo.mapSzie, mo.mapSzie))
             state_layers.append(layer)
-        print()
+        return np.array(state_layers).reshape((-1, mo.mapSzie, mo.mapSzie, 39))
 
-        # for key, value in obs.observation.items():
-        #     # 数据为空，使用全0图层站位。
-        #     if not len(value):
-        #         layer = np.zeros(shape=(mo.mapSzie, mo.mapSzie))
-        #         state_layers.append(layer)
-        #         continue
-        #     # 数据非空，制造图层。
-        #     elif type(value) is NNA or type(value) is np.ndarray:
-        #         value = np.array(value).flatten()
-        #         number = len(value)
-        #         dataSize = pow(mo.mapSzie, 2)
-        #         loop = int(number / dataSize)
-        #         for i in range(loop):
-        #             layer = np.zeros(shape=(mo.mapSzie, mo.mapSzie))
-        #             layer = layer.flatten()
-        #             if i != loop - 1:
-        #                 start = i * dataSize
-        #                 end = (i + 1) * dataSize
-        #                 layer = value[start:end]
-        #                 layer = layer.reshape((mo.mapSzie, mo.mapSzie))
-        #                 state_layers.append(layer)
-        #                 continue
-        #             layer = layer.flatten()
-        #             layer[0:(number - i * dataSize)] = value[i * dataSize: number]
-        #             layer = layer.reshape((mo.mapSzie, mo.mapSzie))
-        #             state_layers.append(layer)
-
-        print()
 
     def get_top_observation(self, obs):
 
@@ -103,9 +94,7 @@ class hierarchical_learning_structure():
         return state
 
     def choose_controller(self, obs, mark):
-        a = self.get_all_observation(obs)
-        self.top_decision_maker.current_state = self.get_top_observation(obs)
-
+        self.top_decision_maker.current_state = self.get_all_observation(obs)
         if mark == 'train':
             current_socre = obs.observation['score_cumulative'][0]
             if self.top_decision_maker.previous_action is not None:
@@ -131,7 +120,7 @@ class hierarchical_learning_structure():
         return state
 
     def choose_build_macro(self, obs, mark):
-        self.controllers[0].current_state = self.get_build_observation(obs)
+        self.controllers[0].current_state = self.get_all_observation(obs)
 
         if mark == 'train':
 
@@ -158,7 +147,7 @@ class hierarchical_learning_structure():
         return state
 
     def choose_train_macro(self, obs, mark):
-        self.controllers[1].current_state = self.get_train_observation(obs)
+        self.controllers[1].current_state = self.get_all_observation(obs)
 
         if mark == 'train':
             current_socre = obs.observation['score_cumulative'][1]
@@ -184,7 +173,7 @@ class hierarchical_learning_structure():
         return state
 
     def choose_harvest_macro(self, obs, mark):
-        self.controllers[2].current_state = self.get_harvest_observation(obs)
+        self.controllers[2].current_state = self.get_all_observation(obs)
 
         if mark == 'train':
             current_socre = obs.observation['score_cumulative'][2]
@@ -210,7 +199,7 @@ class hierarchical_learning_structure():
         return state
 
     def choose_attack_macro(self, obs, mark):
-        self.controllers[3].current_state = self.get_attack_observation(obs)
+        self.controllers[3].current_state = self.get_all_observation(obs)
 
         if mark == 'train':
 
