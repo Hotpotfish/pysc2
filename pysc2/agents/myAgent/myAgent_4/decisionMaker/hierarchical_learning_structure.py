@@ -1,4 +1,6 @@
+import datetime
 import inspect
+import os
 
 from pysc2.agents.myAgent.myAgent_4.decisionMaker.DQN import DQN
 import pysc2.agents.myAgent.myAgent_4.smart_actions as sa
@@ -26,15 +28,17 @@ class decision_maker():
 class hierarchical_learning_structure():
 
     def __init__(self):
+        self.replay_path = []
         self.DataShape = (None, mo.mapSzie, mo.mapSzie, 39)
         # self.controllerDataShape = (None, mo.mapSzie, mo.mapSzie, 2)
         self.top_decision_maker = decision_maker(
-            DQN(mu, sigma, learning_rate, len(sa.controllers), 0, self.DataShape, 'top_decision_maker'))
+            DQN(mu, sigma, learning_rate, len(sa.controllers), 0, self.DataShape, 'top_decision_maker', self.replay_path))
         self.controllers = []
         for i in range(len(sa.controllers)):
             # 5代表增加的参数槽 6个槽分别代表动作编号，RAW_TYPES.queued, RAW_TYPES.unit_tags, RAW_TYPES.target_unit_tag 和RAW_TYPES.world（占两位）
             self.controllers.append(decision_maker(
-                DQN(mu, sigma, learning_rate, len(sa.controllers[i]), 5, self.DataShape, 'controller' + str(i))))
+                DQN(mu, sigma, learning_rate, len(sa.controllers[i]), 5, self.DataShape, 'controller' + str(i),
+                    self.replay_path)))
 
     def my_flatten(self, input_list):
         output_list = []
@@ -66,8 +70,8 @@ class hierarchical_learning_structure():
 
         macro_and_parameter[2] = int(macro_and_parameter[2] * raw_units_len)
         macro_and_parameter[3] = int(macro_and_parameter[3] * raw_units_len)
-        macro_and_parameter[4] = int(macro_and_parameter[4] * (mo.mapSzie-1))
-        macro_and_parameter[5] = int(macro_and_parameter[5] * (mo.mapSzie-1))
+        macro_and_parameter[4] = int(macro_and_parameter[4] * (mo.mapSzie - 1))
+        macro_and_parameter[5] = int(macro_and_parameter[5] * (mo.mapSzie - 1))
         return m_a_p
 
     def assembly_action(self, obs, controller_number, macro_and_parameter):
@@ -92,7 +96,6 @@ class hierarchical_learning_structure():
 
         parameter = tuple(parameter)
         return action(*parameter)
-
 
     def get_all_observation(self, obs):
         state_layers = []
@@ -136,6 +139,9 @@ class hierarchical_learning_structure():
                                                          self.top_decision_maker.previous_reward,
                                                          self.top_decision_maker.current_state,
                                                          obs.last())
+            if obs.last() == True:
+                self.top_decision_maker.network.train_Q_network()
+
 
             controller_number = self.top_decision_maker.network.egreedy_action(self.top_decision_maker.current_state)
             self.top_decision_maker.previous_reward = obs.reward
@@ -151,10 +157,15 @@ class hierarchical_learning_structure():
         if mark == 'train':
             if self.controllers[controller_number].previous_action is not None:
                 self.controllers[controller_number].network.perceive(self.controllers[controller_number].previous_state,
-                                                                     self.controllers[controller_number].previous_action,
-                                                                     self.controllers[controller_number].previous_reward,
+                                                                     self.controllers[
+                                                                         controller_number].previous_action,
+                                                                     self.controllers[
+                                                                         controller_number].previous_reward,
                                                                      self.controllers[controller_number].current_state,
                                                                      obs.last())
+
+            if obs.last() == True:
+                self.controllers[controller_number].network.train_Q_network()
 
             action_and_parameter = self.controllers[controller_number].network.egreedy_action(
                 self.controllers[controller_number].current_state)
@@ -177,10 +188,14 @@ class hierarchical_learning_structure():
     def make_choice(self, obs, mark):
 
         if obs[0] == StepType.FIRST:
+            self.replay_path = 'replay/' + str(datetime.datetime.now().strftime('%Y%m%d%H%M%S')) + '/'
+            os.makedirs(self.replay_path)
+            self.top_decision_maker.network.replay_path = self.replay_path
+            for i in range(len(self.controllers)):
+                self.controllers[i].network.replay_path = self.replay_path
             return actions.RAW_FUNCTIONS.raw_move_camera((mo.mapSzie / 2, mo.mapSzie / 2))
 
         controller_number = int(self.choose_controller(obs, mark)[0])
-
         action = self.choose_macro(obs, controller_number, mark)
 
         return action

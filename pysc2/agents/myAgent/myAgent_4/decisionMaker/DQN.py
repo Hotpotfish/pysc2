@@ -9,7 +9,8 @@ GAMMA = 0.9  # discount factor for target Q
 INITIAL_EPSILON = 0.5  # starting value of epsilon
 FINAL_EPSILON = 0.01  # final value of epsilon
 REPLAY_SIZE = 10000  # experience replay buffer size
-BATCH_SIZE = 10000  # size of minibatch
+EPISODES = 1
+BATCH_SIZE = 32  # size of minibatch
 
 
 class DQN():
@@ -50,9 +51,9 @@ class DQN():
         return r
 
     # DQN Agent
-    def __init__(self, mu, sigma, learning_rate, actiondim, parameterdim, datadim, name):  # 初始化
+    def __init__(self, mu, sigma, learning_rate, actiondim, parameterdim, datadim, name, replay_path):  # 初始化
         # init experience replay
-        self.replay_buffer = deque()
+        self.replay_path = replay_path
         # init some parameters
         # 神经网络参数
         self.mu = mu
@@ -68,6 +69,15 @@ class DQN():
 
         self.create_Q_network(name)
         self.create_training_method()
+        self.name = name
+
+        # self.states = []
+        # self.one_hot_actions = []
+        # self.rewards = []
+        # self.next_states = []
+        # self.dones = []
+        self.data = []
+
 
         # Init session
         self.session = tf.InteractiveSession()
@@ -109,42 +119,63 @@ class DQN():
         state = np.squeeze(state)
         next_state = np.squeeze(next_state)
 
-        self.replay_buffer.append([state, one_hot_action, reward, next_state, done])
+        # np.savetxt(
+        #     self.replay_path + self.name + '.txt',
+        #     np.array([state, one_hot_action, reward, next_state, done]),
+        # )
+        # self.states.append(state)
+        # self.one_hot_actions.append(one_hot_action)
+        # self.rewards.append(reward)
+        # self.next_states.append(next_state)
+        # self.dones.append(done)
+        self.data.append([state, one_hot_action, reward, next_state, done])
 
-        if len(self.replay_buffer) > REPLAY_SIZE:
-            self.replay_buffer.popleft()
+        if done == True:
 
-        if len(self.replay_buffer) > BATCH_SIZE:
-            self.train_Q_network()
+            np.savez(self.replay_path + self.name,
+                     data = self.data)
+                     # state=self.states,
+                     # one_hot_action=self.one_hot_actions,
+                     # reward=self.rewards,
+                     # next_state=self.next_states,
+                     # done=self.dones)
+            self.data.clear()
+
 
     def train_Q_network(self):  # 训练网络
-        self.time_step += 1
+        # self.time_step += 1
+        file = np.load(self.replay_path + self.name + '.npz')
+        data =  list(file['data'])
         # Step 1: obtain random minibatch from replay memory
-        minibatch = random.sample(self.replay_buffer, BATCH_SIZE)
-        state_batch = np.array([data[0] for data in minibatch])
-        action_batch = np.array([data[1] for data in minibatch])
-        reward_batch = np.array([data[2] for data in minibatch])
-        next_state_batch = np.array([data[3] for data in minibatch])
 
-        # Step 2: calculate y
-        y_batch =np.array([])
-        Q_value_batch = np.array(self.session.run(self.Q_value, {self.state_input: next_state_batch}))
-        # Q_value_batch = np.squeeze(Q_value_batch)
+        for mark in range(EPISODES):
+            for i in range(BATCH_SIZE):
+                minibatch = random.sample(data, BATCH_SIZE)
+                state_batch = np.array([data[0] for data in minibatch])
+                action_batch = np.array([data[1] for data in minibatch])
+                reward_batch = np.array([data[2] for data in minibatch])
+                next_state_batch = np.array([data[3] for data in minibatch])
 
-        # Q_value_batch = self.Q_value.eval(feed_dict={self.state_input: next_state_batch})
-        for i in range(0, BATCH_SIZE):
-            done = minibatch[i][4]
-            if done:
-                temp = np.append(np.array(reward_batch[i]), np.array(Q_value_batch[i][self.action_dim:]))
-                temp = temp.reshape((1, 1 + self.parameterdim))
-                y_batch = np.append(y_batch,temp)
-            else:
-                temp = np.append(np.array(reward_batch[i] + GAMMA * np.max(Q_value_batch[i][0:self.action_dim])),
-                                 Q_value_batch[i][self.action_dim:])
-                temp = temp.reshape((1, 1 + self.parameterdim))
-                y_batch = np.append(y_batch,temp)
-        y_batch = np.array(y_batch).reshape(BATCH_SIZE, 1 + self.parameterdim)
-        self.optimizer.run(feed_dict={self.y_input: y_batch, self.action_input: action_batch, self.state_input: state_batch})
+            # Step 2: calculate y
+            y_batch = np.array([])
+            Q_value_batch = np.array(self.session.run(self.Q_value, {self.state_input: next_state_batch}))
+            # Q_value_batch = np.squeeze(Q_value_batch)
+
+            # Q_value_batch = self.Q_value.eval(feed_dict={self.state_input: next_state_batch})
+            for i in range(0, BATCH_SIZE):
+                done = minibatch[i][4]
+                if done:
+                    temp = np.append(np.array(reward_batch[i]), np.array(Q_value_batch[i][self.action_dim:]))
+                    temp = temp.reshape((1, 1 + self.parameterdim))
+                    y_batch = np.append(y_batch, temp)
+                else:
+                    temp = np.append(np.array(reward_batch[i] + GAMMA * np.max(Q_value_batch[i][0:self.action_dim])),
+                                     Q_value_batch[i][self.action_dim:])
+                    temp = temp.reshape((1, 1 + self.parameterdim))
+                    y_batch = np.append(y_batch, temp)
+            y_batch = np.array(y_batch).reshape(BATCH_SIZE, 1 + self.parameterdim)
+            self.optimizer.run(
+                feed_dict={self.y_input: y_batch, self.action_input: action_batch, self.state_input: state_batch})
 
     def egreedy_action(self, state):  # 输出带随机的动作
         Q_value = self.session.run(self.Q_value, {self.state_input: state})[0]
