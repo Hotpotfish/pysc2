@@ -9,7 +9,7 @@ GAMMA = 0.9  # discount factor for target Q
 INITIAL_EPSILON = 0.5  # starting value of epsilon
 FINAL_EPSILON = 0.01  # final value of epsilon
 REPLAY_SIZE = 10000  # experience replay buffer size
-BATCH_SIZE = 9000  # size of minibatch
+BATCH_SIZE = 1  # size of minibatch
 
 
 class DQN():
@@ -97,7 +97,7 @@ class DQN():
     def create_training_method(self):  # 创建训练方法
         self.action_input = tf.placeholder("float", [None, self.action_dim + self.parameterdim])  # one hot presentation
         self.y_input = tf.placeholder("float", [None, 1 + self.parameterdim])
-        Q_action = tf.reduce_sum(tf.multiply(self.Q_value, self.action_input), reduction_indices=1)
+        Q_action = tf.reduce_sum(tf.multiply(self.Q_value, self.action_input))
         self.cost = tf.reduce_mean(tf.square(self.y_input - Q_action))
         self.optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(self.cost)
 
@@ -127,23 +127,24 @@ class DQN():
         next_state_batch = np.array([data[3] for data in minibatch])
 
         # Step 2: calculate y
-        y_batch = []
+        y_batch =np.array([])
         Q_value_batch = np.array(self.session.run(self.Q_value, {self.state_input: next_state_batch}))
-        Q_value_batch = np.squeeze(Q_value_batch)
+        # Q_value_batch = np.squeeze(Q_value_batch)
 
         # Q_value_batch = self.Q_value.eval(feed_dict={self.state_input: next_state_batch})
         for i in range(0, BATCH_SIZE):
             done = minibatch[i][4]
             if done:
-                y_batch.append(reward_batch[i])
+                temp = np.append(np.array(reward_batch[i]), np.array(Q_value_batch[i][self.action_dim:]))
+                temp = temp.reshape((1, 1 + self.parameterdim))
+                y_batch = np.append(y_batch,temp)
             else:
-                y_batch.append(reward_batch[i] + GAMMA * np.max(Q_value_batch[i][0:self.action_dim]))
-        y_batch = np.array(y_batch).reshape(BATCH_SIZE, 1)
-        self.optimizer.run(feed_dict={
-            self.y_input: y_batch,
-            self.action_input: action_batch,
-            self.state_input: state_batch
-        })
+                temp = np.append(np.array(reward_batch[i] + GAMMA * np.max(Q_value_batch[i][0:self.action_dim])),
+                                 Q_value_batch[i][self.action_dim:])
+                temp = temp.reshape((1, 1 + self.parameterdim))
+                y_batch = np.append(y_batch,temp)
+        y_batch = np.array(y_batch).reshape(BATCH_SIZE, 1 + self.parameterdim)
+        self.optimizer.run(feed_dict={self.y_input: y_batch, self.action_input: action_batch, self.state_input: state_batch})
 
     def egreedy_action(self, state):  # 输出带随机的动作
         Q_value = self.session.run(self.Q_value, {self.state_input: state})[0]
