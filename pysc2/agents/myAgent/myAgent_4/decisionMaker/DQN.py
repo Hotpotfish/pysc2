@@ -9,7 +9,7 @@ GAMMA = 0.9  # discount factor for target Q
 INITIAL_EPSILON = 0.5  # starting value of epsilon
 FINAL_EPSILON = 0.01  # final value of epsilon
 REPLAY_SIZE = 10000  # experience replay buffer size
-BATCH_SIZE = 32  # size of minibatch
+BATCH_SIZE = 9000  # size of minibatch
 
 
 class DQN():
@@ -50,7 +50,7 @@ class DQN():
         return r
 
     # DQN Agent
-    def __init__(self, mu, sigma, learning_rate, actiondim, datadim, name):  # 初始化
+    def __init__(self, mu, sigma, learning_rate, actiondim, parameterdim, datadim, name):  # 初始化
         # init experience replay
         self.replay_buffer = deque()
         # init some parameters
@@ -64,6 +64,7 @@ class DQN():
 
         self.state_dim = datadim
         self.action_dim = actiondim
+        self.parameterdim = parameterdim
 
         self.create_Q_network(name)
         self.create_training_method()
@@ -82,25 +83,29 @@ class DQN():
 
             self.pool1 = self._pooling_layer('layer_1_pooling', self.conv1_1, [1, 4, 4, 1], [1, 4, 4, 1])
 
-            self.fc6 = tf.nn.relu(self._fully_connected_layer('full_connected6', 'full_connected_w', 'full_connected_b',
-                                                              self.pool1, (self.pool1._shape[1] * self.pool1._shape[2] * self.pool1._shape[3], 1024)))
-            self.dropOut1 = tf.nn.dropout(self.fc6, 0.5)
+            self.fc1 = tf.nn.relu(
+                self._fully_connected_layer('full_connected_1', 'full_connected_w', 'full_connected_b',
+                                            self.pool1, (self.pool1._shape[1] * self.pool1._shape[2] *
+                                                         self.pool1._shape[3], 1024)))
+            self.dropOut1 = tf.nn.dropout(self.fc1, 0.5)
 
-            self.logits = self._fully_connected_layer('full_connected8', 'full_connected_w', 'full_connected_b',
-                                                      self.dropOut1, (1024, self.action_dim))
+            self.logits = self._fully_connected_layer('full_connected_2', 'full_connected_w', 'full_connected_b',
+                                                      self.dropOut1, (1024, self.action_dim + self.parameterdim))
 
             self.Q_value = tf.nn.softmax(self.logits)
 
     def create_training_method(self):  # 创建训练方法
-        self.action_input = tf.placeholder("float", [None, self.action_dim])  # one hot presentation
-        self.y_input = tf.placeholder("float", [None])
+        self.action_input = tf.placeholder("float", [None, self.action_dim + self.parameterdim])  # one hot presentation
+        self.y_input = tf.placeholder("float", [None, 1 + self.parameterdim])
         Q_action = tf.reduce_sum(tf.multiply(self.Q_value, self.action_input), reduction_indices=1)
         self.cost = tf.reduce_mean(tf.square(self.y_input - Q_action))
         self.optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(self.cost)
 
     def perceive(self, state, action, reward, next_state, done):  # 感知存储信息
-        one_hot_action = np.zeros(self.action_dim)
-        one_hot_action[action] = 1
+        one_hot_action = np.zeros(self.action_dim + self.parameterdim)
+        one_hot_action[int(action[0])] = 1
+        if self.parameterdim != 0:
+            one_hot_action[self.action_dim:] = action[1:]
         state = np.squeeze(state)
         next_state = np.squeeze(next_state)
 
@@ -123,7 +128,7 @@ class DQN():
 
         # Step 2: calculate y
         y_batch = []
-        Q_value_batch = np.array(self.session.run([self.Q_value], {self.state_input: next_state_batch}))
+        Q_value_batch = np.array(self.session.run(self.Q_value, {self.state_input: next_state_batch}))
         Q_value_batch = np.squeeze(Q_value_batch)
 
         # Q_value_batch = self.Q_value.eval(feed_dict={self.state_input: next_state_batch})
@@ -132,8 +137,8 @@ class DQN():
             if done:
                 y_batch.append(reward_batch[i])
             else:
-                y_batch.append(reward_batch[i] + GAMMA * np.max(Q_value_batch[i]))
-
+                y_batch.append(reward_batch[i] + GAMMA * np.max(Q_value_batch[i][0:self.action_dim]))
+        y_batch = np.array(y_batch).reshape(BATCH_SIZE, 1)
         self.optimizer.run(feed_dict={
             self.y_input: y_batch,
             self.action_input: action_batch,
@@ -141,13 +146,23 @@ class DQN():
         })
 
     def egreedy_action(self, state):  # 输出带随机的动作
-        Q_value = self.session.run([self.Q_value], {self.state_input: state})
-
+        Q_value = self.session.run(self.Q_value, {self.state_input: state})[0]
         self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / 10000
         if np.random.uniform() <= self.epsilon:
-            return random.randint(0, self.action_dim - 1)
+            # return random.randint(0, self.action_dim - 1)
+            random_action = np.random.randint(0, self.action_dim)
+            random_parameter = np.random.rand(self.parameterdim)
+            random_action_and_parameter = np.append(random_action, random_parameter).flatten()
+            return random_action_and_parameter
         else:
-            return np.argmax(Q_value)
+            action = np.argmax(Q_value[0:self.action_dim])
+            parameter = np.array(Q_value[self.action_dim:(self.action_dim + self.parameterdim)])
+            action_and_parameter = np.append(action, parameter).flatten()
+            return action_and_parameter
 
     def action(self, state):
-        return np.argmax(self.session.run([self.Q_value], {self.state_input: state})[0])
+        Q_value = self.session.run(self.Q_value, {self.state_input: state})[0]
+        action = np.argmax(Q_value[0:self.action_dim])
+        parameter = np.array(Q_value[self.action_dim:(self.action_dim + self.parameterdim)])
+        action_and_parameter = np.append(action, parameter)
+        return action_and_parameter

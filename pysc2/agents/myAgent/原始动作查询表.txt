@@ -1,4 +1,11 @@
-Function.raw_ui_func(0, "no_op", raw_no_op),
+    raw_no_op: [],
+    raw_cmd: [RAW_TYPES.queued, RAW_TYPES.unit_tags],
+    raw_cmd_pt: [RAW_TYPES.queued, RAW_TYPES.unit_tags, RAW_TYPES.world],
+    raw_cmd_unit: [RAW_TYPES.queued, RAW_TYPES.unit_tags, RAW_TYPES.target_unit_tag],
+    raw_move_camera: [RAW_TYPES.world],
+    raw_autocast: [RAW_TYPES.unit_tags]
+
+    Function.raw_ui_func(0, "no_op", raw_no_op),
     Function.raw_ui_func(168, "raw_move_camera", raw_move_camera),
     Function.raw_ability(2, "Attack_pt", raw_cmd_pt, 3674),
     Function.raw_ability(3, "Attack_unit", raw_cmd_unit, 3674),

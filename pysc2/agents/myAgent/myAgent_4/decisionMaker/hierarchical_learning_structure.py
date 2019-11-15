@@ -1,8 +1,9 @@
+import inspect
+
 from pysc2.agents.myAgent.myAgent_4.decisionMaker.DQN import DQN
 import pysc2.agents.myAgent.myAgent_4.smart_actions as sa
 import pysc2.agents.myAgent.myAgent_4.macro_operation as mo
 import numpy as np
-from pysc2.lib.named_array import NamedNumpyArray as NNA
 
 from pysc2.env.environment import StepType
 from pysc2.lib import actions
@@ -18,7 +19,7 @@ class decision_maker():
         self.network = network
         self.previous_state = None
         self.previous_action = None
-        self.previous_sorce = None
+        self.previous_reward = None
         self.current_state = None
 
 
@@ -28,14 +29,14 @@ class hierarchical_learning_structure():
         self.DataShape = (None, mo.mapSzie, mo.mapSzie, 39)
         # self.controllerDataShape = (None, mo.mapSzie, mo.mapSzie, 2)
         self.top_decision_maker = decision_maker(
-            DQN(mu, sigma, learning_rate, len(sa.controllers), self.DataShape, 'top_decision_maker'))
+            DQN(mu, sigma, learning_rate, len(sa.controllers), 0, self.DataShape, 'top_decision_maker'))
         self.controllers = []
         for i in range(len(sa.controllers)):
+            # 5代表增加的参数槽 6个槽分别代表动作编号，RAW_TYPES.queued, RAW_TYPES.unit_tags, RAW_TYPES.target_unit_tag 和RAW_TYPES.world（占两位）
             self.controllers.append(decision_maker(
-                DQN(mu, sigma, learning_rate, len(sa.controllers[i]), self.DataShape, 'controller' + str(i))))
-            print()
+                DQN(mu, sigma, learning_rate, len(sa.controllers[i]), 5, self.DataShape, 'controller' + str(i))))
 
-    def my_flatten(self,input_list):
+    def my_flatten(self, input_list):
         output_list = []
         while True:
             if input_list == []:
@@ -51,6 +52,48 @@ class hierarchical_learning_structure():
                     break
 
         return output_list
+
+    def reflect(self, obs, macro_and_parameter):
+        # macro_and_parameter 分别代表：动作（一维），RAW_TYPES.queued, RAW_TYPES.unit_tags, RAW_TYPES.target_unit_tag 和RAW_TYPES.world（占两位）
+        m_a_p = macro_and_parameter
+        raw_units = obs.observation['raw_units']
+        raw_units_len = len(raw_units) - 1
+
+        if macro_and_parameter[1] > 0.5:
+            macro_and_parameter[1] = '1'
+        else:
+            macro_and_parameter[1] = '0'
+
+        macro_and_parameter[2] = int(macro_and_parameter[2] * raw_units_len)
+        macro_and_parameter[3] = int(macro_and_parameter[3] * raw_units_len)
+        macro_and_parameter[4] = int(macro_and_parameter[4] * (mo.mapSzie-1))
+        macro_and_parameter[5] = int(macro_and_parameter[5] * (mo.mapSzie-1))
+        return m_a_p
+
+    def assembly_action(self, obs, controller_number, macro_and_parameter):
+        raw_units = obs.observation['raw_units']
+        action = sa.controllers[controller_number][macro_and_parameter[0]]
+        parameter = []
+        # 根据参数名字填内容
+        for i in range(len(action[5])):
+
+            if action[5][i].name == 'queued':
+                parameter.append(int(macro_and_parameter[1]))
+                continue
+            if action[5][i].name == 'unit_tags':
+                parameter.append(raw_units[int(macro_and_parameter[2])].tag)
+                continue
+            if action[5][i].name == 'target_unit_tag':
+                parameter.append(raw_units[int(macro_and_parameter[3])].tag)
+                continue
+            if action[5][i].name == 'world':
+                parameter.append((int(macro_and_parameter[4]), int(macro_and_parameter[5])))
+                continue
+
+        parameter = tuple(parameter)
+        return action(*parameter)
+
+
     def get_all_observation(self, obs):
         state_layers = []
         non_serial_layer = []
@@ -66,9 +109,6 @@ class hierarchical_learning_structure():
             if type(value) is not str:
                 value = value.tolist()
                 non_serial_layer.append(value)
-                # value = (np.array(value)).flatten()
-                # non_serial_layer.append(value)
-
         non_serial_layer = np.array(self.my_flatten(non_serial_layer))
         number = len(non_serial_layer)
         dataSize = pow(mo.mapSzie, 2)
@@ -87,157 +127,60 @@ class hierarchical_learning_structure():
             state_layers.append(layer)
         return np.array(state_layers).reshape((-1, mo.mapSzie, mo.mapSzie, 39))
 
-
-    def get_top_observation(self, obs):
-
-        state = np.array(obs.observation['feature_minimap']).reshape((-1, mo.mapSzie, mo.mapSzie, 11))
-        return state
-
     def choose_controller(self, obs, mark):
         self.top_decision_maker.current_state = self.get_all_observation(obs)
         if mark == 'train':
-            current_socre = obs.observation['score_cumulative'][0]
             if self.top_decision_maker.previous_action is not None:
-                reward = current_socre - self.top_decision_maker.previous_sorce
                 self.top_decision_maker.network.perceive(self.top_decision_maker.previous_state,
                                                          self.top_decision_maker.previous_action,
-                                                         reward,
+                                                         self.top_decision_maker.previous_reward,
                                                          self.top_decision_maker.current_state,
                                                          obs.last())
 
             controller_number = self.top_decision_maker.network.egreedy_action(self.top_decision_maker.current_state)
-
-            self.top_decision_maker.previous_sorce = current_socre
+            self.top_decision_maker.previous_reward = obs.reward
             self.top_decision_maker.previous_state = self.top_decision_maker.current_state
             self.top_decision_maker.previous_action = controller_number
             return controller_number
         elif mark == 'test':
             return self.top_decision_maker.network.action(self.top_decision_maker.current_state)
 
-    def get_build_observation(self, obs):
-
-        state = np.array(obs.observation['feature_minimap'][0:2]).reshape((-1, mo.mapSzie, mo.mapSzie, 2))
-        return state
-
-    def choose_build_macro(self, obs, mark):
-        self.controllers[0].current_state = self.get_all_observation(obs)
+    def choose_macro(self, obs, controller_number, mark):
+        self.controllers[controller_number].current_state = self.get_all_observation(obs)
 
         if mark == 'train':
+            if self.controllers[controller_number].previous_action is not None:
+                self.controllers[controller_number].network.perceive(self.controllers[controller_number].previous_state,
+                                                                     self.controllers[controller_number].previous_action,
+                                                                     self.controllers[controller_number].previous_reward,
+                                                                     self.controllers[controller_number].current_state,
+                                                                     obs.last())
 
-            current_socre = obs.observation['score_cumulative'][0]
-            if self.controllers[0].previous_action is not None:
-                reward = current_socre - self.controllers[0].previous_sorce
-                self.controllers[0].network.perceive(self.controllers[0].previous_state,
-                                                     self.controllers[0].previous_action,
-                                                     reward,
-                                                     self.controllers[0].current_state)
+            action_and_parameter = self.controllers[controller_number].network.egreedy_action(
+                self.controllers[controller_number].current_state)
 
-            macro_number = self.controllers[0].network.egreedy_action(self.controllers[0].current_state)
+            self.controllers[controller_number].previous_reward = obs.reward
+            self.controllers[controller_number].previous_state = self.controllers[controller_number].current_state
+            self.controllers[controller_number].previous_action = action_and_parameter
+            action_and_parameter = self.reflect(obs, action_and_parameter)
 
-            self.top_decision_maker.previous_sorce = current_socre
-            self.top_decision_maker.previous_state = self.top_decision_maker.current_state
-            self.top_decision_maker.previous_action = macro_number
-            return sa.controllers[0][macro_number]
+            action = self.assembly_action(obs, controller_number, action_and_parameter)
+
+            return action
         elif mark == 'test':
-            return sa.controllers[0][self.controllers[0].network.action(self.controllers[0].current_state)]
-
-    def get_train_observation(self, obs):
-
-        state = np.array(obs.observation['feature_minimap'][2:4]).reshape((-1, mo.mapSzie, mo.mapSzie, 2))
-        return state
-
-    def choose_train_macro(self, obs, mark):
-        self.controllers[1].current_state = self.get_all_observation(obs)
-
-        if mark == 'train':
-            current_socre = obs.observation['score_cumulative'][1]
-            if self.controllers[1].previous_action is not None:
-                reward = current_socre - self.controllers[1].previous_sorce
-                self.controllers[1].network.perceive(self.controllers[1].previous_state,
-                                                     self.controllers[1].previous_action,
-                                                     reward,
-                                                     self.controllers[1].current_state)
-
-            macro_number = self.controllers[1].network.egreedy_action(self.controllers[1].current_state)
-
-            self.top_decision_maker.previous_sorce = current_socre
-            self.top_decision_maker.previous_state = self.top_decision_maker.current_state
-            self.top_decision_maker.previous_action = macro_number
-            return sa.controllers[1][macro_number]
-        elif mark == 'test':
-            return sa.controllers[1][self.controllers[1].network.action(self.controllers[1].current_state)]
-
-    def get_harvest_observation(self, obs):
-
-        state = np.array(obs.observation['feature_minimap'][4:6]).reshape((-1, mo.mapSzie, mo.mapSzie, 2))
-        return state
-
-    def choose_harvest_macro(self, obs, mark):
-        self.controllers[2].current_state = self.get_all_observation(obs)
-
-        if mark == 'train':
-            current_socre = obs.observation['score_cumulative'][2]
-            if self.controllers[2].previous_action is not None:
-                reward = current_socre - self.controllers[2].previous_sorce
-                self.controllers[2].network.perceive(self.controllers[2].previous_state,
-                                                     self.controllers[2].previous_action,
-                                                     reward,
-                                                     self.controllers[2].current_state)
-
-            macro_number = self.controllers[2].network.egreedy_action(self.controllers[2].current_state)
-
-            self.top_decision_maker.previous_sorce = current_socre
-            self.top_decision_maker.previous_state = self.top_decision_maker.current_state
-            self.top_decision_maker.previous_action = macro_number
-            return sa.controllers[2][macro_number]
-        elif mark == 'test':
-            return sa.controllers[2][self.controllers[2].network.action(self.controllers[2].current_state)]
-
-    def get_attack_observation(self, obs):
-
-        state = np.array(obs.observation['feature_minimap'][6:8]).reshape((-1, mo.mapSzie, mo.mapSzie, 2))
-        return state
-
-    def choose_attack_macro(self, obs, mark):
-        self.controllers[3].current_state = self.get_all_observation(obs)
-
-        if mark == 'train':
-
-            current_socre = obs.observation['score_cumulative'][3]
-            if self.controllers[3].previous_action is not None:
-                reward = current_socre - self.controllers[3].previous_sorce
-                self.controllers[3].network.perceive(self.controllers[3].previous_state,
-                                                     self.controllers[3].previous_action,
-                                                     reward,
-                                                     self.controllers[3].current_state)
-
-            macro_number = self.controllers[3].network.egreedy_action(self.controllers[3].current_state)
-
-            self.top_decision_maker.previous_sorce = current_socre
-            self.top_decision_maker.previous_state = self.top_decision_maker.current_state
-            self.top_decision_maker.previous_action = macro_number
-            return sa.controllers[3][macro_number]
-        elif mark == 'test':
-            return sa.controllers[3][self.controllers[3].network.action(self.controllers[3].current_state)]
+            state = self.controllers[controller_number].current_state
+            action_and_parameter = self.controllers[controller_number].network.action(state)
+            macro_and_parameter = self.reflect(obs, action_and_parameter)
+            action = self.assembly_action(obs, controller_number, macro_and_parameter)
+            return action
 
     def make_choice(self, obs, mark):
 
         if obs[0] == StepType.FIRST:
             return actions.RAW_FUNCTIONS.raw_move_camera((mo.mapSzie / 2, mo.mapSzie / 2))
 
-        controller_number = self.choose_controller(obs, mark)
+        controller_number = int(self.choose_controller(obs, mark)[0])
 
-        if controller_number == 0:
-            macro = self.choose_build_macro(obs, mark)
-            return macro(obs)
-        if controller_number == 1:
-            macro = self.choose_train_macro(obs, mark)
-            return macro(obs)
-        if controller_number == 2:
-            macro = self.choose_harvest_macro(obs, mark)
-            return macro(obs)
-        if controller_number == 3:
-            macro = self.choose_attack_macro(obs, mark)
-            return macro(obs)
+        action = self.choose_macro(obs, controller_number, mark)
 
-        return actions.RAW_FUNCTIONS.no_op()
+        return action

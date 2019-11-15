@@ -19,7 +19,7 @@ class myAgent(base_agent.BaseAgent):
 
     def step(self, obs):
         super(myAgent, self).step(obs)
-        action = self.hierarchical_learning_structure.make_choice(obs,'test')
+        action = self.hierarchical_learning_structure.make_choice(obs,'train')
 
         return action
 
@@ -42,7 +42,7 @@ def main(unused_argv):
                     raw_resolution=macro_operation.mapSzie,
                     use_unit_counts=True
                 ),
-                step_mul=8,
+                step_mul=4,
                 disable_fog=False,
                 visualize=True,
                 realtime=False
