@@ -9,8 +9,8 @@ GAMMA = 0.9  # discount factor for target Q
 INITIAL_EPSILON = 0.5  # starting value of epsilon
 FINAL_EPSILON = 0.01  # final value of epsilon
 REPLAY_SIZE = 10000  # experience replay buffer size
-EPISODES = 1
-BATCH_SIZE = 32  # size of minibatch
+EPISODES = 32
+BATCH_SIZE = 1  # size of minibatch
 
 
 class DQN():
@@ -78,7 +78,6 @@ class DQN():
         # self.dones = []
         self.data = []
 
-
         # Init session
         self.session = tf.InteractiveSession()
         self.session.run(tf.initialize_all_variables())
@@ -131,21 +130,19 @@ class DQN():
         self.data.append([state, one_hot_action, reward, next_state, done])
 
         if done == True:
-
             np.savez(self.replay_path + self.name,
-                     data = self.data)
-                     # state=self.states,
-                     # one_hot_action=self.one_hot_actions,
-                     # reward=self.rewards,
-                     # next_state=self.next_states,
-                     # done=self.dones)
+                     data=self.data)
+            # state=self.states,
+            # one_hot_action=self.one_hot_actions,
+            # reward=self.rewards,
+            # next_state=self.next_states,
+            # done=self.dones)
             self.data.clear()
-
 
     def train_Q_network(self):  # 训练网络
         # self.time_step += 1
         file = np.load(self.replay_path + self.name + '.npz')
-        data =  list(file['data'])
+        data = list(file['data'])
         # Step 1: obtain random minibatch from replay memory
 
         for mark in range(EPISODES):
