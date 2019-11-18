@@ -8,8 +8,8 @@ import tensorflow as tf
 GAMMA = 0.9  # discount factor for target Q
 INITIAL_EPSILON = 0.5  # starting value of epsilon
 FINAL_EPSILON = 0.01  # final value of epsilon
-REPLAY_SIZE = 10000  # experience replay buffer size
-EPISODES = 32
+REPLAY_SIZE = 20000  # experience replay buffer size
+EPISODES = 128
 BATCH_SIZE = 1  # size of minibatch
 
 
@@ -51,9 +51,9 @@ class DQN():
         return r
 
     # DQN Agent
-    def __init__(self, mu, sigma, learning_rate, actiondim, parameterdim, datadim, name, replay_path):  # 初始化
+    def __init__(self, mu, sigma, learning_rate, actiondim, parameterdim, datadim, name):  # 初始化
         # init experience replay
-        self.replay_path = replay_path
+        self.replay_buffer = deque()
         # init some parameters
         # 神经网络参数
         self.mu = mu
@@ -73,9 +73,12 @@ class DQN():
 
         self.data = []
 
+        self.saver = tf.train.Saver()
+
         # Init session
         self.session = tf.InteractiveSession()
         self.session.run(tf.initialize_all_variables())
+
 
     def create_Q_network(self, name):  # 创建Q网络(vgg16结构)
         self.state_input = tf.placeholder("float", shape=self.state_dim, name='state_input')
@@ -113,36 +116,13 @@ class DQN():
         state = np.squeeze(state)
         next_state = np.squeeze(next_state)
 
-        # np.savetxt(
-        #     self.replay_path + self.name + '.txt',
-        #     np.array([state, one_hot_action, reward, next_state, done]),
-        # )
-        # self.states.append(state)
-        # self.one_hot_actions.append(one_hot_action)
-        # self.rewards.append(reward)
-        # self.next_states.append(next_state)
-        # self.dones.append(done)
-        self.data.append([state, one_hot_action, reward, next_state, done])
-
-        if done == True:
-            np.savez(self.replay_path + self.name,
-                     data=self.data)
-            # state=self.states,
-            # one_hot_action=self.one_hot_actions,
-            # reward=self.rewards,
-            # next_state=self.next_states,
-            # done=self.dones)
-            self.data.clear()
+        self.replay_buffer.append([state, one_hot_action, reward, next_state, done])
 
     def train_Q_network(self):  # 训练网络
-        # self.time_step += 1
-        file = np.load(self.replay_path + self.name + '.npz')
-        data = list(file['data'])
         # Step 1: obtain random minibatch from replay memory
-
         for mark in range(EPISODES):
             for i in range(BATCH_SIZE):
-                minibatch = random.sample(data, BATCH_SIZE)
+                minibatch = random.sample(self.replay_buffer, BATCH_SIZE)
                 state_batch = np.array([data[0] for data in minibatch])
                 action_batch = np.array([data[1] for data in minibatch])
                 reward_batch = np.array([data[2] for data in minibatch])
@@ -166,6 +146,8 @@ class DQN():
             y_batch = np.array(y_batch).reshape(BATCH_SIZE, 1 + self.parameterdim)
             self.optimizer.run(
                 feed_dict={self.y_input: y_batch, self.action_input: action_batch, self.state_input: state_batch})
+
+        self.replay_buffer.clear()
 
     def egreedy_action(self, state):  # 输出带随机的动作
         Q_value = self.session.run(self.Q_value, {self.state_input: state})[0]
