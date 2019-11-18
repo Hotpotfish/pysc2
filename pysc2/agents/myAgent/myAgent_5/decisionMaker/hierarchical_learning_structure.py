@@ -23,11 +23,13 @@ class decision_maker():
         self.previous_action = None
         self.previous_reward = None
         self.current_state = None
+        self.load_and_train = True
 
 
 class hierarchical_learning_structure():
 
     def __init__(self):
+        self.episode = -1
 
         self.DataShape = (None, mo.mapSzie, mo.mapSzie, 39)
         # self.controllerDataShape = (None, mo.mapSzie, mo.mapSzie, 2)
@@ -129,7 +131,7 @@ class hierarchical_learning_structure():
             state_layers.append(layer)
         return np.array(state_layers).reshape((-1, mo.mapSzie, mo.mapSzie, 39))
 
-    def choose_controller(self, obs, mark):
+    def choose_controller(self, obs, mark, modelSavePath, modelLoadPath):
         self.top_decision_maker.current_state = self.get_all_observation(obs)
         if mark == 'TRAIN':
             if self.top_decision_maker.previous_action is not None:
@@ -138,8 +140,9 @@ class hierarchical_learning_structure():
                                                          self.top_decision_maker.previous_reward,
                                                          self.top_decision_maker.current_state,
                                                          obs.last())
-            if obs.last() == True:
-                self.top_decision_maker.network.train_Q_network()
+            if modelLoadPath is not None and self.top_decision_maker.load_and_train is True:
+                self.top_decision_maker.load_and_train = False
+                self.top_decision_maker.network.restoreModel(modelLoadPath)
 
             controller_number = self.top_decision_maker.network.egreedy_action(self.top_decision_maker.current_state)
             self.top_decision_maker.previous_reward = obs.reward
@@ -147,52 +150,56 @@ class hierarchical_learning_structure():
             self.top_decision_maker.previous_action = controller_number
             return controller_number
         elif mark == 'TEST':
-            return self.top_decision_maker.network.action(self.top_decision_maker.current_state)
+            return self.top_decision_maker.network.action(self.top_decision_maker.current_state, modelLoadPath)
 
-    def choose_macro(self, obs, controller_number, mark):
+    def choose_macro(self, obs, controller_number, mark, modelSavePath, modelLoadPath):
         self.controllers[controller_number].current_state = self.get_all_observation(obs)
 
         if mark == 'TRAIN':
             if self.controllers[controller_number].previous_action is not None:
                 self.controllers[controller_number].network.perceive(self.controllers[controller_number].previous_state,
-                                                                     self.controllers[
-                                                                         controller_number].previous_action,
-                                                                     self.controllers[
-                                                                         controller_number].previous_reward,
+                                                                     self.controllers[controller_number].previous_action,
+                                                                     self.controllers[controller_number].previous_reward,
                                                                      self.controllers[controller_number].current_state,
                                                                      obs.last())
-
-            if obs.last() == True:
-                self.controllers[controller_number].network.train_Q_network()
+            if modelLoadPath is not None and self.controllers[controller_number].load_and_train is True:
+                self.controllers[controller_number].load_and_train = False
+                self.top_decision_maker.network.restoreModel(modelLoadPath)
 
             action_and_parameter = self.controllers[controller_number].network.egreedy_action(
                 self.controllers[controller_number].current_state)
-
             self.controllers[controller_number].previous_reward = obs.reward
             self.controllers[controller_number].previous_state = self.controllers[controller_number].current_state
             self.controllers[controller_number].previous_action = action_and_parameter
             action_and_parameter = self.reflect(obs, action_and_parameter)
-
             action = self.assembly_action(obs, controller_number, action_and_parameter)
             return action
+
         elif mark == 'TEST':
             state = self.controllers[controller_number].current_state
-            action_and_parameter = self.controllers[controller_number].network.action(state)
+            action_and_parameter = self.controllers[controller_number].network.action(state, modelLoadPath)
             macro_and_parameter = self.reflect(obs, action_and_parameter)
             action = self.assembly_action(obs, controller_number, macro_and_parameter)
             return action
 
-    def make_choice(self, obs, mark):
+    def make_choice(self, obs, mark, modelSavePath, modelLoadPath):
 
         if obs[0] == StepType.FIRST:
-            # self.replay_path = 'replay/' + str(datetime.datetime.now().strftime('%Y%m%d%H%M%S')) + '/'
-            # os.makedirs(self.replay_path)
-            # self.top_decision_maker.network.replay_path = self.replay_path
-            # for i in range(len(self.controllers)):
-            #     self.controllers[i].network.replay_path = self.replay_path
+            self.episode += 1
+            time = str(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+            self.modelSavePath = modelSavePath + '/' + time + '/'
+            self.modelLoadPath = modelLoadPath
             return actions.RAW_FUNCTIONS.raw_move_camera((mo.mapSzie / 2, mo.mapSzie / 2))
 
-        controller_number = int(self.choose_controller(obs, mark)[0])
-        action = self.choose_macro(obs, controller_number, mark)
+        elif obs[0] == StepType.LAST:
+            self.top_decision_maker.network.train_Q_network(self.modelSavePath, self.episode)
+            for i in range(len(sa.controllers)):
+                self.controllers[i].network.train_Q_network(self.modelSavePath, self.episode)
 
-        return action
+        else:
+            controller_number = int(self.choose_controller(obs, mark, self.modelSavePath, self.modelLoadPath)[0])
+            action = self.choose_macro(obs, controller_number, mark, self.modelSavePath, self.modelLoadPath)
+            return action
+
+
+

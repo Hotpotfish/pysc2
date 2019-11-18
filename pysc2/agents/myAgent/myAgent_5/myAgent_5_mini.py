@@ -19,7 +19,7 @@ class myAgent(base_agent.BaseAgent):
 
     def step(self, obs):
         super(myAgent, self).step(obs)
-        action = self.hierarchical_learning_structure.make_choice(obs, 'train')
+        action = self.hierarchical_learning_structure.make_choice(obs, 'TRAIN','model/',None)
 
         return action
         # return sa.attack_controller[0](obs)

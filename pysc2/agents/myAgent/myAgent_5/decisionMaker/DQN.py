@@ -1,3 +1,5 @@
+import datetime
+import os
 from collections import deque
 import random
 
@@ -9,7 +11,7 @@ GAMMA = 0.9  # discount factor for target Q
 INITIAL_EPSILON = 0.5  # starting value of epsilon
 FINAL_EPSILON = 0.01  # final value of epsilon
 REPLAY_SIZE = 20000  # experience replay buffer size
-EPISODES = 128
+LOOP = 128
 BATCH_SIZE = 1  # size of minibatch
 
 
@@ -79,6 +81,8 @@ class DQN():
         self.session = tf.InteractiveSession()
         self.session.run(tf.initialize_all_variables())
 
+    def restoreModel(self, modelLoadPath):
+        self.saver.restore(self.session, modelLoadPath + '/' + self.name + '.ckpt')
 
     def create_Q_network(self, name):  # 创建Q网络(vgg16结构)
         self.state_input = tf.placeholder("float", shape=self.state_dim, name='state_input')
@@ -118,9 +122,10 @@ class DQN():
 
         self.replay_buffer.append([state, one_hot_action, reward, next_state, done])
 
-    def train_Q_network(self):  # 训练网络
+    def train_Q_network(self, modelSavePath, episode):  # 训练网络
         # Step 1: obtain random minibatch from replay memory
-        for mark in range(EPISODES):
+
+        for mark in range(LOOP):
             for i in range(BATCH_SIZE):
                 minibatch = random.sample(self.replay_buffer, BATCH_SIZE)
                 state_batch = np.array([data[0] for data in minibatch])
@@ -144,8 +149,16 @@ class DQN():
                     temp = temp.reshape((1, 1 + self.parameterdim))
                     y_batch = np.append(y_batch, temp)
             y_batch = np.array(y_batch).reshape(BATCH_SIZE, 1 + self.parameterdim)
-            self.optimizer.run(
-                feed_dict={self.y_input: y_batch, self.action_input: action_batch, self.state_input: state_batch})
+            self.optimizer.run(feed_dict={self.y_input: y_batch, self.action_input: action_batch, self.state_input: state_batch})
+
+        if episode % 10 == 0:
+            thisPath = modelSavePath + 'episode_' + str(episode) + '/'
+            try:
+                os.makedirs(thisPath)
+            except OSError:
+                pass
+
+            self.saver.save(self.session, thisPath + self.name + '.ckpt', )
 
         self.replay_buffer.clear()
 
@@ -158,6 +171,7 @@ class DQN():
             random_parameter = np.random.rand(self.parameterdim)
             random_action_and_parameter = np.append(random_action, random_parameter).flatten()
             return random_action_and_parameter
+
         else:
             action = np.argmax(Q_value[0:self.action_dim])
             parameter = np.array(Q_value[self.action_dim:(self.action_dim + self.parameterdim)])
@@ -165,6 +179,7 @@ class DQN():
             return action_and_parameter
 
     def action(self, state):
+
         Q_value = self.session.run(self.Q_value, {self.state_input: state})[0]
         action = np.argmax(Q_value[0:self.action_dim])
         parameter = np.array(Q_value[self.action_dim:(self.action_dim + self.parameterdim)])

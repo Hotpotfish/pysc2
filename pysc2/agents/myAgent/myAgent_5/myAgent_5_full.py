@@ -10,7 +10,6 @@ from pysc2.lib import actions, features
 from pysc2.env import sc2_env, run_loop
 
 
-
 class myAgent(base_agent.BaseAgent):
 
     def __init__(self):
@@ -19,9 +18,10 @@ class myAgent(base_agent.BaseAgent):
 
     def step(self, obs):
         super(myAgent, self).step(obs)
-        action = self.hierarchical_learning_structure.make_choice(obs,'TRAIN')
+        action = self.hierarchical_learning_structure.make_choice(obs, 'TRAIN', 'model/', None)
 
         return action
+
 
 def main(unused_argv):
     agent1 = myAgent()
@@ -35,7 +35,7 @@ def main(unused_argv):
                 agent_interface_format=features.AgentInterfaceFormat(
                     feature_dimensions=features.Dimensions(screen=macro_operation.mapSzie,
                                                            minimap=macro_operation.mapSzie),
-                    camera_width_world_units=macro_operation.mapSzie *1,
+                    camera_width_world_units=macro_operation.mapSzie * 1,
 
                     action_space=actions.ActionSpace.RAW,
                     use_raw_units=True,
