@@ -30,9 +30,9 @@ class hierarchical_learning_structure():
 
     def __init__(self):
         self.episode = -1
+        self.time = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
         self.DataShape = (None, mo.mapSzie, mo.mapSzie, 39)
-        # self.controllerDataShape = (None, mo.mapSzie, mo.mapSzie, 2)
         self.top_decision_maker = decision_maker(
             DQN(mu, sigma, learning_rate, len(sa.controllers), 0, self.DataShape, 'top_decision_maker'))
         self.controllers = []
@@ -131,7 +131,7 @@ class hierarchical_learning_structure():
             state_layers.append(layer)
         return np.array(state_layers).reshape((-1, mo.mapSzie, mo.mapSzie, 39))
 
-    def choose_controller(self, obs, mark, modelSavePath, modelLoadPath):
+    def choose_controller(self, obs, mark, modelLoadPath):
         self.top_decision_maker.current_state = self.get_all_observation(obs)
         if mark == 'TRAIN':
             if self.top_decision_maker.previous_action is not None:
@@ -143,6 +143,7 @@ class hierarchical_learning_structure():
             if modelLoadPath is not None and self.top_decision_maker.load_and_train is True:
                 self.top_decision_maker.load_and_train = False
                 self.top_decision_maker.network.restoreModel(modelLoadPath)
+                print('top')
 
             controller_number = self.top_decision_maker.network.egreedy_action(self.top_decision_maker.current_state)
             self.top_decision_maker.previous_reward = obs.reward
@@ -152,7 +153,7 @@ class hierarchical_learning_structure():
         elif mark == 'TEST':
             return self.top_decision_maker.network.action(self.top_decision_maker.current_state, modelLoadPath)
 
-    def choose_macro(self, obs, controller_number, mark, modelSavePath, modelLoadPath):
+    def choose_macro(self, obs, controller_number, mark, modelLoadPath):
         self.controllers[controller_number].current_state = self.get_all_observation(obs)
 
         if mark == 'TRAIN':
@@ -165,6 +166,7 @@ class hierarchical_learning_structure():
             if modelLoadPath is not None and self.controllers[controller_number].load_and_train is True:
                 self.controllers[controller_number].load_and_train = False
                 self.top_decision_maker.network.restoreModel(modelLoadPath)
+                print('con'+str(controller_number))
 
             action_and_parameter = self.controllers[controller_number].network.egreedy_action(
                 self.controllers[controller_number].current_state)
@@ -186,8 +188,10 @@ class hierarchical_learning_structure():
 
         if obs[0] == StepType.FIRST:
             self.episode += 1
-            time = str(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
-            self.modelSavePath = modelSavePath + '/' + time + '/'
+            time = str(self.time)
+            if mark == 'TRAIN':
+                self.modelSavePath = modelSavePath + '/' + time + '/'
+
             self.modelLoadPath = modelLoadPath
             return actions.RAW_FUNCTIONS.raw_move_camera((mo.mapSzie / 2, mo.mapSzie / 2))
 
@@ -197,9 +201,6 @@ class hierarchical_learning_structure():
                 self.controllers[i].network.train_Q_network(self.modelSavePath, self.episode)
 
         else:
-            controller_number = int(self.choose_controller(obs, mark, self.modelSavePath, self.modelLoadPath)[0])
-            action = self.choose_macro(obs, controller_number, mark, self.modelSavePath, self.modelLoadPath)
+            controller_number = int(self.choose_controller(obs, mark, self.modelLoadPath)[0])
+            action = self.choose_macro(obs, controller_number, mark, self.modelLoadPath)
             return action
-
-
-

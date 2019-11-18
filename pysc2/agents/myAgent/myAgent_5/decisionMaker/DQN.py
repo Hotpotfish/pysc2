@@ -81,6 +81,10 @@ class DQN():
         self.session = tf.InteractiveSession()
         self.session.run(tf.initialize_all_variables())
 
+        self.restoreModelMark = True
+
+
+
     def restoreModel(self, modelLoadPath):
         self.saver.restore(self.session, modelLoadPath + '/' + self.name + '.ckpt')
 
@@ -151,7 +155,7 @@ class DQN():
             y_batch = np.array(y_batch).reshape(BATCH_SIZE, 1 + self.parameterdim)
             self.optimizer.run(feed_dict={self.y_input: y_batch, self.action_input: action_batch, self.state_input: state_batch})
 
-        if episode % 10 == 0:
+        if episode % 20 == 0:
             thisPath = modelSavePath + 'episode_' + str(episode) + '/'
             try:
                 os.makedirs(thisPath)
@@ -178,7 +182,12 @@ class DQN():
             action_and_parameter = np.append(action, parameter).flatten()
             return action_and_parameter
 
-    def action(self, state):
+    def action(self, state, modelLoadPath):
+
+        if self.restoreModelMark == True:
+            self.restoreModelMark = False
+            self.restoreModel(modelLoadPath)
+            print(self.name + 'read!')
 
         Q_value = self.session.run(self.Q_value, {self.state_input: state})[0]
         action = np.argmax(Q_value[0:self.action_dim])
