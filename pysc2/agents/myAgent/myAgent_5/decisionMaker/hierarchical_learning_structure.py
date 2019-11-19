@@ -12,7 +12,7 @@ from pysc2.lib import actions
 
 mu = 0
 sigma = 1
-learning_rate = 1e-4
+learning_rate = 1e-2
 
 
 class decision_maker():
@@ -33,13 +33,11 @@ class hierarchical_learning_structure():
         self.time = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
         self.DataShape = (None, mo.mapSzie, mo.mapSzie, 39)
-        self.top_decision_maker = decision_maker(
-            DQN(mu, sigma, learning_rate, len(sa.controllers), 0, self.DataShape, 'top_decision_maker'))
+        self.top_decision_maker = decision_maker(DQN(mu, sigma, learning_rate, len(sa.controllers), 0, self.DataShape, 'top_decision_maker'))
         self.controllers = []
         for i in range(len(sa.controllers)):
             # 5代表增加的参数槽 6个槽分别代表动作编号，RAW_TYPES.queued, RAW_TYPES.unit_tags, RAW_TYPES.target_unit_tag 和RAW_TYPES.world（占两位）
-            self.controllers.append(decision_maker(
-                DQN(mu, sigma, learning_rate, len(sa.controllers[i]), 5, self.DataShape, 'controller' + str(i))))
+            self.controllers.append(decision_maker(DQN(mu, sigma, learning_rate, len(sa.controllers[i]), 5, self.DataShape, 'controller' + str(i))))
 
     def my_flatten(self, input_list):
         output_list = []
@@ -81,7 +79,6 @@ class hierarchical_learning_structure():
         parameter = []
         # 根据参数名字填内容
         for i in range(len(action[5])):
-
             if action[5][i].name == 'queued':
                 parameter.append(int(macro_and_parameter[1]))
                 continue
@@ -150,6 +147,7 @@ class hierarchical_learning_structure():
             self.top_decision_maker.previous_state = self.top_decision_maker.current_state
             self.top_decision_maker.previous_action = controller_number
             return controller_number
+
         elif mark == 'TEST':
             return self.top_decision_maker.network.action(self.top_decision_maker.current_state, modelLoadPath)
 
