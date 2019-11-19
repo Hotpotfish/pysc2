@@ -37,6 +37,7 @@ melee_maps = [
     "Simple64",
     "Simple96",
     "Simple128",
+    "WorldofSleepersLE"
 ]
 
 for name in melee_maps:

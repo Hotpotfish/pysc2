@@ -202,4 +202,5 @@ class hierarchical_learning_structure():
         else:
             controller_number = int(self.choose_controller(obs, mark, self.modelLoadPath)[0])
             action = self.choose_macro(obs, controller_number, mark, self.modelLoadPath)
+            print(action)
             return action

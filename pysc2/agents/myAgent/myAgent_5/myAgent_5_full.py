@@ -18,9 +18,10 @@ class myAgent(base_agent.BaseAgent):
 
     def step(self, obs):
         super(myAgent, self).step(obs)
-        # action = self.hierarchical_learning_structure.make_choice(obs, 'TRAIN', 'model/', None)
-        action = self.hierarchical_learning_structure.make_choice(obs, 'TRAIN', 'e:/model/', 'model/20191118211813/episode_20')
-        # action = self.hierarchical_learning_structure.make_choice(obs, 'TEST', None, 'model/20191118194943/episode_20')
+        action = self.hierarchical_learning_structure.make_choice(obs, 'TRAIN', 'e:/model/', None)
+        # action = self.hierarchical_learning_structure.make_choice(obs, 'TRAIN', 'e:/model/', 'model/20191118211813/episode_20')
+        # action = self.hierarchical_learning_structure.make_choice(obs, 'TEST', None, 'e:/model/20191119112956/episode_0')
+        # action = self.hierarchical_learning_structure.make_choice(obs, 'TEST', None, None)
 
         return action
 
@@ -30,7 +31,7 @@ def main(unused_argv):
 
     try:
         with sc2_env.SC2Env(
-                map_name="Simple96",
+                map_name="Flat96",
                 players=[sc2_env.Agent(sc2_env.Race.terran),
                          sc2_env.Bot(sc2_env.Race.protoss,
                                      sc2_env.Difficulty.very_easy)],
@@ -44,6 +45,8 @@ def main(unused_argv):
                     raw_resolution=macro_operation.mapSzie,
                     use_unit_counts=True
                 ),
+                score_index = 0,
+
                 step_mul=16,
                 disable_fog=False,
                 visualize=True,

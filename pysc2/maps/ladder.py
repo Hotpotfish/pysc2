@@ -32,6 +32,7 @@ class Ladder(lib.Map):
   download = "https://github.com/Blizzard/s2client-proto#map-packs"
 
 
+
 ladder_seasons = [
     "Ladder2017Season1",
     "Ladder2017Season2",

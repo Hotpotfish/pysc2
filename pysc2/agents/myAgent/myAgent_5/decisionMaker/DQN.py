@@ -7,12 +7,14 @@ import numpy as np
 import tensorflow as tf
 
 # Hyper Parameters for DQN
+from tensorflow_core.contrib import slim
+
 GAMMA = 0.9  # discount factor for target Q
 INITIAL_EPSILON = 0.5  # starting value of epsilon
 FINAL_EPSILON = 0.01  # final value of epsilon
 REPLAY_SIZE = 20000  # experience replay buffer size
 LOOP = 4
-BATCH_SIZE = 64  # size of minibatch
+BATCH_SIZE = 32  # size of minibatch
 
 
 class DQN():
@@ -83,31 +85,115 @@ class DQN():
 
         self.restoreModelMark = True
 
-
-
     def restoreModel(self, modelLoadPath):
         self.saver.restore(self.session, modelLoadPath + '/' + self.name + '.ckpt')
 
     def create_Q_network(self, name):  # 创建Q网络(vgg16结构)
         self.state_input = tf.placeholder("float", shape=self.state_dim, name='state_input')
         with tf.variable_scope(name, reuse=tf.AUTO_REUSE):
-            self.conv1_1 = tf.nn.relu(
-                self._cnn_layer('layer_1_1_conv', 'conv_w', 'conv_b', self.state_input, (3, 3, self.state_dim[3], 8),
-                                [1, 1, 1, 1],
-                                padding_tag='SAME'))
+            with slim.arg_scope([slim.conv2d],
+                                activation_fn=tf.nn.relu,
+                                padding='SAME',
+                                weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),
+                                weights_regularizer=slim.l2_regularizer(0.0005),
+                                ):
+                # 112 * 112 * 64
+                net = slim.conv2d(self.state_input, 64, [7, 7], stride=2, scope='conv1')
 
-            self.pool1 = self._pooling_layer('layer_1_pooling', self.conv1_1, [1, 2, 2, 1], [1, 2, 2, 1])
+                # 56 * 56 * 64
+                net = slim.max_pool2d(net, [3, 3], stride=2, scope='pool1')
 
-            self.fc1 = tf.nn.relu(
-                self._fully_connected_layer('full_connected_1', 'full_connected_w', 'full_connected_b',
-                                            self.pool1, (self.pool1._shape[1] * self.pool1._shape[2] *
-                                                         self.pool1._shape[3], 1024)))
-            self.dropOut1 = tf.nn.dropout(self.fc1, 0.5)
+                temp = net
 
-            self.logits = self._fully_connected_layer('full_connected_2', 'full_connected_w', 'full_connected_b',
-                                                      self.dropOut1, (1024, self.action_dim + self.parameterdim))
+                # 第一残差块
+                net = slim.conv2d(net, 64, [3, 3], scope='conv2_1_1')
+                net = slim.conv2d(net, 64, [3, 3], scope='conv2_1_2')
+                # 残差相加
+                net = tf.nn.relu(tf.add(temp, net))
 
-            self.Q_value = tf.nn.softmax(self.logits)
+                temp = net
+                # 残差块
+                net = slim.conv2d(net, 64, [3, 3], scope='conv2_2_1')
+                net = slim.conv2d(net, 64, [3, 3], scope='conv2_2_2')
+                # 残差相加
+                net = tf.nn.relu(tf.add(temp, net))
+
+                temp = net
+                # 28 * 28 * 128
+                temp = slim.conv2d(temp, 128, [1, 1], stride=2, scope='r1')
+
+                # 第二残差块
+                net = slim.conv2d(net, 128, [3, 3], stride=2, scope='conv3_1_1')
+                net = slim.conv2d(net, 128, [3, 3], scope='conv3_1_2')
+                # 残差相加
+                net = tf.nn.relu(tf.add(temp, net))
+
+                temp = net
+                # 残差块
+                net = slim.conv2d(net, 128, [3, 3], scope='conv3_2_1')
+                net = slim.conv2d(net, 128, [3, 3], scope='conv3_2_2')
+                # 残差相加
+                net = tf.nn.relu(tf.add(temp, net))
+
+                temp = net
+                # 14 * 14 * 256
+                temp = slim.conv2d(temp, 256, [1, 1], stride=2, scope='r2')
+
+                # 第三残差块
+                net = slim.conv2d(net, 256, [3, 3], stride=2, scope='conv4_1_1')
+                net = slim.conv2d(net, 256, [3, 3], scope='conv4_1_2')
+                # 残差相加
+                net = tf.nn.relu(tf.add(temp, net))
+
+                temp = net
+                # 残差块
+                net = slim.conv2d(net, 256, [3, 3], scope='conv4_2_1')
+                net = slim.conv2d(net, 256, [3, 3], scope='conv4_2_2')
+                # 残差相加
+                net = tf.nn.relu(tf.add(temp, net))
+
+                temp = net
+                # 7 * 7 * 512
+                temp = slim.conv2d(temp, 512, [1, 1], stride=2, scope='r3')
+
+                # 第四残差块
+                net = slim.conv2d(net, 512, [3, 3], stride=2, scope='conv5_1_1')
+                net = slim.conv2d(net, 512, [3, 3], scope='conv5_1_2')
+                # 残差相加
+                net = tf.nn.relu(tf.add(temp, net))
+
+                temp = net
+                # 残差块
+                net = slim.conv2d(net, 512, [3, 3], scope='conv5_2_1')
+                net = slim.conv2d(net, 512, [3, 3], scope='conv5_2_2')
+                # 残差相加
+                net = tf.nn.relu(tf.add(temp, net))
+
+                net = slim.avg_pool2d(net, [4, 4], stride=1, scope='pool2')
+
+                net = slim.flatten(net, scope='flatten')
+                fc1 = slim.fully_connected(net, 1000, scope='fc1')
+
+                self.logits = slim.fully_connected(fc1, self.action_dim + self.parameterdim, activation_fn=None, scope='fc2')
+                self.Q_value = tf.nn.softmax(self.logits)
+        # with tf.variable_scope(name, reuse=tf.AUTO_REUSE):
+        #     self.conv1_1 = tf.nn.relu(
+        #         self._cnn_layer('layer_1_1_conv', 'conv_w', 'conv_b', self.state_input, (3, 3, self.state_dim[3], 8),
+        #                         [1, 1, 1, 1],
+        #                         padding_tag='SAME'))
+        #
+        #     self.pool1 = self._pooling_layer('layer_1_pooling', self.conv1_1, [1, 2, 2, 1], [1, 2, 2, 1])
+        #
+        #     self.fc1 = tf.nn.relu(
+        #         self._fully_connected_layer('full_connected_1', 'full_connected_w', 'full_connected_b',
+        #                                     self.pool1, (self.pool1._shape[1] * self.pool1._shape[2] *
+        #                                                  self.pool1._shape[3], 1024)))
+        #     self.dropOut1 = tf.nn.dropout(self.fc1, 0.5)
+        #
+        #     self.logits = self._fully_connected_layer('full_connected_2', 'full_connected_w', 'full_connected_b',
+        #                                               self.dropOut1, (1024, self.action_dim + self.parameterdim))
+        #
+        #     self.Q_value = tf.nn.softmax(self.logits)
 
     def create_training_method(self):  # 创建训练方法
         self.action_input = tf.placeholder("float", [None, self.action_dim + self.parameterdim])  # one hot presentation
@@ -155,6 +241,8 @@ class DQN():
                         y_batch = np.append(y_batch, temp)
                 y_batch = np.array(y_batch).reshape(BATCH_SIZE, 1 + self.parameterdim)
                 self.optimizer.run(feed_dict={self.y_input: y_batch, self.action_input: action_batch, self.state_input: state_batch})
+        if episode % 2 == 0 :
+            self.replay_buffer.clear()
 
         if episode % 20 == 0:
             thisPath = modelSavePath + 'episode_' + str(episode) + '/'
@@ -164,8 +252,6 @@ class DQN():
                 pass
 
             self.saver.save(self.session, thisPath + self.name + '.ckpt', )
-
-
 
     def egreedy_action(self, state):  # 输出带随机的动作
         Q_value = self.session.run(self.Q_value, {self.state_input: state})[0]
@@ -185,7 +271,7 @@ class DQN():
 
     def action(self, state, modelLoadPath):
 
-        if self.restoreModelMark == True:
+        if self.restoreModelMark == True and modelLoadPath is not None:
             self.restoreModelMark = False
             self.restoreModel(modelLoadPath)
             print(self.name + 'read!')
