@@ -30,7 +30,7 @@ def main(unused_argv):
 
     try:
         with sc2_env.SC2Env(
-                map_name="FindAndDefeatZerglings",
+                map_name="DefeatRoaches",
                 players=[sc2_env.Agent(sc2_env.Race.terran), ],
                 # sc2_env.Bot(sc2_env.Race.protoss,
                 #             sc2_env.Difficulty.very_easy)],

@@ -3,22 +3,32 @@ import tensorflow as tf
 
 class VGG16():
 
-    def __init__(self, mu, sigma):
+    def __init__(self, mu, sigma, learning_rate, action_dim, parameterdim, statedim, name):
         self.mu = mu
         self.sigma = sigma
+        self.learning_rate = learning_rate
+
+        self.action_dim = action_dim
+        self.parameterdim = parameterdim
+        self.statedim = statedim
+
+        self.name = name
+
         self._build_graph()
 
-    def _build_graph(self, network_name='VGG16'):
+
+    def _build_graph(self):
         self._setup_placeholders_graph()
-        self._build_network_graph(network_name)
+        self._build_network_graph(self.name)
         self._compute_loss_graph()
-        self._compute_acc_graph()
+        # self._compute_acc_graph()
         self._create_train_op_graph()
         self.merged_summary = tf.summary.merge_all()
 
     def _setup_placeholders_graph(self):
-        self.x = tf.placeholder("float", shape=[None, 224, 224, 3], name='x')
-        self.y = tf.placeholder("float", shape=[None, 101], name='y')
+        self.action_input = tf.placeholder("float", shape=[None, self.action_dim + self.parameterdim], name='action_input')
+        self.y_input = tf.placeholder("float", shape=[None, 1 + self.parameterdim], name='y_input')
+        self.state_input = tf.placeholder("float", shape=self.statedim, name='state_input')
 
     def _cnn_layer(self, scope_name, W_name, b_name, x, filter_shape, conv_strides, padding_tag='VALID'):
         with tf.variable_scope(scope_name):
@@ -58,7 +68,7 @@ class VGG16():
     def _build_network_graph(self, scope_name):
         with tf.variable_scope(scope_name,reuse=tf.AUTO_REUSE):
             self.conv1_1 = tf.nn.relu(
-                self._cnn_layer('layer_1_1_conv', 'conv_w', 'conv_b', self.x, (3, 3, 3, 64), [1, 1, 1, 1],
+                self._cnn_layer('layer_1_1_conv', 'conv_w', 'conv_b', self.x, (3, 3, self.statedim[3], 64), [1, 1, 1, 1],
                                 padding_tag='SAME'))
 
             self.conv1_2 = tf.nn.relu(
@@ -123,22 +133,21 @@ class VGG16():
             self.dropOut2 = tf.nn.dropout(self.fc7, 0.5)
 
             self.logits = self._fully_connected_layer('full_connected8', 'full_connected_w', 'full_connected_b',
-                                                      self.dropOut2, (4096, 101))
+                                                      self.dropOut2, (4096, self.action_dim + self.parameterdim))
 
-            self.y_predicted = tf.nn.softmax(self.logits)
+            self.Q_value = tf.nn.softmax(self.logits)
 
     def _compute_loss_graph(self):
-        with tf.name_scope("loss_function"):
-            loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.y, logits=self.logits)
-            self.loss = tf.reduce_mean(loss)
+        with tf.name_scope(self.name + "_loss_function"):
+            self.Q_action = tf.reduce_sum(tf.multiply(self.Q_value, self.action_input))
+            self.loss = tf.reduce_mean(tf.square(self.y_input - self.Q_action))
             tf.summary.scalar("loss", self.loss)
 
     def _compute_acc_graph(self):
-        with tf.name_scope("acc_function"):
+        with tf.name_scope(self.name + "_acc_function"):
             self.accuracy = \
-                tf.metrics.accuracy(labels=tf.argmax(self.y, axis=1), predictions=tf.argmax(self.y_predicted, axis=1))[
-                    1]
+                tf.metrics.accuracy(labels=tf.argmax(self.y, axis=1), predictions=tf.argmax(self.y_predicted, axis=1))[1]
             tf.summary.scalar("accuracy", self.accuracy)
 
     def _create_train_op_graph(self):
-        self.train_op = tf.train.AdamOptimizer(learning_rate=0.1).minimize(self.loss)
+        self.train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
