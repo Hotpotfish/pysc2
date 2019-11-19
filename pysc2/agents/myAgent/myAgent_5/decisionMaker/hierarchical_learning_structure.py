@@ -168,8 +168,7 @@ class hierarchical_learning_structure():
                 self.top_decision_maker.network.restoreModel(modelLoadPath)
                 print('con'+str(controller_number))
 
-            action_and_parameter = self.controllers[controller_number].network.egreedy_action(
-                self.controllers[controller_number].current_state)
+            action_and_parameter = self.controllers[controller_number].network.egreedy_action(self.controllers[controller_number].current_state)
             self.controllers[controller_number].previous_reward = obs.reward
             self.controllers[controller_number].previous_state = self.controllers[controller_number].current_state
             self.controllers[controller_number].previous_action = action_and_parameter
