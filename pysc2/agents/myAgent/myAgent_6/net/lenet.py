@@ -22,7 +22,7 @@ class Lenet():
         self._compute_loss_graph()
         # self._compute_acc_graph()
         self._create_train_op_graph()
-        self.merged_summary = tf.summary.merge_all()
+        # self.merged_summary = tf.summary.merge_all()
 
     def _setup_placeholders_graph(self):
         self.action_input = tf.placeholder("float", shape=[None, self.action_dim + self.parameterdim], name='action_input')
@@ -65,9 +65,9 @@ class Lenet():
         return r
 
     def _build_network_graph(self, scope_name):
-        with tf.variable_scope(scope_name):
+        with tf.variable_scope(scope_name,reuse=tf.AUTO_REUSE):
             # 28 * 28 * 6
-            self.conv1 = self._cnn_layer('layer_1_conv', 'conv_w', 'conv_b', self.x, (5, 5, 1, 6), [1, 1, 1, 1])
+            self.conv1 = self._cnn_layer('layer_1_conv', 'conv_w', 'conv_b', self.state_input, (5, 5, self.statedim[3], 6), [1, 1, 1, 1])
             # 14 * 14 * 6
             self.pool1 = self._pooling_layer('layer_1_pooling', self.conv1, [1, 2, 2, 1], [1, 2, 2, 1])
 
@@ -79,7 +79,7 @@ class Lenet():
 
             # w.shape=[5 * 5 * 16, 120]
             self.fc1 = self._fully_connected_layer('full_connected1', 'full_connected_w', 'full_connected_b',
-                                                   self.pool2, (5 * 5 * 16, 120))
+                                                   self.pool2, (self.pool2._shape[1] * self.pool2._shape[2] * self.pool2._shape[3], 120))
 
             # w.shape=[120, 84]
             self.fc2 = self._fully_connected_layer('full_connected2', 'full_connected_w',
@@ -87,12 +87,10 @@ class Lenet():
                                                    self.fc1, (120, 84))
             # w.shape=[84, 10]
             self.logits = self._fully_connected_layer('full_connected3', 'full_connected_w', 'full_connected_b',
-                                                      self.fc2, (84, 101))
+                                                      self.fc2, (84, self.action_dim + self.parameterdim))
 
-            self.y_predicted = tf.nn.softmax(self.logits)
-            tf.summary.histogram("y_predicted", self.y_predicted)
-
-
+            self.Q_value = tf.nn.softmax(self.logits)
+            # tf.summary.histogram("y_predicted", self.y_predicted)
 
     def _compute_loss_graph(self):
         with tf.name_scope(self.name + "_loss_function"):

@@ -7,7 +7,7 @@ import numpy as np
 import tensorflow as tf
 import pysc2.agents.myAgent.myAgent_6.config.config as config
 
-from pysc2.agents.myAgent.myAgent_6.net.resNet import resNet
+from pysc2.agents.myAgent.myAgent_6.net.lenet import Lenet
 
 
 class DQN():
@@ -31,7 +31,7 @@ class DQN():
 
         # 网络结构初始化
         self.name = name
-        self.net = resNet(self.mu, self.sigma, self.learning_rate, self.action_dim, self.parameterdim, self.state_dim, self.name)
+        self.net = Lenet(self.mu, self.sigma, self.learning_rate, self.action_dim, self.parameterdim, self.state_dim, self.name)
 
         self.saver = tf.train.Saver()
 
