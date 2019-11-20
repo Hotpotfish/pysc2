@@ -64,7 +64,6 @@ class DQN():
         self.replay_buffer.append([state, one_hot_action, reward, next_state, done])
 
     def train_Q_network(self, modelSavePath, episode):  # 训练网络
-        # Step 1: obtain random minibatch from replay memory
 
         if len(self.replay_buffer) > config.BATCH_SIZE:
             for mark in range(config.LOOP):
@@ -93,6 +92,8 @@ class DQN():
                 y_batch = np.array(y_batch).reshape(config.BATCH_SIZE, 1 + self.parameterdim)
                 self.session.run(self.net.train_op,
                                  feed_dict={self.net.y_input: y_batch, self.net.action_input: action_batch, self.net.state_input: state_batch})
+
+        self.saveModel(modelSavePath, episode)
 
 
 
