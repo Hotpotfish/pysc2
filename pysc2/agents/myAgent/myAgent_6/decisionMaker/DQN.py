@@ -33,16 +33,18 @@ class DQN():
         self.name = name
         self.net = Lenet(self.mu, self.sigma, self.learning_rate, self.action_dim, self.parameterdim, self.state_dim, self.name)
 
-        self.saver = tf.train.Saver()
-
         # Init session
         self.session = tf.InteractiveSession()
         self.session.run(tf.initialize_all_variables())
 
+        self.modelSaver = tf.train.Saver()
+        self.recordSaver = None
+        self.recordCount = 0
+
         self.restoreModelMark = True
 
     def restoreModel(self, modelLoadPath):
-        self.saver.restore(self.session, modelLoadPath + '/' + self.name + '.ckpt')
+        self.modelSaver.restore(self.session, modelLoadPath + '/' + self.name + '.ckpt')
 
     def saveModel(self, modelSavePath, episode):
         if episode % config.MODEL_SAVE_EPISODE == 0:
@@ -51,10 +53,18 @@ class DQN():
                 os.makedirs(thisPath)
             except OSError:
                 pass
-            self.saver.save(self.session, thisPath + self.name + '.ckpt', )
+            self.modelSaver.save(self.session, thisPath + self.name + '.ckpt', )
+
+    def saveRecord(self, modelSavePath, data):
+        if self.recordSaver is None:
+            thisPath = modelSavePath
+            self.recordSaver = tf.summary.FileWriter(thisPath, self.session.graph)
+
+        self.recordSaver.add_summary(data, self.recordCount)
+        self.recordCount += 1
 
     def perceive(self, state, action, reward, next_state, done):  # 感知存储信息
-        one_hot_action = np.zeros(self.action_dim + self.parameterdim)
+        one_hot_action = np.zeros(self.action_dim + self.parameterdim, dtype=np.float32)
         one_hot_action[int(action[0])] = 1
         if self.parameterdim != 0:
             one_hot_action[self.action_dim:] = action[1:]
@@ -67,12 +77,11 @@ class DQN():
 
         if len(self.replay_buffer) > config.BATCH_SIZE:
             for mark in range(config.LOOP):
-                for i in range(config.BATCH_SIZE):
-                    minibatch = random.sample(self.replay_buffer, config.BATCH_SIZE)
-                    state_batch = np.array([data[0] for data in minibatch])
-                    action_batch = np.array([data[1] for data in minibatch])
-                    reward_batch = np.array([data[2] for data in minibatch])
-                    next_state_batch = np.array([data[3] for data in minibatch])
+                minibatch = random.sample(self.replay_buffer, config.BATCH_SIZE)
+                state_batch = np.array([data[0] for data in minibatch])
+                action_batch = np.array([data[1] for data in minibatch])
+                reward_batch = np.array([data[2] for data in minibatch])
+                next_state_batch = np.array([data[3] for data in minibatch])
 
                 # Step 2: calculate y
                 y_batch = np.array([])
@@ -90,12 +99,19 @@ class DQN():
                         temp = temp.reshape((1, 1 + self.parameterdim))
                         y_batch = np.append(y_batch, temp)
                 y_batch = np.array(y_batch).reshape(config.BATCH_SIZE, 1 + self.parameterdim)
+
+                # data = self.session.run(self.net.merged_summary,
+                #                         {self.net.y_input: y_batch,
+                #                          self.net.action_input: action_batch,
+                #                          self.net.state_input: state_batch})
                 self.session.run(self.net.train_op,
-                                 feed_dict={self.net.y_input: y_batch, self.net.action_input: action_batch, self.net.state_input: state_batch})
+                                 {self.net.y_input: y_batch,
+                                  self.net.action_input: action_batch,
+                                  self.net.state_input: state_batch})
+
+                # self.saveRecord(modelSavePath, data)
 
         self.saveModel(modelSavePath, episode)
-
-
 
     def egreedy_action(self, state):  # 输出带随机的动作
         Q_value = self.session.run(self.net.Q_value, {self.net.state_input: state})[0]

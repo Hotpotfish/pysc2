@@ -43,7 +43,7 @@ def main(unused_argv):
                     raw_resolution=macro_operation.mapSzie,
                     use_unit_counts=True
                 ),
-                step_mul=4,
+                step_mul=32,
                 disable_fog=False,
                 visualize=True,
                 realtime=False

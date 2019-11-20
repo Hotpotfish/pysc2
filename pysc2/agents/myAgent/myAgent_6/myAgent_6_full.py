@@ -45,9 +45,9 @@ def main(unused_argv):
                     raw_resolution=macro_operation.mapSzie,
                     use_unit_counts=True
                 ),
-                score_index = -1,
+                score_index=-1,
 
-                step_mul=16,
+                step_mul=32,
                 disable_fog=False,
                 visualize=True,
                 realtime=False

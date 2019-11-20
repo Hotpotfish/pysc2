@@ -22,12 +22,12 @@ class Lenet():
         self._compute_loss_graph()
         # self._compute_acc_graph()
         self._create_train_op_graph()
-        # self.merged_summary = tf.summary.merge_all()
+        self.merged_summary = tf.summary.merge_all()
 
     def _setup_placeholders_graph(self):
-        self.action_input = tf.placeholder("float", shape=[None, self.action_dim + self.parameterdim], name='action_input')
-        self.y_input = tf.placeholder("float", shape=[None, 1 + self.parameterdim], name='y_input')
-        self.state_input = tf.placeholder("float", shape=self.statedim, name='state_input')
+        self.action_input = tf.placeholder("float", shape=[None, self.action_dim + self.parameterdim], name=self.name + '_' + 'action_input')
+        self.y_input = tf.placeholder("float", shape=[None, 1 + self.parameterdim], name=self.name + '_' + 'y_input')
+        self.state_input = tf.placeholder("float", shape=self.statedim, name=self.name + '_' + 'state_input')
 
     def _cnn_layer(self, scope_name, W_name, b_name, x, filter_shape, conv_strides, padding_tag='VALID'):
         with tf.variable_scope(scope_name):
@@ -65,7 +65,7 @@ class Lenet():
         return r
 
     def _build_network_graph(self, scope_name):
-        with tf.variable_scope(scope_name,reuse=tf.AUTO_REUSE):
+        with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             # 28 * 28 * 6
             self.conv1 = self._cnn_layer('layer_1_conv', 'conv_w', 'conv_b', self.state_input, (5, 5, self.statedim[3], 6), [1, 1, 1, 1])
             # 14 * 14 * 6
@@ -96,7 +96,7 @@ class Lenet():
         with tf.name_scope(self.name + "_loss_function"):
             self.Q_action = tf.reduce_sum(tf.multiply(self.Q_value, self.action_input))
             self.loss = tf.reduce_mean(tf.square(self.y_input - self.Q_action))
-            tf.summary.scalar("loss", self.loss)
+            tf.summary.scalar(self.name + "_loss_function", self.loss)
 
     def _compute_acc_graph(self):
         with tf.name_scope(self.name + "_acc_function"):
