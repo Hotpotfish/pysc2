@@ -1,6 +1,20 @@
 import numpy as np
 import pysc2.agents.myAgent.myAgent_6.config.config as config
 import pysc2.agents.myAgent.myAgent_6.smart_actions as sa
+
+import matplotlib.pyplot as plt
+
+from pysc2.env.environment import StepType
+
+
+# def plt_score(obs, steps):
+#     plt.subplot(221)
+#     plt.plot(steps, obs.observation['score_cumulative'][0])
+#
+#     if obs[0] == StepType.LAST:
+#         plt.show()
+
+
 # 平铺嵌套数组
 def my_flatten(input_list):
     output_list = []
@@ -18,6 +32,7 @@ def my_flatten(input_list):
                 break
 
     return output_list
+
 
 # 参数映射
 # 将神经网络的参数映射到可以执行的程度
@@ -38,8 +53,9 @@ def reflect(obs, macro_and_parameter):
     macro_and_parameter[5] = int(macro_and_parameter[5] * (config.MAP_SIZE - 1))
     return m_a_p
 
-#动作组装
-#将动作组装成可执行的结果
+
+# 动作组装
+# 将动作组装成可执行的结果
 def assembly_action(obs, controller_number, macro_and_parameter):
     raw_units = obs.observation['raw_units']
     action = sa.controllers[controller_number][macro_and_parameter[0]]
@@ -62,7 +78,8 @@ def assembly_action(obs, controller_number, macro_and_parameter):
     parameter = tuple(parameter)
     return action(*parameter)
 
-#获得全局的观察
+
+# 获得全局的观察
 def get_all_observation(obs):
     state_layers = []
     non_serial_layer = []

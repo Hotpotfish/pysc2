@@ -60,8 +60,8 @@ class DQN():
             thisPath = modelSavePath
             self.recordSaver = tf.summary.FileWriter(thisPath, self.session.graph)
 
-        data_summary = tf.Summary(value=[tf.Summary.Value(tag=self.name+'_'+"loss", simple_value=data)])
-        self.recordSaver.add_summary(summary =  data_summary, global_step=self.recordCount)
+        data_summary = tf.Summary(value=[tf.Summary.Value(tag=self.name + '_' + "loss", simple_value=data)])
+        self.recordSaver.add_summary(summary=data_summary, global_step=self.recordCount)
         self.recordCount += 1
 
     def perceive(self, state, action, reward, next_state, done):  # 感知存储信息
@@ -101,15 +101,10 @@ class DQN():
                         y_batch = np.append(y_batch, temp)
                 y_batch = np.array(y_batch).reshape(config.BATCH_SIZE, 1 + self.parameterdim)
 
-                # self.session.run(self.net.merged_summary,
-                #                         {self.net.y_input: y_batch,
-                #                          self.net.action_input: action_batch,
-                #                          self.net.state_input: state_batch})
-                _,loss = self.session.run([self.net.train_op, self.net.loss],
-                                 feed_dict={self.net.y_input: y_batch,
-                                            self.net.action_input: action_batch,
-                                            self.net.state_input: state_batch})
-                # print(self.name+':'+str(loss))
+                _, loss = self.session.run([self.net.train_op, self.net.loss],
+                                           feed_dict={self.net.y_input: y_batch,
+                                                      self.net.action_input: action_batch,
+                                                      self.net.state_input: state_batch})
 
                 self.saveRecord(modelSavePath, loss)
 

@@ -1,11 +1,12 @@
 from queue import Queue
 
-import pysc2.agents.myAgent.myAgent_4.macro_operation as macro_operation
-
 from absl import app
 from pysc2.agents import base_agent
 from pysc2.agents.myAgent.myAgent_6.decisionMaker.hierarchical_learning_structure import hierarchical_learning_structure
+import pysc2.agents.myAgent.myAgent_6.config.config as config
+from pysc2.agents.myAgent.myAgent_6.tools.plt_function import plt_function
 
+from pysc2.env.environment import StepType
 from pysc2.lib import actions, features
 from pysc2.env import sc2_env, run_loop
 
@@ -14,13 +15,21 @@ class myAgent(base_agent.BaseAgent):
 
     def __init__(self):
         super(myAgent, self).__init__()
+        self.plt_function = plt_function()
         self.hierarchical_learning_structure = hierarchical_learning_structure()
 
+    def add_or_plt(self, obs, steps):
+        self.plt_function.add_summary(obs, steps)
+        if obs[0] == StepType.LAST:
+            self.plt_function.plt_score_cumulative()
+
     def step(self, obs):
+        self.add_or_plt(obs, self.steps)
         super(myAgent, self).step(obs)
-        # action = self.hierarchical_learning_structure.make_choice(obs, 'TRAIN', 'e:/model/', None)
+        action = self.hierarchical_learning_structure.make_choice(obs, 'TRAIN', 'e:/model/', None)
+        # plt_score(obs, self.steps)
         # action = self.hierarchical_learning_structure.make_choice(obs, 'TRAIN', 'e:/model/', 'E:/model/20191120190907/episode_20')
-        action = self.hierarchical_learning_structure.make_choice(obs, 'TEST', None, 'e:/model/20191120193615/episode_920')
+        # action = self.hierarchical_learning_structure.make_choice(obs, 'TEST', None, 'e:/model/20191120193615/episode_920')
         # action = self.hierarchical_learning_structure.make_choice(obs, 'TEST', None, None)
 
         return action
@@ -36,13 +45,13 @@ def main(unused_argv):
                          sc2_env.Bot(sc2_env.Race.protoss,
                                      sc2_env.Difficulty.very_easy)],
                 agent_interface_format=features.AgentInterfaceFormat(
-                    feature_dimensions=features.Dimensions(screen=macro_operation.mapSzie,
-                                                           minimap=macro_operation.mapSzie),
-                    camera_width_world_units=macro_operation.mapSzie * 1,
+                    feature_dimensions=features.Dimensions(screen=config.MAP_SIZE,
+                                                           minimap=config.MAP_SIZE),
+                    camera_width_world_units=config.MAP_SIZE * 1,
 
                     action_space=actions.ActionSpace.RAW,
                     use_raw_units=True,
-                    raw_resolution=macro_operation.mapSzie,
+                    raw_resolution=config.MAP_SIZE,
                     use_unit_counts=True
                 ),
                 score_index=-1,

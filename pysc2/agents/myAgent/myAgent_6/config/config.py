@@ -14,3 +14,7 @@ LEARING_RATE = 1e-2
 
 MODEL_SAVE_EPISODE = 20
 LOOP = 4
+
+#sub plt
+ROW = 4
+COLUMN = 4
