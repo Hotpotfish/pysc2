@@ -18,9 +18,9 @@ class myAgent(base_agent.BaseAgent):
 
     def step(self, obs):
         super(myAgent, self).step(obs)
-        action = self.hierarchical_learning_structure.make_choice(obs, 'TRAIN', 'e:/model/', None)
-        # action = self.hierarchical_learning_structure.make_choice(obs, 'TRAIN', 'e:/model/', 'e:/model/20191120111224/episode_0')
-        # action = self.hierarchical_learning_structure.make_choice(obs, 'TEST', None, 'e:/model/20191120111224/episode_0')
+        # action = self.hierarchical_learning_structure.make_choice(obs, 'TRAIN', 'e:/model/', None)
+        # action = self.hierarchical_learning_structure.make_choice(obs, 'TRAIN', 'e:/model/', 'E:/model/20191120190907/episode_20')
+        action = self.hierarchical_learning_structure.make_choice(obs, 'TEST', None, 'e:/model/20191120193615/episode_920')
         # action = self.hierarchical_learning_structure.make_choice(obs, 'TEST', None, None)
 
         return action

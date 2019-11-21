@@ -90,13 +90,13 @@ class Lenet():
                                                       self.fc2, (84, self.action_dim + self.parameterdim))
 
             self.Q_value = tf.nn.softmax(self.logits)
-            # tf.summary.histogram("y_predicted", self.y_predicted)
+            tf.summary.histogram("Q_value", self.Q_value)
 
     def _compute_loss_graph(self):
         with tf.name_scope(self.name + "_loss_function"):
             self.Q_action = tf.reduce_sum(tf.multiply(self.Q_value, self.action_input))
             self.loss = tf.reduce_mean(tf.square(self.y_input - self.Q_action))
-            tf.summary.scalar(self.name + "_loss_function", self.loss)
+            # tf.summary.scalar(self.name + "_loss_function", self.loss)
 
     def _compute_acc_graph(self):
         with tf.name_scope(self.name + "_acc_function"):

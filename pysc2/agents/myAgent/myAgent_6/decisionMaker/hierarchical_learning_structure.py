@@ -127,7 +127,7 @@ class hierarchical_learning_structure():
             self.get_save_and_loadPath(mark, modelSavePath, modelLoadPath)
             return actions.RAW_FUNCTIONS.raw_move_camera((config.MAP_SIZE / 2, config.MAP_SIZE / 2))
 
-        elif obs[0] == StepType.LAST:
+        elif obs[0] == StepType.LAST and mark == 'TRAIN':
             self.train_all_neural_network()
 
         else:

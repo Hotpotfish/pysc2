@@ -1,6 +1,5 @@
 from queue import Queue
-
-import pysc2.agents.myAgent.myAgent_4.macro_operation as macro_operation
+import pysc2.agents.myAgent.myAgent_6.config.config as config
 
 from absl import app
 from pysc2.agents import base_agent
@@ -35,12 +34,12 @@ def main(unused_argv):
                 # sc2_env.Bot(sc2_env.Race.protoss,
                 #             sc2_env.Difficulty.very_easy)],
                 agent_interface_format=features.AgentInterfaceFormat(
-                    feature_dimensions=features.Dimensions(screen=macro_operation.mapSzie,
-                                                           minimap=macro_operation.mapSzie),
-                    camera_width_world_units=macro_operation.mapSzie * 1,
+                    feature_dimensions=features.Dimensions(screen=config.MAP_SIZE,
+                                                           minimap=config.MAP_SIZE),
+                    camera_width_world_units=config.MAP_SIZE * 1,
                     action_space=actions.ActionSpace.RAW,
                     use_raw_units=True,
-                    raw_resolution=macro_operation.mapSzie,
+                    raw_resolution=config.MAP_SIZE,
                     use_unit_counts=True
                 ),
                 step_mul=32,
