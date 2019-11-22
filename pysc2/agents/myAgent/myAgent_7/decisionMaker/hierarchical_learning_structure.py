@@ -62,9 +62,6 @@ class hierarchical_learning_structure():
                 self.train_network(save_path)
                 if self.episode % config.MODEL_SAVE_EPISODE == 0:
                     self.save_model(save_path)
-
-
-
             return self.train_action(obs)
 
         elif mark == 'TEST':
