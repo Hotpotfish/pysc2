@@ -25,8 +25,11 @@ class myAgent(base_agent.BaseAgent):
     def step(self, obs):
         self.add_or_plt(obs, self.steps)
         super(myAgent, self).step(obs)
-        # action = self.hierarchical_learning_structure.make_choice(obs, 'TRAIN', 'e:/model/', None)
-        action = self.hierarchical_learning_structure.make_choice(obs, 'TEST', None, None)
+        action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'e:/model/', None)
+        # plt_score(obs, self.steps)
+        # action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'e:/model/', 'E:/model/20191122162617/episode_0')
+        # action = self.hierarchical_learning_structure.execute(obs, 'TEST', None, 'E:/model/20191122162617/episode_0')
+        # action = self.hierarchical_learning_structure.make_choice(obs, 'TEST', None, None)
 
         return action
         # return sa.attack_controller[0](obs)

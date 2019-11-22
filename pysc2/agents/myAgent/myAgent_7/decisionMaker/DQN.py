@@ -47,13 +47,13 @@ class DQN():
         self.modelSaver.restore(self.session, modelLoadPath + '/' + self.name + '.ckpt')
 
     def saveModel(self, modelSavePath, episode):
-        if episode % config.MODEL_SAVE_EPISODE == 0:
-            thisPath = modelSavePath + 'episode_' + str(episode) + '/'
-            try:
-                os.makedirs(thisPath)
-            except OSError:
-                pass
-            self.modelSaver.save(self.session, thisPath + self.name + '.ckpt', )
+
+        thisPath = modelSavePath + 'episode_' + str(episode) + '/'
+        try:
+            os.makedirs(thisPath)
+        except OSError:
+            pass
+        self.modelSaver.save(self.session, thisPath + self.name + '.ckpt', )
 
     def saveRecord(self, modelSavePath, data):
         if self.recordSaver is None:
@@ -74,7 +74,7 @@ class DQN():
 
         self.replay_buffer.append([state, one_hot_action, reward, next_state, done])
 
-    def train_Q_network(self, modelSavePath, episode):  # 训练网络
+    def train_Q_network(self, modelSavePath):  # 训练网络
 
         if len(self.replay_buffer) > config.BATCH_SIZE:
             for mark in range(config.LOOP):
@@ -108,7 +108,7 @@ class DQN():
 
                 self.saveRecord(modelSavePath, loss)
 
-        self.saveModel(modelSavePath, episode)
+        # self.saveModel(modelSavePath, episode)
 
     def egreedy_action(self, state):  # 输出带随机的动作
         Q_value = self.session.run(self.net.Q_value, {self.net.state_input: state})[0]
@@ -125,13 +125,7 @@ class DQN():
             action_and_parameter = np.append(action, parameter).flatten()
             return action_and_parameter
 
-    def action(self, state, modelLoadPath):
-
-        if self.restoreModelMark == True and modelLoadPath is not None:
-            self.restoreModelMark = False
-            self.restoreModel(modelLoadPath)
-            print(self.name + 'read!')
-
+    def action(self, state):
         Q_value = self.session.run(self.net.Q_value, {self.net.state_input: state})[0]
         action = np.argmax(Q_value[0:self.action_dim])
         parameter = np.array(Q_value[self.action_dim:(self.action_dim + self.parameterdim)])
