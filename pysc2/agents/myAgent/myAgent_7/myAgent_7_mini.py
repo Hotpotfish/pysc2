@@ -1,10 +1,9 @@
-from queue import Queue
-import pysc2.agents.myAgent.myAgent_6.config.config as config
 
+import pysc2.agents.myAgent.myAgent_7.config.config as config
 from absl import app
 from pysc2.agents import base_agent
-from pysc2.agents.myAgent.myAgent_6.decisionMaker.hierarchical_learning_structure import hierarchical_learning_structure
-from pysc2.agents.myAgent.myAgent_6.tools.plt_function import plt_function
+from pysc2.agents.myAgent.myAgent_7.decisionMaker.hierarchical_learning_structure import hierarchical_learning_structure
+from pysc2.agents.myAgent.myAgent_7.tools.plt_function import plt_function
 from pysc2.env.environment import StepType
 
 from pysc2.lib import actions, features
@@ -26,7 +25,8 @@ class myAgent(base_agent.BaseAgent):
     def step(self, obs):
         self.add_or_plt(obs, self.steps)
         super(myAgent, self).step(obs)
-        action = self.hierarchical_learning_structure.make_choice(obs, 'TRAIN', 'e:/model/', None)
+        # action = self.hierarchical_learning_structure.make_choice(obs, 'TRAIN', 'e:/model/', None)
+        action = self.hierarchical_learning_structure.make_choice(obs, 'TEST', None, None)
 
         return action
         # return sa.attack_controller[0](obs)
