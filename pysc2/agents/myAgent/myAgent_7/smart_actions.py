@@ -74,10 +74,15 @@ Research_controller = {
     6: action.RAW_FUNCTIONS.Research_TerranInfantryWeaponsLevel3_quick
 }
 
+# controllers = {
+#     0: build_controller,
+#     1: train_controller,
+#     2: harvest_controller,
+#     3: attack_controller,
+#     4: Research_controller,
+# }
+
 controllers = {
-    0: build_controller,
-    1: train_controller,
-    2: harvest_controller,
     3: attack_controller,
-    4: Research_controller,
 }
+

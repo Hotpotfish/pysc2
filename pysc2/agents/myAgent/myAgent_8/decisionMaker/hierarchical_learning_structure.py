@@ -1,8 +1,7 @@
 import datetime
-
-from pysc2.agents.myAgent.myAgent_7.config import config
-from pysc2.agents.myAgent.myAgent_7.decisionMaker.level_1 import level_1
-from pysc2.agents.myAgent.myAgent_7.decisionMaker.level_2 import level_2
+from pysc2.agents.myAgent.myAgent_8.config import config
+from pysc2.agents.myAgent.myAgent_8.decisionMaker.level_1 import level_1
+from pysc2.agents.myAgent.myAgent_8.decisionMaker.level_2.level_2 import level_2
 from pysc2.env.environment import StepType
 from pysc2.lib import actions
 

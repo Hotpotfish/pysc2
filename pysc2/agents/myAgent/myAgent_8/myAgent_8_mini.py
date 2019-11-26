@@ -1,9 +1,9 @@
 
-import pysc2.agents.myAgent.myAgent_7.config.config as config
+import pysc2.agents.myAgent.myAgent_8.config.config as config
 from absl import app
 from pysc2.agents import base_agent
-from pysc2.agents.myAgent.myAgent_7.decisionMaker.hierarchical_learning_structure import hierarchical_learning_structure
-from pysc2.agents.myAgent.myAgent_7.tools.plt_function import plt_function
+from pysc2.agents.myAgent.myAgent_8.decisionMaker.hierarchical_learning_structure import hierarchical_learning_structure
+from pysc2.agents.myAgent.myAgent_8.tools.plt_function import plt_function
 from pysc2.env.environment import StepType
 
 from pysc2.lib import actions, features

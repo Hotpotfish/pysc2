@@ -9,9 +9,9 @@ class level_2():
     def __init__(self):
         self.DataShape = (None, config.MAP_SIZE, config.MAP_SIZE, 39)
         self.controllers = []
-        for i in range(len(sa.controllers)):
+        for key in sa.controllers.keys():
             # 5代表增加的参数槽 6个槽分别代表动作编号，RAW_TYPES.queued, RAW_TYPES.unit_tags, RAW_TYPES.target_unit_tag 和RAW_TYPES.world（占两位）
-            self.controllers.append(decision_maker(DQN(config.MU, config.SIGMA, config.LEARING_RATE, len(sa.controllers[i]), 5, self.DataShape, 'controller' + str(i))))
+            self.controllers.append(decision_maker(DQN(config.MU, config.SIGMA, config.LEARING_RATE, len(sa.controllers[int(key)]), 5, self.DataShape, 'controller' + str(key))))
 
     # 重训练模式 无需读取外部模型
     def train_action(self, obs, controller_number):

@@ -1,12 +1,14 @@
 import numpy as np
-import pysc2.agents.myAgent.myAgent_7.config.config as config
-import pysc2.agents.myAgent.myAgent_7.smart_actions as sa
-
-import matplotlib.pyplot as plt
-
-from pysc2.env.environment import StepType
+import pysc2.agents.myAgent.myAgent_8.config.config as config
+import pysc2.agents.myAgent.myAgent_8.smart_actions as sa
 
 
+
+from pysc2.agents.myAgent.myAgent_8.decisionMaker.level_2.level_2_attack_controller import level_2_attack_controller
+from pysc2.agents.myAgent.myAgent_8.decisionMaker.level_2.level_2_build_controller import level_2_build_controller
+from pysc2.agents.myAgent.myAgent_8.decisionMaker.level_2.level_2_harvest_controller import level_2_harvest_controller
+from pysc2.agents.myAgent.myAgent_8.decisionMaker.level_2.level_2_research_controller import level_2_research_controller
+from pysc2.agents.myAgent.myAgent_8.decisionMaker.level_2.level_2_train_controller import level_2_train_controller
 
 
 # 平铺嵌套数组
@@ -52,7 +54,7 @@ def reflect(obs, macro_and_parameter):
 # 将动作组装成可执行的结果
 def assembly_action(obs, controller_number, macro_and_parameter):
     raw_units = obs.observation['raw_units']
-    action = sa.controllers[controller_number][macro_and_parameter[0]]
+    action = sa.controllers[controller_number][int(macro_and_parameter[0])]
     parameter = []
     # 根据参数名字填内容
     for i in range(len(action[5])):
@@ -106,3 +108,25 @@ def get_all_observation(obs):
         layer = layer.reshape((config.MAP_SIZE, config.MAP_SIZE))
         state_layers.append(layer)
     return np.array(state_layers).reshape((-1, config.MAP_SIZE, config.MAP_SIZE, 39))
+
+
+def append_controllers():
+    controllers = []
+    for i in range(len(sa.controllers)):
+        if sa.controllers[i] == sa.build_controller:
+            controllers.append(level_2_build_controller())
+        elif sa.controllers[i]== sa.attack_controller:
+            controllers.append(level_2_attack_controller())
+        elif sa.controllers[i] == sa.harvest_controller:
+            controllers.append(level_2_harvest_controller())
+        elif sa.controllers[i] ==sa.research_controller:
+            controllers.append(level_2_research_controller())
+        elif sa.controllers[i] == sa.train_controller:
+            controllers.append(level_2_train_controller())
+    return controllers
+
+
+def find_controller_index(controller):
+    for i in range(len(sa.controllers)):
+        if controller == sa.controllers[i]:
+            return i
