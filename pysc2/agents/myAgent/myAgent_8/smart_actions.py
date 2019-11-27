@@ -1,6 +1,5 @@
 from pysc2.lib import actions as action
 
-
 build_controller = [
     action.RAW_FUNCTIONS.Build_SupplyDepot_pt,
     action.RAW_FUNCTIONS.Build_Barracks_pt,
@@ -77,11 +76,12 @@ research_controller = [
 ]
 
 controllers = [
-    build_controller,
-    train_controller,
-    harvest_controller,
+    # build_controller,
+    # train_controller,
+    # harvest_controller,
+    # research_controller,
     attack_controller,
-    research_controller,
+
 ]
 
 # controllers = {

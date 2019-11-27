@@ -27,7 +27,7 @@ class hierarchical_learning_structure():
         return action
 
     def train_network(self, modelSavePath):
-        self.leve1_1.train_network(modelSavePath)
+        # self.leve1_1.train_network(modelSavePath)
         self.level_2.train_network(modelSavePath)
 
     def test_action(self, obs):
@@ -37,11 +37,11 @@ class hierarchical_learning_structure():
         return action
 
     def load_model(self, modelLoadPath):
-        self.leve1_1.load_model(modelLoadPath)
+        # self.leve1_1.load_model(modelLoadPath)
         self.level_2.load_model(modelLoadPath)
 
     def save_model(self, modelSavePath):
-        self.leve1_1.save_model(modelSavePath, self.episode)
+        # self.leve1_1.save_model(modelSavePath, self.episode)
         self.level_2.save_model(modelSavePath, self.episode)
 
     def execute(self, obs, mark, modelSavePath, modelLoadPath):
@@ -58,6 +58,7 @@ class hierarchical_learning_structure():
             if obs[0] == StepType.LAST:
                 save_path = self.get_model_savePath(modelSavePath)
                 self.train_network(save_path)
+                #模型保存
                 if self.episode % config.MODEL_SAVE_EPISODE == 0:
                     self.save_model(save_path)
             return self.train_action(obs)

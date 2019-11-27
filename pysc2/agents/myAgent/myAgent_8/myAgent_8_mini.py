@@ -1,4 +1,3 @@
-
 import pysc2.agents.myAgent.myAgent_8.config.config as config
 from absl import app
 from pysc2.agents import base_agent
@@ -26,6 +25,8 @@ class myAgent(base_agent.BaseAgent):
         self.add_or_plt(obs, self.steps)
         super(myAgent, self).step(obs)
         action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'e:/model/', None)
+        # action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'e:/model/', 'E:/model/20191127091406/episode_0')
+        # action = self.hierarchical_learning_structure.execute(obs, 'TEST', None, 'E:/model/20191127091406/episode_0')
         return action
 
 
@@ -34,7 +35,7 @@ def main(unused_argv):
 
     try:
         with sc2_env.SC2Env(
-                map_name="FindAndDefeatZerglings",
+                map_name="DefeatZerglingsAndBanelings",
                 players=[sc2_env.Agent(sc2_env.Race.terran), ],
                 agent_interface_format=features.AgentInterfaceFormat(
                     feature_dimensions=features.Dimensions(screen=config.MAP_SIZE,
@@ -45,7 +46,8 @@ def main(unused_argv):
                     raw_resolution=config.MAP_SIZE,
                     use_unit_counts=True
                 ),
-                step_mul=32,
+                score_index=-1,
+                step_mul=16,
                 disable_fog=False,
                 visualize=True,
                 realtime=False

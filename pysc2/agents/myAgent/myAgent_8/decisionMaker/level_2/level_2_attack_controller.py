@@ -5,22 +5,25 @@ import pysc2.agents.myAgent.myAgent_8.smart_actions as sa
 from pysc2.agents.myAgent.myAgent_8.tools import handcraft_function
 
 
-
 class level_2_attack_controller:
     def __init__(self):
         self.DataShape = (None, config.MAP_SIZE, config.MAP_SIZE, 39)
         self.controller = decision_maker(DQN(config.MU, config.SIGMA, config.LEARING_RATE, len(sa.attack_controller), 5, self.DataShape, 'attack_controller'))
-        self.index =  handcraft_function.find_controller_index(sa.attack_controller)
+        self.index = handcraft_function.find_controller_index(sa.attack_controller)
+
+    def compute_reward(self):
+        pass
 
     # 重训练模式 无需读取外部模型
     def train_action(self, obs):
         self.controller.current_state = handcraft_function.get_all_observation(obs)
         if self.controller.previous_action is not None:
             self.controller.network.perceive(self.controller.previous_state,
-                                                     self.controller.previous_action,
-                                                     self.controller.previous_reward,
-                                                     self.controller.current_state,
-                                                     obs.last())
+                                             self.controller.previous_action,
+                                             self.controller.previous_reward,
+                                             self.controller.current_state,
+                                             obs.last())
+            print(obs.reward)
         action_and_parameter = self.controller.network.egreedy_action(self.controller.current_state)
         self.controller.previous_reward = obs.reward
         self.controller.previous_state = self.controller.current_state

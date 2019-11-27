@@ -33,10 +33,14 @@ class level_1():
     def train_network(self,modelSavePath):
         self.top_decision_maker.network.train_Q_network(modelSavePath)
 
+
     def load_model(self, modelLoadPath):
         self.top_decision_maker.network.restoreModel(modelLoadPath)
+        print('level_1 load complete!')
+
 
     def save_model(self,modelSavePath, episode):
         self.top_decision_maker.network.saveModel(modelSavePath, episode)
+        print('level_1 episode %d save complete!' % (episode))
 
 

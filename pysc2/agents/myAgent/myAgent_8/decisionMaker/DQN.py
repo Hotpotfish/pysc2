@@ -45,6 +45,7 @@ class DQN():
 
     def restoreModel(self, modelLoadPath):
         self.modelSaver.restore(self.session, modelLoadPath + '/' + self.name + '.ckpt')
+        print(self.name + ' ' + 'load!')
 
     def saveModel(self, modelSavePath, episode):
 
@@ -54,6 +55,7 @@ class DQN():
         except OSError:
             pass
         self.modelSaver.save(self.session, thisPath + self.name + '.ckpt', )
+        print(self.name + ' ' + 'saved!')
 
     def saveRecord(self, modelSavePath, data):
         if self.recordSaver is None:
@@ -76,36 +78,35 @@ class DQN():
 
     def train_Q_network(self, modelSavePath):  # 训练网络
         if len(self.replay_buffer) > config.BATCH_SIZE:
-            for mark in range(config.LOOP):
-                minibatch = random.sample(self.replay_buffer, config.BATCH_SIZE)
-                state_batch = np.array([data[0] for data in minibatch])
-                action_batch = np.array([data[1] for data in minibatch])
-                reward_batch = np.array([data[2] for data in minibatch])
-                next_state_batch = np.array([data[3] for data in minibatch])
+            minibatch = random.sample(self.replay_buffer, config.BATCH_SIZE)
+            state_batch = np.array([data[0] for data in minibatch])
+            action_batch = np.array([data[1] for data in minibatch])
+            reward_batch = np.array([data[2] for data in minibatch])
+            next_state_batch = np.array([data[3] for data in minibatch])
 
-                # Step 2: calculate y
-                y_batch = np.array([])
-                Q_value_batch = np.array(self.session.run(self.net.Q_value, {self.net.state_input: next_state_batch}))
+            # Step 2: calculate y
+            y_batch = np.array([])
+            Q_value_batch = np.array(self.session.run(self.net.Q_value, {self.net.state_input: next_state_batch}))
 
-                for i in range(0, config.BATCH_SIZE):
-                    done = minibatch[i][4]
-                    if done:
-                        temp = np.append(np.array(reward_batch[i]), np.array(Q_value_batch[i][self.action_dim:]))
-                        temp = temp.reshape((1, 1 + self.parameterdim))
-                        y_batch = np.append(y_batch, temp)
-                    else:
-                        temp = np.append(np.array(reward_batch[i] + config.GAMMA * np.max(Q_value_batch[i][0:self.action_dim])),
-                                         Q_value_batch[i][self.action_dim:])
-                        temp = temp.reshape((1, 1 + self.parameterdim))
-                        y_batch = np.append(y_batch, temp)
-                y_batch = np.array(y_batch).reshape(config.BATCH_SIZE, 1 + self.parameterdim)
+            for i in range(0, config.BATCH_SIZE):
+                done = minibatch[i][4]
+                if done:
+                    temp = np.append(np.array(reward_batch[i]), np.array(Q_value_batch[i][self.action_dim:]))
+                    temp = temp.reshape((1, 1 + self.parameterdim))
+                    y_batch = np.append(y_batch, temp)
+                else:
+                    temp = np.append(np.array(reward_batch[i] + config.GAMMA * np.max(Q_value_batch[i][0:self.action_dim])),
+                                     Q_value_batch[i][self.action_dim:])
+                    temp = temp.reshape((1, 1 + self.parameterdim))
+                    y_batch = np.append(y_batch, temp)
+            y_batch = np.array(y_batch).reshape(config.BATCH_SIZE, 1 + self.parameterdim)
 
-                _, loss = self.session.run([self.net.train_op, self.net.loss],
-                                           feed_dict={self.net.y_input: y_batch,
-                                                      self.net.action_input: action_batch,
-                                                      self.net.state_input: state_batch})
+            _, loss = self.session.run([self.net.train_op, self.net.loss],
+                                       feed_dict={self.net.y_input: y_batch,
+                                                  self.net.action_input: action_batch,
+                                                  self.net.state_input: state_batch})
 
-                self.saveRecord(modelSavePath, loss)
+            self.saveRecord(modelSavePath, loss)
 
         # self.saveModel(modelSavePath, episode)
 
