@@ -2,6 +2,8 @@ import datetime
 from pysc2.agents.myAgent.myAgent_8.config import config
 from pysc2.agents.myAgent.myAgent_8.decisionMaker.level_1 import level_1
 from pysc2.agents.myAgent.myAgent_8.decisionMaker.level_2.level_2 import level_2
+from pysc2.agents.myAgent.myAgent_8.tools import handcraft_function
+from pysc2.agents.myAgent.myAgent_8.tools.handcraft_function import win_or_loss
 from pysc2.env.environment import StepType
 from pysc2.lib import actions
 
@@ -9,6 +11,7 @@ from pysc2.lib import actions
 class hierarchical_learning_structure():
     def __init__(self):
         self.episode = 0
+        self.win = 0
         self.begin_time = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
         self.load_mark = False
 
@@ -23,7 +26,6 @@ class hierarchical_learning_structure():
     def train_action(self, obs):
         controller_number = int(self.leve1_1.train_action(obs)[0])
         action = self.level_2.train_action(obs, controller_number)
-        print(action)
         return action
 
     def train_network(self, modelSavePath):
@@ -58,7 +60,16 @@ class hierarchical_learning_structure():
             if obs[0] == StepType.LAST:
                 save_path = self.get_model_savePath(modelSavePath)
                 self.train_network(save_path)
-                #模型保存
+
+                self.episode += 1
+                # if handcraft_function.win_or_loss(obs) == 1:
+                #     self.win += 1
+                #
+                # print('episode:%d   win rate %f' % (self.episode, self.win / self.episode))
+                print('episode:%d   score_cumulative: %f' % (self.episode, obs.observation['score_cumulative'][0]))
+
+
+                # 模型保存
                 if self.episode % config.MODEL_SAVE_EPISODE == 0:
                     self.save_model(save_path)
             return self.train_action(obs)

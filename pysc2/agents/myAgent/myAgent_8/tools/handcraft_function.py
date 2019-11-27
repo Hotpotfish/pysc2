@@ -2,16 +2,16 @@ import numpy as np
 import pysc2.agents.myAgent.myAgent_8.config.config as config
 import pysc2.agents.myAgent.myAgent_8.smart_actions as sa
 
-
-
 from pysc2.agents.myAgent.myAgent_8.decisionMaker.level_2.level_2_attack_controller import level_2_attack_controller
 from pysc2.agents.myAgent.myAgent_8.decisionMaker.level_2.level_2_build_controller import level_2_build_controller
 from pysc2.agents.myAgent.myAgent_8.decisionMaker.level_2.level_2_harvest_controller import level_2_harvest_controller
 from pysc2.agents.myAgent.myAgent_8.decisionMaker.level_2.level_2_research_controller import level_2_research_controller
 from pysc2.agents.myAgent.myAgent_8.decisionMaker.level_2.level_2_train_controller import level_2_train_controller
 
-
 # 平铺嵌套数组
+from pysc2.env.environment import StepType
+
+
 def my_flatten(input_list):
     output_list = []
     while True:
@@ -110,23 +110,35 @@ def get_all_observation(obs):
     return np.array(state_layers).reshape((-1, config.MAP_SIZE, config.MAP_SIZE, 39))
 
 
+# 向分层框架添加2层控制器的信息
 def append_controllers():
     controllers = []
     for i in range(len(sa.controllers)):
         if sa.controllers[i] == sa.build_controller:
             controllers.append(level_2_build_controller())
-        elif sa.controllers[i]== sa.attack_controller:
+        elif sa.controllers[i] == sa.attack_controller:
             controllers.append(level_2_attack_controller())
         elif sa.controllers[i] == sa.harvest_controller:
             controllers.append(level_2_harvest_controller())
-        elif sa.controllers[i] ==sa.research_controller:
+        elif sa.controllers[i] == sa.research_controller:
             controllers.append(level_2_research_controller())
         elif sa.controllers[i] == sa.train_controller:
             controllers.append(level_2_train_controller())
     return controllers
 
 
+# 找到控制器在列表的索引
 def find_controller_index(controller):
     for i in range(len(sa.controllers)):
         if controller == sa.controllers[i]:
             return i
+
+
+def win_or_loss(obs):
+    if obs[0] == StepType.LAST:
+        units = np.array(obs.observation['raw_units'])
+        enemies = np.where(units[:, 1] == 4)
+        if not len(enemies):
+            return 1
+
+    return -1

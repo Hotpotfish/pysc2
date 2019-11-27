@@ -71,10 +71,10 @@ class DQN():
         one_hot_action[int(action[0])] = 1
         if self.parameterdim != 0:
             one_hot_action[self.action_dim:] = action[1:]
-        state = np.squeeze(state)
-        next_state = np.squeeze(next_state)
+        # state = np.squeeze(state)
+        # next_state = np.squeeze(next_state)
 
-        self.replay_buffer.append([state, one_hot_action, reward, next_state, done])
+        self.replay_buffer.append([state[0], one_hot_action, reward, next_state[0], done])
 
     def train_Q_network(self, modelSavePath):  # 训练网络
         if len(self.replay_buffer) > config.BATCH_SIZE:
@@ -112,7 +112,7 @@ class DQN():
 
     def egreedy_action(self, state):  # 输出带随机的动作
         Q_value = self.session.run(self.net.Q_value, {self.net.state_input: state})[0]
-        # self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 10000
+        self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 10000
         if np.random.uniform() <= self.epsilon:
             random_action = np.random.randint(0, self.action_dim)
             random_parameter = np.random.rand(self.parameterdim)

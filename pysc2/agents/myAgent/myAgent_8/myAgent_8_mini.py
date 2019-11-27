@@ -16,17 +16,18 @@ class myAgent(base_agent.BaseAgent):
         self.hierarchical_learning_structure = hierarchical_learning_structure()
         self.plt_function = plt_function()
 
+
     def add_or_plt(self, obs, steps):
         self.plt_function.add_summary(obs, steps)
         if obs[0] == StepType.LAST:
             self.plt_function.plt_score_cumulative()
 
     def step(self, obs):
-        self.add_or_plt(obs, self.steps)
+        # self.add_or_plt(obs, self.steps)
         super(myAgent, self).step(obs)
         action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'e:/model/', None)
         # action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'e:/model/', 'E:/model/20191127091406/episode_0')
-        # action = self.hierarchical_learning_structure.execute(obs, 'TEST', None, 'E:/model/20191127091406/episode_0')
+        # action = self.hierarchical_learning_structure.execute(obs, 'TEST', None, 'E:/model/20191127194328/episode_40')
         return action
 
 
@@ -46,7 +47,7 @@ def main(unused_argv):
                     raw_resolution=config.MAP_SIZE,
                     use_unit_counts=True
                 ),
-                score_index=-1,
+                score_index=0,
                 step_mul=16,
                 disable_fog=False,
                 visualize=True,
@@ -59,34 +60,6 @@ def main(unused_argv):
         pass
 
 
-# def main(unused_argv):
-#     agent1 = myAgent()
-#
-#     try:
-#         with sc2_env.SC2Env(
-#                 map_name="Simple96",
-#                 players=[sc2_env.Agent(sc2_env.Race.terran),
-#                          sc2_env.Bot(sc2_env.Race.protoss,
-#                                      sc2_env.Difficulty.very_easy)],
-#                 agent_interface_format=features.AgentInterfaceFormat(
-#                     feature_dimensions=features.Dimensions(screen=macro_operation.mapSzie,
-#                                                            minimap=macro_operation.mapSzie),
-#
-#                     action_space=actions.ActionSpace.RAW,
-#                     use_raw_units=True,
-#                     raw_resolution=macro_operation.mapSzie,
-#                     use_unit_counts=True
-#                 ),
-#                 step_mul=8,
-#                 disable_fog=False,
-#                 visualize=True,
-#                 realtime=False
-#
-#         ) as env:
-#             run_loop.run_loop([agent1], env)
-#
-#     except KeyboardInterrupt:
-#         pass
 
 
 if __name__ == "__main__":

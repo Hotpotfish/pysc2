@@ -23,12 +23,10 @@ class plt_function():
             ax = self.fig.add_subplot(config.ROW, config.COLUMN, i + 1)
             ax.set_xlabel('step')
             ax.set_ylabel('score')
-            ax.plot(self.steps, self.score_cumulative[:, i],linewidth=2.0)
+            ax.plot(self.steps, self.score_cumulative[:, i], linewidth=2.0)
             ax.set_title(str(temp))
             i += 1
 
         plt.show()
         self.score_cumulative = np.array([])
         self.steps = np.array([])
-
-        # print()
