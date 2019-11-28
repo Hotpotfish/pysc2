@@ -21,24 +21,21 @@ class Lenet():
 
     def _build_graph(self):
         self._setup_placeholders_graph()
-        # self._build_action_network_graph(self.name + '_action')
         self._build_network_graph(self.name)
         self._compute_loss_graph()
-        # self._compute_acc_graph()
         self._create_train_op_graph()
         self.merged_summary = tf.summary.merge_all()
 
     def _build_network_graph(self, name):
         self._action_network_graph(name + '_' + 'action')
-        if self.parameterdim != 0:
-            self._queued_network_graph(name + '_' + 'queued')
-            self._my_unit_network_graph(name + '_' + 'my_unit')
-            self._enemy_unit_network_graph(name + '_' + 'enemy_unit')
-            self._target_point_network_graph(name + '_' + 'target_point')
+        self._queued_network_graph(name + '_' + 'queued')
+        self._my_unit_network_graph(name + '_' + 'my_unit')
+        self._enemy_unit_network_graph(name + '_' + 'enemy_unit')
+        self._target_point_network_graph(name + '_' + 'target_point')
 
     def _setup_placeholders_graph(self):
-        self.action_input = tf.placeholder("float", shape=[None, self.action_dim + self.parameterdim], name=self.name + '_' + 'action_input')
-        self.y_input = tf.placeholder("float", shape=[None, 1 + self.parameterdim], name=self.name + '_' + 'y_input')
+        self.action_input = tf.placeholder("float", shape=[None, config.ORDERLENTH], name=self.name + '_' + 'action_input')
+        self.y_input = tf.placeholder("float", shape=[None, config.ORDERLENTH], name=self.name + '_' + 'y_input')
         self.state_input = tf.placeholder("float", shape=self.statedim, name=self.name + '_' + 'state_input')
 
     def _action_network_graph(self, scope_name):
@@ -66,9 +63,9 @@ class Lenet():
                                 activation_fn=None,
                                 weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),  # mu，sigma
                                 weights_regularizer=slim.l2_regularizer(0.1)):
-                self.queued.flatten = tf.concat(self.action_flatten, self.action, axis = 1)
+                self.queued_flatten = tf.concat([self.action_flatten, self.action], axis=1)
 
-                fc1 = slim.fully_connected(self.queued.flatten, 120, scope='full_connected1')
+                fc1 = slim.fully_connected(self.queued_flatten, 120, scope='full_connected1')
                 fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
                 self.queued = slim.fully_connected(fc2, config.QUEUED, activation_fn=tf.nn.softmax, scope='queued')
 
@@ -78,7 +75,7 @@ class Lenet():
                                 activation_fn=None,
                                 weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),  # mu，sigma
                                 weights_regularizer=slim.l2_regularizer(0.1)):
-                self.my_unit_flatten = tf.concat(self.queued.flatten, self.queued,axis = 1)
+                self.my_unit_flatten = tf.concat([self.queued_flatten, self.queued], axis=1)
 
                 fc1 = slim.fully_connected(self.my_unit_flatten, 120, scope='full_connected1')
                 fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
@@ -91,7 +88,7 @@ class Lenet():
                                 activation_fn=None,
                                 weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),  # mu，sigma
                                 weights_regularizer=slim.l2_regularizer(0.1)):
-                self.enemy_unit_flatten = tf.concat(self.my_unit_flatten, self.my_unit,axis = 1)
+                self.enemy_unit_flatten = tf.concat([self.my_unit_flatten, self.my_unit], axis=1)
 
                 fc1 = slim.fully_connected(self.enemy_unit_flatten, 120, scope='full_connected1')
                 fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
@@ -104,23 +101,25 @@ class Lenet():
                                 activation_fn=None,
                                 weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),  # mu，sigma
                                 weights_regularizer=slim.l2_regularizer(0.1)):
-                self.target_point_flatten = tf.concat(self.enemy_unit_flatten, self.enemy_unit,axis = 1)
+                self.target_point_flatten = tf.concat([self.enemy_unit_flatten, self.enemy_unit], axis=1)
 
                 fc1 = slim.fully_connected(self.target_point_flatten, 120, scope='full_connected1')
                 fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
 
                 self.target_point = slim.fully_connected(fc2, config.POINT_NUMBER, activation_fn=tf.nn.softmax, scope='target_point')
-                self.Q_value = tf.concat(self.target_point_flatten, self.target_point)
+                self.Q_value = tf.concat([self.action, self.queued, self.my_unit, self.enemy_unit, self.target_point], axis=1)
 
     def _compute_loss_graph(self):
         with tf.name_scope(self.name + "_loss_function"):
-            if self.parameterdim != 0:
-                self.Q_action = tf.reduce_sum(tf.multiply(self.Q_value, self.action_input))
-                self.loss = tf.reduce_mean(tf.square(self.y_input - self.Q_action))
-            else:
-                self.Q_action = tf.reduce_sum(tf.multiply(self.action, self.action_input))
-                self.loss = tf.reduce_mean(tf.square(self.y_input - self.Q_action))
-            # tf.summary.scalar(self.name + "_loss_function", self.loss)
+            # self.Q_action = tf.multiply(self.Q_value, self.action_input)
+            self.loss1 = tf.square(self.y_input[0] - self.action[self.action_input[0]])
+            self.loss2 = tf.square(self.y_input[1] - self.queued[self.action_input[1]])
+            self.loss3 = tf.square(self.y_input[2] - self.my_unit[self.action_input[2]])
+            self.loss4 = tf.square(self.y_input[3] - self.enemy_unit[self.action_input[3]])
+            self.loss5 = tf.square(self.y_input[4] - self.target_point[self.action_input[4]])
+            self.loss = tf.reduce_mean(self.loss1 + self.loss2 + self.loss3 + self.loss4 + self.loss5)
+
+        # tf.summary.scalar(self.name + "_loss_function", self.loss)
 
     def _compute_acc_graph(self):
         with tf.name_scope(self.name + "_acc_function"):

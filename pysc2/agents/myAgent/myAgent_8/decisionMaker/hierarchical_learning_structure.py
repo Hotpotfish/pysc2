@@ -1,9 +1,7 @@
 import datetime
 from pysc2.agents.myAgent.myAgent_8.config import config
-from pysc2.agents.myAgent.myAgent_8.decisionMaker.level_1 import level_1
+from pysc2.agents.myAgent.myAgent_8.decisionMaker.level_1.level_1 import level_1
 from pysc2.agents.myAgent.myAgent_8.decisionMaker.level_2.level_2 import level_2
-from pysc2.agents.myAgent.myAgent_8.tools import handcraft_function
-from pysc2.agents.myAgent.myAgent_8.tools.handcraft_function import win_or_loss
 from pysc2.env.environment import StepType
 from pysc2.lib import actions
 

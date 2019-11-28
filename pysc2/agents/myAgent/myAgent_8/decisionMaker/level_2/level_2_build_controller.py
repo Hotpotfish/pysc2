@@ -1,9 +1,8 @@
 from pysc2.agents.myAgent.myAgent_8.config import config
-from pysc2.agents.myAgent.myAgent_8.decisionMaker.DQN import DQN
+from pysc2.agents.myAgent.myAgent_8.decisionMaker.level_1.DQN_for_level_1 import DQN
 from pysc2.agents.myAgent.myAgent_8.decisionMaker.decision_maker import decision_maker
 import pysc2.agents.myAgent.myAgent_8.smart_actions as sa
 from pysc2.agents.myAgent.myAgent_8.tools import handcraft_function
-from pysc2.agents.myAgent.myAgent_8.tools import handcraft_function_for_level_2_attack_controller
 
 
 class level_2_build_controller:

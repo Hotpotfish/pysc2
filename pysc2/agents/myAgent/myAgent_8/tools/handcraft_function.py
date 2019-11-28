@@ -10,6 +10,7 @@ from pysc2.agents.myAgent.myAgent_8.decisionMaker.level_2.level_2_train_controll
 
 # 平铺嵌套数组
 from pysc2.env.environment import StepType
+from pysc2.lib import actions
 
 
 def my_flatten(input_list):
@@ -26,27 +27,38 @@ def my_flatten(input_list):
                 output_list.append(i)
                 input_list.pop(index)
                 break
-
     return output_list
 
 
 # 参数映射
 # 将神经网络的参数映射到可以执行的程度
-def reflect(obs, macro_and_parameter):
+def reflect(actiondim, action_and_parameter):
     # macro_and_parameter 分别代表：动作（一维），RAW_TYPES.queued, RAW_TYPES.unit_tags, RAW_TYPES.target_unit_tag 和RAW_TYPES.world（占两位）
-    m_a_p = macro_and_parameter
-    raw_units = obs.observation['raw_units']
-    raw_units_len = len(raw_units) - 1
+    m_a_p = []
+    start = 0
+    end = actiondim
+    m_a_p.append(np.argmax(action_and_parameter[start: end]))
 
-    if macro_and_parameter[1] > 0.5:
-        macro_and_parameter[1] = '1'
-    else:
-        macro_and_parameter[1] = '0'
+    start = end
+    end += config.QUEUED
+    m_a_p.append(np.argmax(action_and_parameter[start: actiondim + config.QUEUED]))
 
-    macro_and_parameter[2] = int(macro_and_parameter[2] * raw_units_len)
-    macro_and_parameter[3] = int(macro_and_parameter[3] * raw_units_len)
-    macro_and_parameter[4] = int(macro_and_parameter[4] * (config.MAP_SIZE - 1))
-    macro_and_parameter[5] = int(macro_and_parameter[5] * (config.MAP_SIZE - 1))
+    start = end
+    end += config.MY_UNIT_NUMBER
+    m_a_p.append(np.argmax(action_and_parameter[start:end]))
+
+    start += end
+    end += config.ENEMY_UNIT_NUMBER
+    m_a_p.append(np.argmax(action_and_parameter[start:end]))
+
+    start = end
+    # number = np.argmax(action_and_parameter[start:])
+    # y = int(number / config.MAP_SIZE)
+    # x = int(number % config.MAP_SIZE)
+    # m_a_p.append(x)
+    # m_a_p.append(y)
+    m_a_p.append(np.argmax(action_and_parameter[start]))
+
     return m_a_p
 
 
@@ -54,6 +66,7 @@ def reflect(obs, macro_and_parameter):
 # 将动作组装成可执行的结果
 def assembly_action(obs, controller_number, macro_and_parameter):
     raw_units = obs.observation['raw_units']
+    raw_units_lenth = len(raw_units)
     action = sa.controllers[controller_number][int(macro_and_parameter[0])]
     parameter = []
     # 根据参数名字填内容
@@ -68,11 +81,17 @@ def assembly_action(obs, controller_number, macro_and_parameter):
             parameter.append(raw_units[int(macro_and_parameter[3])].tag)
             continue
         if action[5][i].name == 'world':
-            parameter.append((int(macro_and_parameter[4]), int(macro_and_parameter[5])))
+            number = macro_and_parameter[4]
+            y = int(number / config.MAP_SIZE)
+            x = int(number % config.MAP_SIZE)
+            parameter.append((x, y))
             continue
 
     parameter = tuple(parameter)
-    return action(*parameter)
+    if macro_and_parameter[2] > raw_units_lenth or macro_and_parameter[3] > raw_units_lenth:
+        return actions.RAW_FUNCTIONS.no_op()
+    else:
+        return action(*parameter)
 
 
 # 获得全局的观察
@@ -142,3 +161,8 @@ def win_or_loss(obs):
             return 1
 
     return -1
+
+
+def one_hot_encoding(number, dim):
+    one_hot = np.zeros((dim,))
+    one_hot[number] = 1
