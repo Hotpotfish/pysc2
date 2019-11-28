@@ -8,6 +8,7 @@ import tensorflow as tf
 import pysc2.agents.myAgent.myAgent_8.config.config as config
 
 from pysc2.agents.myAgent.myAgent_8.net.lenet import Lenet
+from pysc2.agents.myAgent.myAgent_8.net.resNet import resNet
 
 
 class DQN():
@@ -111,18 +112,21 @@ class DQN():
         # self.saveModel(modelSavePath, episode)
 
     def egreedy_action(self, state):  # 输出带随机的动作
-        Q_value = self.session.run(self.net.Q_value, {self.net.state_input: state})[0]
-        self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 10000
+        fc2, Q_value = self.session.run([self.net.fc2, self.net.Q_value[0]], {self.net.state_input: state})
+        # print(logits)
+        # self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 10000
         if np.random.uniform() <= self.epsilon:
             random_action = np.random.randint(0, self.action_dim)
             random_parameter = np.random.rand(self.parameterdim)
             random_action_and_parameter = np.append(random_action, random_parameter).flatten()
+
             return random_action_and_parameter
 
         else:
             action = np.argmax(Q_value[0:self.action_dim])
             parameter = np.array(Q_value[self.action_dim:(self.action_dim + self.parameterdim)])
             action_and_parameter = np.append(action, parameter).flatten()
+            # print(action_and_parameter)
             return action_and_parameter
 
     def action(self, state):

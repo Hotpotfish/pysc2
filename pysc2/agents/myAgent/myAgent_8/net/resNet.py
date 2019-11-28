@@ -111,13 +111,15 @@ class resNet():
                 # 残差相加
                 net = tf.nn.relu(tf.add(temp, net))
 
-                net = slim.avg_pool2d(net, [4, 4], stride=1, scope='pool2')
+                net = slim.avg_pool2d(net, [2, 2], stride=1, scope='pool2')
 
                 net = slim.flatten(net, scope='flatten')
                 fc1 = slim.fully_connected(net, 1000, scope='fc1')
 
                 self.logits = slim.fully_connected(fc1, self.action_dim + self.parameterdim, activation_fn=None, scope='fc2')
-                self.Q_value = tf.nn.softmax(self.logits)
+                self.logits = tf.reduce_max(tf.abs(self.logits)) + self.logits
+                self.Q_value = tf.nn.l2_normalize(self.logits)
+                # self.Q_value = tf.nn.softmax(self.logits)
 
     def _compute_loss_graph(self):
         with tf.name_scope(self.name + "_loss_function"):

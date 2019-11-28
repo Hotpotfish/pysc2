@@ -12,6 +12,7 @@ class level_2():
     # 重训练模式 无需读取外部模型
     def train_action(self, obs, controller_number):
         action = self.controllers[controller_number].train_action(obs)
+        # print(action)
         return action
 
     def test_action(self, obs, controller_number):

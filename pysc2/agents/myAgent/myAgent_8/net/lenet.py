@@ -1,4 +1,7 @@
 import tensorflow as tf
+import tensorflow.contrib.slim as slim
+
+from pysc2.agents.myAgent.myAgent_8.config import config
 
 
 class Lenet():
@@ -18,84 +21,105 @@ class Lenet():
 
     def _build_graph(self):
         self._setup_placeholders_graph()
+        # self._build_action_network_graph(self.name + '_action')
         self._build_network_graph(self.name)
         self._compute_loss_graph()
         # self._compute_acc_graph()
         self._create_train_op_graph()
         self.merged_summary = tf.summary.merge_all()
 
+    def _build_network_graph(self, name):
+        self._action_network_graph(name + '_' + 'action')
+        if self.parameterdim != 0:
+            self._queued_network_graph(name + '_' + 'queued')
+            self._my_unit_network_graph(name + '_' + 'my_unit')
+            self._enemy_unit_network_graph(name + '_' + 'enemy_unit')
+            self._target_point_network_graph(name + '_' + 'target_point')
+
     def _setup_placeholders_graph(self):
         self.action_input = tf.placeholder("float", shape=[None, self.action_dim + self.parameterdim], name=self.name + '_' + 'action_input')
         self.y_input = tf.placeholder("float", shape=[None, 1 + self.parameterdim], name=self.name + '_' + 'y_input')
         self.state_input = tf.placeholder("float", shape=self.statedim, name=self.name + '_' + 'state_input')
 
-    def _cnn_layer(self, scope_name, W_name, b_name, x, filter_shape, conv_strides, padding_tag='VALID'):
-        with tf.variable_scope(scope_name):
-            conv_W = tf.get_variable(W_name,
-                                     dtype=tf.float32,
-                                     initializer=tf.truncated_normal(shape=filter_shape, mean=self.mu,
-                                                                     stddev=self.sigma))
-            conv_b = tf.get_variable(b_name,
-                                     dtype=tf.float32,
-                                     initializer=tf.zeros(filter_shape[3]))
-            conv = tf.nn.conv2d(x, conv_W,
-                                strides=conv_strides,
-                                padding=padding_tag) + conv_b
-
-            return conv
-
-    def _pooling_layer(self, scope_name, x, pool_ksize, pool_strides, padding_tag='VALID'):
-        with tf.variable_scope(scope_name):
-            pool = tf.nn.avg_pool(x, pool_ksize, pool_strides, padding=padding_tag)
-            return pool
-
-    def _fully_connected_layer(self, scope_name, W_name, b_name, x, W_shape):
-        with tf.variable_scope(scope_name):
-            x = tf.reshape(x, [-1, W_shape[0]])
-            w = tf.get_variable(W_name,
-                                dtype=tf.float32,
-                                initializer=tf.truncated_normal(shape=W_shape, mean=self.mu,
-                                                                stddev=self.sigma))
-            b = tf.get_variable(b_name,
-                                dtype=tf.float32,
-                                initializer=tf.zeros(W_shape[1]))
-
-            r = tf.add(tf.matmul(x, w), b)
-
-        return r
-
-    def _build_network_graph(self, scope_name):
+    def _action_network_graph(self, scope_name):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
-            # 28 * 28 * 6
-            self.conv1 = self._cnn_layer('layer_1_conv', 'conv_w', 'conv_b', self.state_input, (5, 5, self.statedim[3], 6), [1, 1, 1, 1])
-            # 14 * 14 * 6
-            self.pool1 = self._pooling_layer('layer_1_pooling', self.conv1, [1, 2, 2, 1], [1, 2, 2, 1])
+            with slim.arg_scope([slim.conv2d, slim.fully_connected],
+                                activation_fn=None,
+                                weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),  # mu，sigma
+                                weights_regularizer=slim.l2_regularizer(0.1)):
+                conv1 = slim.conv2d(self.state_input, 6, [5, 5], stride=1, padding="VALID", scope='layer_1_conv')
+                pool1 = slim.max_pool2d(conv1, [2, 2], stride=2, padding="VALID", scope='layer_1_pooling')
 
-            # 10 * 10 * 16
-            self.conv2 = self._cnn_layer('layer_2_conv', 'conv_w', 'conv_b', self.pool1, (5, 5, 6, 16), [1, 1, 1, 1])
+                conv2 = slim.conv2d(pool1, 16, [5, 5], stride=1, padding="VALID", scope='layer_2_conv')
+                pool2 = slim.max_pool2d(conv2, [2, 2], stride=2, padding="VALID", scope='layer_2_pooling')
+                # 传给下一阶段
+                self.action_flatten = slim.flatten(pool2, scope="flatten")
 
-            # 5 * 5 * 16
-            self.pool2 = self._pooling_layer('layer_2_pooling', self.conv2, [1, 2, 2, 1], [1, 2, 2, 1])
+                fc1 = slim.fully_connected(self.action_flatten, 120, scope='full_connected1')
+                fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
 
-            # w.shape=[5 * 5 * 16, 120]
-            self.fc1 = self._fully_connected_layer('full_connected1', 'full_connected_w', 'full_connected_b',
-                                                   self.pool2, (self.pool2._shape[1] * self.pool2._shape[2] * self.pool2._shape[3], 120))
+                self.action = slim.fully_connected(fc2, self.action_dim, activation_fn=tf.nn.softmax, scope='action')
 
-            # w.shape=[120, 84]
-            self.fc2 = self._fully_connected_layer('full_connected2', 'full_connected_w',
-                                                   'full_connected_b',
-                                                   self.fc1, (120, 84))
-            # w.shape=[84, 10]
-            self.logits = self._fully_connected_layer('full_connected3', 'full_connected_w', 'full_connected_b',
-                                                      self.fc2, (84, self.action_dim + self.parameterdim))
+    def _queued_network_graph(self, scope_name):
+        with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
+            with slim.arg_scope([slim.conv2d, slim.fully_connected],
+                                activation_fn=None,
+                                weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),  # mu，sigma
+                                weights_regularizer=slim.l2_regularizer(0.1)):
+                self.queued.flatten = tf.concat(self.action_flatten, self.action, axis = 1)
 
-            self.Q_value = tf.nn.softmax(self.logits)
-            tf.summary.histogram("Q_value", self.Q_value)
+                fc1 = slim.fully_connected(self.queued.flatten, 120, scope='full_connected1')
+                fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
+                self.queued = slim.fully_connected(fc2, config.QUEUED, activation_fn=tf.nn.softmax, scope='queued')
+
+    def _my_unit_network_graph(self, scope_name):
+        with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
+            with slim.arg_scope([slim.conv2d, slim.fully_connected],
+                                activation_fn=None,
+                                weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),  # mu，sigma
+                                weights_regularizer=slim.l2_regularizer(0.1)):
+                self.my_unit_flatten = tf.concat(self.queued.flatten, self.queued,axis = 1)
+
+                fc1 = slim.fully_connected(self.my_unit_flatten, 120, scope='full_connected1')
+                fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
+
+                self.my_unit = slim.fully_connected(fc2, config.MY_UNIT_NUMBER, activation_fn=tf.nn.softmax, scope='my_unit')
+
+    def _enemy_unit_network_graph(self, scope_name):
+        with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
+            with slim.arg_scope([slim.conv2d, slim.fully_connected],
+                                activation_fn=None,
+                                weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),  # mu，sigma
+                                weights_regularizer=slim.l2_regularizer(0.1)):
+                self.enemy_unit_flatten = tf.concat(self.my_unit_flatten, self.my_unit,axis = 1)
+
+                fc1 = slim.fully_connected(self.enemy_unit_flatten, 120, scope='full_connected1')
+                fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
+
+                self.enemy_unit = slim.fully_connected(fc2, config.ENEMY_UNIT_NUMBER, activation_fn=tf.nn.softmax, scope='enemy_unit')
+
+    def _target_point_network_graph(self, scope_name):
+        with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
+            with slim.arg_scope([slim.conv2d, slim.fully_connected],
+                                activation_fn=None,
+                                weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),  # mu，sigma
+                                weights_regularizer=slim.l2_regularizer(0.1)):
+                self.target_point_flatten = tf.concat(self.enemy_unit_flatten, self.enemy_unit,axis = 1)
+
+                fc1 = slim.fully_connected(self.target_point_flatten, 120, scope='full_connected1')
+                fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
+
+                self.target_point = slim.fully_connected(fc2, config.POINT_NUMBER, activation_fn=tf.nn.softmax, scope='target_point')
+                self.Q_value = tf.concat(self.target_point_flatten, self.target_point)
 
     def _compute_loss_graph(self):
         with tf.name_scope(self.name + "_loss_function"):
-            self.Q_action = tf.reduce_sum(tf.multiply(self.Q_value, self.action_input))
-            self.loss = tf.reduce_mean(tf.square(self.y_input - self.Q_action))
+            if self.parameterdim != 0:
+                self.Q_action = tf.reduce_sum(tf.multiply(self.Q_value, self.action_input))
+                self.loss = tf.reduce_mean(tf.square(self.y_input - self.Q_action))
+            else:
+                self.Q_action = tf.reduce_sum(tf.multiply(self.action, self.action_input))
+                self.loss = tf.reduce_mean(tf.square(self.y_input - self.Q_action))
             # tf.summary.scalar(self.name + "_loss_function", self.loss)
 
     def _compute_acc_graph(self):
