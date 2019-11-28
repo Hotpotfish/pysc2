@@ -65,18 +65,18 @@ def assembly_action(obs, controller_number, macro_and_parameter):
     action = sa.controllers[controller_number][int(macro_and_parameter[0])]
     parameter = []
 
-    if macro_and_parameter[2] >= raw_units_lenth or macro_and_parameter[3] >= raw_units_lenth:
-        return actions.RAW_FUNCTIONS.no_op()
+    # if macro_and_parameter[2] >= raw_units_lenth or macro_and_parameter[3] >= raw_units_lenth:
+    #     return actions.RAW_FUNCTIONS.no_op()
     # 根据参数名字填内容
     for i in range(len(action[5])):
         if action[5][i].name == 'queued':
             parameter.append(int(macro_and_parameter[1]))
             continue
         if action[5][i].name == 'unit_tags':
-            parameter.append(raw_units[int(macro_and_parameter[2])].tag)
+            parameter.append(raw_units[int(macro_and_parameter[2]) % raw_units_lenth].tag)
             continue
         if action[5][i].name == 'target_unit_tag':
-            parameter.append(raw_units[int(macro_and_parameter[3])].tag)
+            parameter.append(raw_units[int(macro_and_parameter[3]) % raw_units_lenth].tag)
             continue
         if action[5][i].name == 'world':
             number = macro_and_parameter[4]

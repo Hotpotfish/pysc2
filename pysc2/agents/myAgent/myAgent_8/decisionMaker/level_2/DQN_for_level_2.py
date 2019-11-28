@@ -69,9 +69,6 @@ class DQN():
         self.recordCount += 1
 
     def perceive(self, state, action, reward, next_state, done):  # 感知存储信息
-        # one_hot_action = np.zeros(self.action_dim + self.parameterdim, dtype=np.float32)
-        # one_hot_action[int(action[0])] = 1
-        # one_hot_action[self.action_dim:] = action[1:]
         action_data = np.array([])
         action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[0]), self.action_dim))
         action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[1]), config.QUEUED))
@@ -175,10 +172,6 @@ class DQN():
             return random_action_and_parameter
 
         else:
-            # action = np.argmax(Q_value[0:self.action_dim])
-            # parameter = np.array(Q_value[self.action_dim:(self.action_dim + self.parameterdim)])
-            # action_and_parameter = np.append(action, parameter).flatten()
-            # print(action_and_parameter)
             return Q_value
 
     def action(self, state):

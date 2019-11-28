@@ -34,8 +34,8 @@ class level_2_attack_controller:
         return action
 
     def test_action(self, obs):
-        # self.controller.current_state = handcraft_function_for_level_2_attack_controller.get_raw_units_observation(obs)
-        self.controller.current_state = handcraft_function.get_all_observation(obs)
+        self.controller.current_state = handcraft_function_for_level_2_attack_controller.get_raw_units_observation(obs)
+        # self.controller.current_state = handcraft_function.get_all_observation(obs)
         state = self.controller.current_state
         action_and_parameter = self.controller.network.action(state)
         macro_and_parameter = handcraft_function.reflect(obs, action_and_parameter)
