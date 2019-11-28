@@ -34,30 +34,25 @@ def my_flatten(input_list):
 # 将神经网络的参数映射到可以执行的程度
 def reflect(actiondim, action_and_parameter):
     # macro_and_parameter 分别代表：动作（一维），RAW_TYPES.queued, RAW_TYPES.unit_tags, RAW_TYPES.target_unit_tag 和RAW_TYPES.world（占两位）
-    m_a_p = []
+    m_a_p = np.array([])
     start = 0
     end = actiondim
-    m_a_p.append(np.argmax(action_and_parameter[start: end]))
+    m_a_p = np.append(m_a_p, np.argmax(action_and_parameter[start: end]))
 
     start = end
     end += config.QUEUED
-    m_a_p.append(np.argmax(action_and_parameter[start: actiondim + config.QUEUED]))
+    m_a_p = np.append(m_a_p, np.argmax(action_and_parameter[start: end]))
 
     start = end
     end += config.MY_UNIT_NUMBER
-    m_a_p.append(np.argmax(action_and_parameter[start:end]))
+    m_a_p = np.append(m_a_p, np.argmax(action_and_parameter[start: end]))
 
     start += end
     end += config.ENEMY_UNIT_NUMBER
-    m_a_p.append(np.argmax(action_and_parameter[start:end]))
+    m_a_p = np.append(m_a_p, np.argmax(action_and_parameter[start: end]))
 
     start = end
-    # number = np.argmax(action_and_parameter[start:])
-    # y = int(number / config.MAP_SIZE)
-    # x = int(number % config.MAP_SIZE)
-    # m_a_p.append(x)
-    # m_a_p.append(y)
-    m_a_p.append(np.argmax(action_and_parameter[start]))
+    m_a_p = np.append(m_a_p, np.argmax(action_and_parameter[start:]))
 
     return m_a_p
 
@@ -69,6 +64,9 @@ def assembly_action(obs, controller_number, macro_and_parameter):
     raw_units_lenth = len(raw_units)
     action = sa.controllers[controller_number][int(macro_and_parameter[0])]
     parameter = []
+
+    if macro_and_parameter[2] >= raw_units_lenth or macro_and_parameter[3] >= raw_units_lenth:
+        return actions.RAW_FUNCTIONS.no_op()
     # 根据参数名字填内容
     for i in range(len(action[5])):
         if action[5][i].name == 'queued':
@@ -88,10 +86,8 @@ def assembly_action(obs, controller_number, macro_and_parameter):
             continue
 
     parameter = tuple(parameter)
-    if macro_and_parameter[2] > raw_units_lenth or macro_and_parameter[3] > raw_units_lenth:
-        return actions.RAW_FUNCTIONS.no_op()
-    else:
-        return action(*parameter)
+
+    return action(*parameter)
 
 
 # 获得全局的观察
@@ -166,3 +162,4 @@ def win_or_loss(obs):
 def one_hot_encoding(number, dim):
     one_hot = np.zeros((dim,))
     one_hot[number] = 1
+    return one_hot

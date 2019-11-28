@@ -27,8 +27,9 @@ class level_2_attack_controller:
         action_and_parameter = self.controller.network.egreedy_action(self.controller.current_state)
         self.controller.previous_reward = obs.reward
         self.controller.previous_state = self.controller.current_state
-        action_and_parameter = handcraft_function.reflect(action_and_parameter)
+        action_and_parameter = handcraft_function.reflect(len(sa.attack_controller), action_and_parameter)
         self.controller.previous_action = action_and_parameter
+
         action = handcraft_function.assembly_action(obs, self.index, action_and_parameter)
         return action
 

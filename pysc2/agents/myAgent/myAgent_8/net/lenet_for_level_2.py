@@ -34,7 +34,7 @@ class Lenet():
         self._target_point_network_graph(name + '_' + 'target_point')
 
     def _setup_placeholders_graph(self):
-        self.action_input = tf.placeholder("float", shape=[None, config.ORDERLENTH], name=self.name + '_' + 'action_input')
+        self.action_input = tf.placeholder("float", shape=[None, self.action_dim + self.parameterdim], name=self.name + '_' + 'action_input')
         self.y_input = tf.placeholder("float", shape=[None, config.ORDERLENTH], name=self.name + '_' + 'y_input')
         self.state_input = tf.placeholder("float", shape=self.statedim, name=self.name + '_' + 'state_input')
 
@@ -111,14 +111,28 @@ class Lenet():
 
     def _compute_loss_graph(self):
         with tf.name_scope(self.name + "_loss_function"):
-            # self.Q_action = tf.multiply(self.Q_value, self.action_input)
-            self.loss1 = tf.square(self.y_input[0] - self.action[self.action_input[0]])
-            self.loss2 = tf.square(self.y_input[1] - self.queued[self.action_input[1]])
-            self.loss3 = tf.square(self.y_input[2] - self.my_unit[self.action_input[2]])
-            self.loss4 = tf.square(self.y_input[3] - self.enemy_unit[self.action_input[3]])
-            self.loss5 = tf.square(self.y_input[4] - self.target_point[self.action_input[4]])
-            self.loss = tf.reduce_mean(self.loss1 + self.loss2 + self.loss3 + self.loss4 + self.loss5)
+            self.Q_action = tf.multiply(self.Q_value, self.action_input)
 
+            start = 0
+            end = self.action_dim
+            self.action_Q = tf.reduce_sum(self.Q_action[:, start:end], axis=1)
+
+            start = end
+            end += config.QUEUED
+            self.queued_Q = tf.reduce_sum(self.Q_action[:, start:end], axis=1)
+
+            start = end
+            end += config.MY_UNIT_NUMBER
+            self.my_unit_Q = tf.reduce_sum(self.Q_action[:, start:end], axis=1)
+
+            start += end
+            end += config.ENEMY_UNIT_NUMBER
+            self.enemy_unit_Q = tf.reduce_sum(self.Q_action[:, start:end], axis=1)
+            start = end
+            self.target_point_Q = tf.reduce_sum(self.Q_action[:, start:], axis=1)
+            self.Q_action_1 = tf.stack([self.action_Q, self.queued_Q, self.my_unit_Q, self.enemy_unit_Q, self.target_point_Q], 1)
+
+            self.loss = tf.reduce_mean(tf.square(self.y_input - self.Q_action_1))
         # tf.summary.scalar(self.name + "_loss_function", self.loss)
 
     def _compute_acc_graph(self):

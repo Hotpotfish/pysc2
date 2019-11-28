@@ -9,7 +9,7 @@ import pysc2.agents.myAgent.myAgent_8.config.config as config
 
 from pysc2.agents.myAgent.myAgent_8.net.lenet_for_level_2 import Lenet
 
-from pysc2.agents.myAgent.myAgent_8.tools.handcraft_function import one_hot_encoding
+import pysc2.agents.myAgent.myAgent_8.tools.handcraft_function as handcraft_function
 
 
 class DQN():
@@ -73,36 +73,39 @@ class DQN():
         # one_hot_action[int(action[0])] = 1
         # one_hot_action[self.action_dim:] = action[1:]
         action_data = np.array([])
-
-        action_data = np.append(action_data, one_hot_encoding(action[0], self.action_dim))
-        action_data = np.append(action_data, one_hot_encoding(action[1], config.QUEUED))
-        action_data = np.append(action_data, one_hot_encoding(action[2], config.MY_UNIT_NUMBER))
-        action_data = np.append(action_data, one_hot_encoding(action[3], config.ENEMY_UNIT_NUMBER))
-        action_data = np.append(action_data, one_hot_encoding(action[4], config.POINT_NUMBER))
+        action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[0]), self.action_dim))
+        action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[1]), config.QUEUED))
+        action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[2]), config.MY_UNIT_NUMBER))
+        action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[3]), config.ENEMY_UNIT_NUMBER))
+        action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[4]), config.POINT_NUMBER))
 
         self.replay_buffer.append([state[0], action_data, reward, next_state[0], done])
 
-    def get_y_value(self, Q_value, reward):
+    def get_y_value(self, Q_value, reward, mark):
         y_value = []
 
-        start = 0
-        end = self.action_dim
-        y_value.append(config.GAMMA * np.max(Q_value[start: end]) + reward)
+        if mark == 0:
+            start = 0
+            end = self.action_dim
+            y_value.append(config.GAMMA * np.max(Q_value[start: end]) + reward)
 
-        start = end
-        end += config.QUEUED
-        y_value.append(config.GAMMA * np.max(Q_value[start: end]) + reward)
+            start = end
+            end += config.QUEUED
+            y_value.append(config.GAMMA * np.max(Q_value[start: end]) + reward)
 
-        start = end
-        end += config.MY_UNIT_NUMBER
-        y_value.append(config.GAMMA * np.max(Q_value[start: end]) + reward)
+            start = end
+            end += config.MY_UNIT_NUMBER
+            y_value.append(config.GAMMA * np.max(Q_value[start: end]) + reward)
 
-        start += end
-        end += config.ENEMY_UNIT_NUMBER
-        y_value.append(config.GAMMA * np.max(Q_value[start: end]) + reward)
+            start += end
+            end += config.ENEMY_UNIT_NUMBER
+            y_value.append(config.GAMMA * np.max(Q_value[start: end]) + reward)
 
-        start = end
-        y_value.append(config.GAMMA * np.max(Q_value[start:]) + reward)
+            start = end
+            y_value.append(config.GAMMA * np.max(Q_value[start:]) + reward)
+
+        else:
+            y_value = [reward, reward, reward, reward, reward]
 
         return np.array(y_value)
 
@@ -121,12 +124,13 @@ class DQN():
             for i in range(0, config.BATCH_SIZE):
                 done = minibatch[i][4]
                 if done:
-                    temp = np.append(np.array(reward_batch[i]), np.array(Q_value_batch[i][self.action_dim:]))
-                    temp = temp.reshape((1, 1 + self.parameterdim))
+                    # temp = np.append(np.array(reward_batch[i]), np.array(Q_value_batch[i][self.action_dim:]))
+                    # temp = temp.reshape((1, 1 + self.parameterdim))
+                    temp = self.get_y_value(Q_value_batch[i], reward_batch[i], done)
                     y_batch = np.append(y_batch, temp)
-                else:
 
-                    temp = self.get_y_value(Q_value_batch[i], reward_batch[i])
+                else:
+                    temp = self.get_y_value(Q_value_batch[i], reward_batch[i], done)
                     temp = temp.reshape((1, config.ORDERLENTH))
                     y_batch = np.append(y_batch, temp)
             y_batch = np.array(y_batch).reshape(config.BATCH_SIZE, config.ORDERLENTH)
@@ -135,30 +139,30 @@ class DQN():
                                        feed_dict={self.net.y_input: y_batch,
                                                   self.net.action_input: action_batch,
                                                   self.net.state_input: state_batch})
-
             self.saveRecord(modelSavePath, loss)
 
         # self.saveModel(modelSavePath, episode)
 
     def get_random_action_and_parameter_one_hot(self):
+        random_action_and_parameter = np.array([])
         random_action = np.random.randint(0, self.action_dim)
-        random_action_one_hot = one_hot_encoding(random_action, self.action_dim)
-        random_action_and_parameter = np.append(random_action_one_hot)
+        random_action_one_hot = handcraft_function.one_hot_encoding(random_action, self.action_dim)
+        random_action_and_parameter = np.append(random_action_and_parameter, random_action_one_hot)
 
         random_queued = np.random.randint(0, config.QUEUED)
-        random_queued_one_hot = one_hot_encoding(random_queued, config.QUEUED)
+        random_queued_one_hot = handcraft_function.one_hot_encoding(random_queued, config.QUEUED)
         random_action_and_parameter = np.append(random_action_and_parameter, random_queued_one_hot)
 
         random_my_unit = np.random.randint(0, config.MY_UNIT_NUMBER)
-        random_my_unit_one_hot = one_hot_encoding(random_my_unit, config.MY_UNIT_NUMBER)
+        random_my_unit_one_hot = handcraft_function.one_hot_encoding(random_my_unit, config.MY_UNIT_NUMBER)
         random_action_and_parameter = np.append(random_action_and_parameter, random_my_unit_one_hot)
 
         random_enemy_unit = np.random.randint(0, config.ENEMY_UNIT_NUMBER)
-        random_enemy_unit_one_hot = one_hot_encoding(random_enemy_unit, config.ENEMY_UNIT_NUMBER)
+        random_enemy_unit_one_hot = handcraft_function.one_hot_encoding(random_enemy_unit, config.ENEMY_UNIT_NUMBER)
         random_action_and_parameter = np.append(random_action_and_parameter, random_enemy_unit_one_hot)
 
         random_target_point = np.random.randint(0, config.POINT_NUMBER)
-        random_target_point_one_hot = one_hot_encoding(random_target_point, config.POINT_NUMBER)
+        random_target_point_one_hot = handcraft_function.one_hot_encoding(random_target_point, config.POINT_NUMBER)
         random_action_and_parameter = np.append(random_action_and_parameter, random_target_point_one_hot)
         return random_action_and_parameter
 
@@ -171,11 +175,11 @@ class DQN():
             return random_action_and_parameter
 
         else:
-            action = np.argmax(Q_value[0:self.action_dim])
-            parameter = np.array(Q_value[self.action_dim:(self.action_dim + self.parameterdim)])
-            action_and_parameter = np.append(action, parameter).flatten()
+            # action = np.argmax(Q_value[0:self.action_dim])
+            # parameter = np.array(Q_value[self.action_dim:(self.action_dim + self.parameterdim)])
+            # action_and_parameter = np.append(action, parameter).flatten()
             # print(action_and_parameter)
-            return action_and_parameter
+            return Q_value
 
     def action(self, state):
         Q_value = self.session.run(self.net.Q_value, {self.net.state_input: state})[0]

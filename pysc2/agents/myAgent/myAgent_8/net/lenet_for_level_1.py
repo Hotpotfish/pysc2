@@ -30,11 +30,7 @@ class Lenet():
 
     def _build_network_graph(self, name):
         self._action_network_graph(name + '_' + 'action')
-        # if self.parameterdim != 0:
-        #     self._queued_network_graph(name + '_' + 'queued')
-        #     self._my_unit_network_graph(name + '_' + 'my_unit')
-        #     self._enemy_unit_network_graph(name + '_' + 'enemy_unit')
-        #     self._target_point_network_graph(name + '_' + 'target_point')
+
 
     def _setup_placeholders_graph(self):
         self.action_input = tf.placeholder("float", shape=[None, self.action_dim + self.parameterdim], name=self.name + '_' + 'action_input')
@@ -58,7 +54,7 @@ class Lenet():
                 fc1 = slim.fully_connected(self.action_flatten, 120, scope='full_connected1')
                 fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
 
-                self.action = slim.fully_connected(fc2, self.action_dim, activation_fn=tf.nn.softmax, scope='action')
+                self.Q_value = slim.fully_connected(fc2, self.action_dim, activation_fn=tf.nn.softmax, scope='Q_value')
 
     # def _queued_network_graph(self, scope_name):
     #     with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
@@ -114,7 +110,7 @@ class Lenet():
 
     def _compute_loss_graph(self):
         with tf.name_scope(self.name + "_loss_function"):
-            self.Q_action = tf.reduce_sum(tf.multiply(self.action, self.action_input))
+            self.Q_action = tf.reduce_sum(tf.multiply(self.Q_value, self.action_input))
             self.loss = tf.reduce_mean(tf.square(self.y_input - self.Q_action))
         # tf.summary.scalar(self.name + "_loss_function", self.loss)
 
