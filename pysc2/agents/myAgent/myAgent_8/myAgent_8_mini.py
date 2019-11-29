@@ -27,7 +27,7 @@ class myAgent(base_agent.BaseAgent):
         super(myAgent, self).step(obs)
         action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'e:/model/', None)
         # action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'e:/model/', 'E:/model/20191129105654/episode_80')
-        # action = self.hierarchical_learning_structure.execute(obs, 'TEST', None, 'E:/model/20191129113359/episode_180')
+        # action = self.hierarchical_learning_structure.execute(obs, 'TEST', None, 'E:/model/20191129155311/episode_180')
         # print(action)
         return action
 

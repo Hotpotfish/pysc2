@@ -133,7 +133,7 @@ class DQN():
 
     def action(self, state):
         Q_value = self.session.run(self.net.Q_value, {self.net.state_input: state})[0]
-        action = np.argmax(Q_value[0:self.action_dim])
-        parameter = np.array(Q_value[self.action_dim:(self.action_dim + self.parameterdim)])
-        action_and_parameter = np.append(action, parameter)
-        return action_and_parameter
+        action = np.argmax(Q_value)
+        # parameter = np.array(Q_value[self.action_dim:(self.action_dim + self.parameterdim)])
+        # action_and_parameter = np.append(action, parameter)
+        return action
