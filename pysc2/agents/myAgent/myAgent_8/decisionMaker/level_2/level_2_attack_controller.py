@@ -38,6 +38,6 @@ class level_2_attack_controller:
         # self.controller.current_state = handcraft_function.get_all_observation(obs)
         state = self.controller.current_state
         action_and_parameter = self.controller.network.action(state)
-        macro_and_parameter = handcraft_function.reflect(obs, action_and_parameter)
+        macro_and_parameter = handcraft_function.reflect(len(sa.attack_controller), action_and_parameter)
         action = handcraft_function.assembly_action(obs, self.index, macro_and_parameter)
         return action

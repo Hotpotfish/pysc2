@@ -10,13 +10,14 @@ import pysc2.agents.myAgent.myAgent_8.config.config as config
 from pysc2.agents.myAgent.myAgent_8.net.lenet_for_level_2 import Lenet
 
 import pysc2.agents.myAgent.myAgent_8.tools.handcraft_function as handcraft_function
+from pysc2.agents.myAgent.myAgent_8.tools.SqQueue import SqQueue
 
 
 class DQN():
 
     def __init__(self, mu, sigma, learning_rate, actiondim, parameterdim, statedim, name):  # 初始化
         # 初始化回放缓冲区，用REPLAY_SIZE定义其最大长度
-        self.replay_buffer = deque(maxlen=config.REPLAY_SIZE)
+        self.replay_buffer = SqQueue(config.REPLAY_SIZE)
 
         # 神经网络参数
         self.mu = mu
@@ -76,7 +77,7 @@ class DQN():
         action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[3]), config.ENEMY_UNIT_NUMBER))
         action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[4]), config.POINT_NUMBER))
 
-        self.replay_buffer.append([state[0], action_data, reward, next_state[0], done])
+        self.replay_buffer.inQueue([state[0], action_data, reward, next_state[0], done])
 
     def get_y_value(self, Q_value, reward, mark):
         y_value = []
@@ -107,8 +108,8 @@ class DQN():
         return np.array(y_value)
 
     def train_Q_network(self, modelSavePath):  # 训练网络
-        if len(self.replay_buffer) > config.BATCH_SIZE:
-            minibatch = random.sample(self.replay_buffer, config.BATCH_SIZE)
+        if self.replay_buffer.size > config.BATCH_SIZE:
+            minibatch = random.sample(self.replay_buffer.queue, config.BATCH_SIZE)
             state_batch = np.array([data[0] for data in minibatch])
             action_batch = np.array([data[1] for data in minibatch])
             reward_batch = np.array([data[2] for data in minibatch])
@@ -176,7 +177,5 @@ class DQN():
 
     def action(self, state):
         Q_value = self.session.run(self.net.Q_value, {self.net.state_input: state})[0]
-        action = np.argmax(Q_value[0:self.action_dim])
-        parameter = np.array(Q_value[self.action_dim:(self.action_dim + self.parameterdim)])
-        action_and_parameter = np.append(action, parameter)
-        return action_and_parameter
+
+        return  Q_value
