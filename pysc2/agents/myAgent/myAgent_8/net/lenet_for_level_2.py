@@ -20,11 +20,12 @@ class Lenet():
         self._build_graph()
 
     def _build_graph(self):
+        # tf.reset_default_graph()
         self._setup_placeholders_graph()
         self._build_network_graph(self.name)
         self._compute_loss_graph()
         self._create_train_op_graph()
-        self.merged_summary = tf.summary.merge_all()
+        # self.merged_summary = tf.summary.merge_all()
 
     def _build_network_graph(self, name):
         self._action_network_graph(name + '_' + 'action')

@@ -37,8 +37,9 @@ class DQN():
         self.net = Lenet(self.mu, self.sigma, self.learning_rate, self.action_dim, self.parameterdim, self.state_dim, self.name)
 
         # Init session
-        self.session = tf.InteractiveSession()
+        self.session = tf.Session()
         self.session.run(tf.initialize_all_variables())
+
 
         self.modelSaver = tf.train.Saver()
         self.recordSaver = None
@@ -132,7 +133,7 @@ class DQN():
                     temp = temp.reshape((1, config.ORDERLENTH))
                     y_batch = np.append(y_batch, temp)
             y_batch = np.array(y_batch).reshape(config.BATCH_SIZE, config.ORDERLENTH)
-
+            # self.session.graph.finalize()
             _, loss = self.session.run([self.net.train_op, self.net.loss],
                                        feed_dict={self.net.y_input: y_batch,
                                                   self.net.action_input: action_batch,
@@ -165,6 +166,7 @@ class DQN():
         return random_action_and_parameter
 
     def egreedy_action(self, state):  # 输出带随机的动作
+        # self.session.graph.finalize()
         Q_value = self.session.run(self.net.Q_value[0], {self.net.state_input: state})
         # print(logits)
         # self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 10000
