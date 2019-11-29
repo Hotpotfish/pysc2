@@ -32,7 +32,7 @@ class hierarchical_learning_structure():
         self.level_2.train_network(modelSavePath)
 
     def test_action(self, obs):
-        controller_number = int(self.leve1_1.test_action(obs)[0])
+        controller_number = self.leve1_1.test_action(obs)
         action = self.level_2.test_action(obs, controller_number)
         print(action)
         return action
@@ -66,7 +66,6 @@ class hierarchical_learning_structure():
                 #
                 # print('episode:%d   win rate %f' % (self.episode, self.win / self.episode))
                 print('episode:%d   score_cumulative: %f' % (self.episode, obs.observation['score_cumulative'][0]))
-
 
                 # 模型保存
                 if self.episode % config.MODEL_SAVE_EPISODE == 0:
