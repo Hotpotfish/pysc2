@@ -4,6 +4,7 @@ from pysc2.agents.myAgent.myAgent_8.decisionMaker.decision_maker import decision
 import pysc2.agents.myAgent.myAgent_8.smart_actions as sa
 from pysc2.agents.myAgent.myAgent_8.tools import handcraft_function
 from pysc2.agents.myAgent.myAgent_8.tools import handcraft_function_for_level_2_attack_controller
+from pysc2.agents.myAgent.myAgent_8.tools.handcraft_function_for_level_2_attack_controller import reward_compute
 
 
 class level_2_attack_controller:
@@ -25,7 +26,7 @@ class level_2_attack_controller:
                                              obs.last())
             # print(obs.reward)
         action_and_parameter = self.controller.network.egreedy_action(self.controller.current_state)
-        self.controller.previous_reward = obs.reward
+        self.controller.previous_reward = reward_compute(obs)
         self.controller.previous_state = self.controller.current_state
         action_and_parameter = handcraft_function.reflect(len(sa.attack_controller), action_and_parameter)
         self.controller.previous_action = action_and_parameter
