@@ -2,25 +2,22 @@
 class SqQueue(object):
     def __init__(self, size):
         self.size = size  # 定义队列长度
+        self.real_size = 0
         self.queue = []  # 存储队列 列表
+        self.head = 0
 
     def __str__(self):
         # 返回对象的字符串表达式，方便查看
         return str(self.queue)
 
     def inQueue(self, n):
-        # 入队
-        if self.isFull():
-            self.outQueue()
-        self.queue.append(n)  # 列表末尾添加新的对象
-
-    def outQueue(self):
-        # 出队
-        if self.isEmpty():
-            return -1
-        firstelement = self.queue[0]  # 删除队头元素
-        self.queue.remove(firstelement)  # 删除队操作
-        return firstelement
+        # 入队 队列满直接覆盖
+        self.head = (self.head + 1) % self.size
+        if self.real_size == self.size:
+            self.queue[self.head] = n
+        else:
+            self.real_size += 1
+            self.queue.append(n)
 
     def delete(self, n):
         # 删除某元素

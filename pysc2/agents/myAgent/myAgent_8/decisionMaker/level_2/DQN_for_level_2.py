@@ -108,7 +108,7 @@ class DQN():
         return np.array(y_value)
 
     def train_Q_network(self, modelSavePath):  # 训练网络
-        if self.replay_buffer.size > config.BATCH_SIZE:
+        if self.replay_buffer.real_size > config.BATCH_SIZE:
             minibatch = random.sample(self.replay_buffer.queue, config.BATCH_SIZE)
             state_batch = np.array([data[0] for data in minibatch])
             action_batch = np.array([data[1] for data in minibatch])
@@ -177,5 +177,4 @@ class DQN():
 
     def action(self, state):
         Q_value = self.session.run(self.net.Q_value, {self.net.state_input: state})[0]
-
         return  Q_value
