@@ -1,0 +1,12 @@
+[
+  "pysc2/env/mock_sc2_env_test.py::TestTestEnvironment::test_action_spec",
+  "pysc2/env/mock_sc2_env_test.py::TestTestEnvironment::test_default_observation",
+  "pysc2/env/mock_sc2_env_test.py::TestTestEnvironment::test_episode",
+  "pysc2/env/mock_sc2_env_test.py::TestTestEnvironment::test_episode_length",
+  "pysc2/env/mock_sc2_env_test.py::TestTestEnvironment::test_observation_spec",
+  "pysc2/env/mock_sc2_env_test.py::TestTestEnvironment::test_two_episodes",
+  "pysc2/env/mock_sc2_env_test.py::TestSC2TestEnv::test_episode",
+  "pysc2/env/mock_sc2_env_test.py::TestSC2TestEnv::test_episode_length",
+  "pysc2/env/mock_sc2_env_test.py::TestSC2TestEnv::test_feature_units_are_supported",
+  "pysc2/env/mock_sc2_env_test.py::TestSC2TestEnv::test_screen_minimap_size"
+]

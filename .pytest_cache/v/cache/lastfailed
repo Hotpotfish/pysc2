@@ -1,0 +1,5 @@
+{
+  "pysc2/bin/update_battle_net_cache.py::test_looks_like_battle_net": true,
+  "pysc2/env/mock_sc2_env_comparison_test.py::TestCompareEnvironments::test_action_spec": true,
+  "pysc2/env/mock_sc2_env_comparison_test.py::TestCompareEnvironments::test_observation_spec": true
+}
