@@ -27,7 +27,7 @@ class myAgent(base_agent.BaseAgent):
         super(myAgent, self).step(obs)
         action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'd:/model/', None)
         # action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'e:/model/', 'E:/model/20191129105654/episode_80')
-        # action = self.hierarchical_learning_structure.execute(obs, 'TEST', None, 'E:/model/20191129230124/episode_20')
+        # action = self.hierarchical_learning_structure.execute(obs, 'TEST', None, 'd:/model/20191130163520/episode_6000')
         # print(action)
         return action
 
@@ -45,6 +45,7 @@ def main(unused_argv):
                     camera_width_world_units=config.MAP_SIZE * 1,
                     action_space=actions.ActionSpace.RAW,
                     use_raw_units=True,
+                    # use_feature_units= True,
                     raw_resolution=config.MAP_SIZE,
                     use_unit_counts=True
                 ),

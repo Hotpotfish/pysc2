@@ -89,6 +89,7 @@ class DQN():
 
         self.replay_buffer.inQueue([state[0], action_data, reward, next_state[0], done])
 
+    #计算单条的y值
     def get_y_value(self, Q_value, reward, mark):
         y_value = []
 
@@ -132,8 +133,6 @@ class DQN():
             for i in range(0, config.BATCH_SIZE):
                 done = minibatch[i][4]
                 if done:
-                    # temp = np.append(np.array(reward_batch[i]), np.array(Q_value_batch[i][self.action_dim:]))
-                    # temp = temp.reshape((1, 1 + self.parameterdim))
                     temp = self.get_y_value(Q_value_batch[i], reward_batch[i], done)
                     y_batch = np.append(y_batch, temp)
 
@@ -149,7 +148,7 @@ class DQN():
                                                   self.net.state_input: state_batch})
             self.saveRecord(modelSavePath, loss)
 
-        # self.saveModel(modelSavePath, episode)
+
 
     def get_random_action_and_parameter_one_hot(self):
         random_action_and_parameter = np.array([])

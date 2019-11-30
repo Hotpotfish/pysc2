@@ -7,7 +7,7 @@ class soldier():
         self.energy = None
         self.x = None
         self.y = None
-        self.tag = None
+        self.order_length =None
         # self.frend = []  # 附近5个友方实体
         # self.near = []  # 附近5个友方实体
 
@@ -17,7 +17,7 @@ class soldier():
                 self.health,
                 self.shield,
                 self.energy,
-                self.tag,
                 self.x,
-                self.y]
+                self.y,
+                self.order_length]
         return temp
