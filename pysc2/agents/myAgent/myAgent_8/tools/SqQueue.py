@@ -13,13 +13,14 @@ class SqQueue(object):
     def inQueue(self, n):
         # 入队 队列满直接覆盖
         self.head = (self.head + 1) % self.size
-        # if self.real_size == self.size:
-        #     self.queue[self.head] = n
         if self.real_size == self.size:
-            self.queue.clear()
-            self.real_size = 0
-        self.real_size += 1
-        self.queue.append(n)
+            self.queue[self.head] = n
+        # if self.real_size == self.size:
+        #     self.queue.clear()
+        #     self.real_size = 0
+        else:
+            self.real_size += 1
+            self.queue.append(n)
 
     def delete(self, n):
         # 删除某元素

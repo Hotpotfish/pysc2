@@ -36,12 +36,17 @@ class DQN():
         self.name = name
         self.net = Lenet(self.mu, self.sigma, self.learning_rate, self.action_dim, self.parameterdim, self.state_dim, self.name)
 
+
         # Init session
         self.session = tf.Session()
         self.session.run(tf.initialize_all_variables())
 
+        # tf.get_default_graph().finalize()
+
 
         self.modelSaver = tf.train.Saver()
+        self.session.graph.finalize()
+
         self.recordSaver = None
         self.recordCount = 0
 
@@ -59,6 +64,10 @@ class DQN():
         except OSError:
             pass
         self.modelSaver.save(self.session, thisPath + self.name + '.ckpt', )
+        # tf.reset_default_graph()
+        # train_graph = tf.Graph()
+        # trian_graph.as_default()
+
         print(self.name + ' ' + 'saved!')
 
     def saveRecord(self, modelSavePath, data):
@@ -133,7 +142,7 @@ class DQN():
                     temp = temp.reshape((1, config.ORDERLENTH))
                     y_batch = np.append(y_batch, temp)
             y_batch = np.array(y_batch).reshape(config.BATCH_SIZE, config.ORDERLENTH)
-            # self.session.graph.finalize()
+
             _, loss = self.session.run([self.net.train_op, self.net.loss],
                                        feed_dict={self.net.y_input: y_batch,
                                                   self.net.action_input: action_batch,
@@ -166,9 +175,8 @@ class DQN():
         return random_action_and_parameter
 
     def egreedy_action(self, state):  # 输出带随机的动作
-        # self.session.graph.finalize()
-        Q_value = self.session.run(self.net.Q_value[0], {self.net.state_input: state})
-        # print(logits)
+
+        Q_value = self.session.run(self.net.Q_value, {self.net.state_input: state})[0]
         # self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 10000
         if np.random.uniform() <= self.epsilon:
             random_action_and_parameter = self.get_random_action_and_parameter_one_hot()
@@ -179,4 +187,4 @@ class DQN():
 
     def action(self, state):
         Q_value = self.session.run(self.net.Q_value, {self.net.state_input: state})[0]
-        return  Q_value
+        return Q_value

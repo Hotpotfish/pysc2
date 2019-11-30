@@ -19,8 +19,9 @@ class Lenet():
 
         self._build_graph()
 
+
     def _build_graph(self):
-        # tf.reset_default_graph()
+
         self._setup_placeholders_graph()
         self._build_network_graph(self.name)
         self._compute_loss_graph()

@@ -47,7 +47,6 @@ class hierarchical_learning_structure():
 
     def execute(self, obs, mark, modelSavePath, modelLoadPath):
         if obs[0] == StepType.FIRST:
-            # 更新读取和保存路径
             return actions.RAW_FUNCTIONS.raw_move_camera((config.MAP_SIZE / 2, config.MAP_SIZE / 2))
 
         if mark == 'TRAIN':
