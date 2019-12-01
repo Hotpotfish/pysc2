@@ -51,6 +51,6 @@ def reward_compute_1(obs):
         return 0
 
     win_rate_reward = (my_fighting_capacity / all_fighting_capacity) * 10
-    reward = obs.reward * 2 + win_rate_reward - (obs.observation.game_loop / 1000)
+    reward = obs.reward * 5 + win_rate_reward - (obs.observation.game_loop / 1000)
     # print("step: %d  reward : %f" % (obs.observation.game_loop, reward))
     return reward

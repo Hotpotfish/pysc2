@@ -36,13 +36,11 @@ class DQN():
         self.name = name
         self.net = Lenet(self.mu, self.sigma, self.learning_rate, self.action_dim, self.parameterdim, self.state_dim, self.name)
 
-
         # Init session
         self.session = tf.Session()
         self.session.run(tf.initialize_all_variables())
 
         # tf.get_default_graph().finalize()
-
 
         self.modelSaver = tf.train.Saver()
         self.session.graph.finalize()
@@ -51,6 +49,10 @@ class DQN():
         self.recordCount = 0
 
         self.restoreModelMark = True
+
+        self.avg_reward = 0
+        self.all_reward = 0
+        self.step = 0
 
     def restoreModel(self, modelLoadPath):
         self.modelSaver.restore(self.session, modelLoadPath + '/' + self.name + '.ckpt')
@@ -80,16 +82,37 @@ class DQN():
         self.recordCount += 1
 
     def perceive(self, state, action, reward, next_state, done):  # 感知存储信息
-        action_data = np.array([])
-        action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[0]), self.action_dim))
-        action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[1]), config.QUEUED))
-        action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[2]), config.MY_UNIT_NUMBER))
-        action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[3]), config.ENEMY_UNIT_NUMBER))
-        action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[4]), config.POINT_NUMBER))
+        if self.step % 2000 == 0:
+            self.avg_reward = self.all_reward / 2000
+            self.all_reward = 0
+            print(self.avg_reward)
 
-        self.replay_buffer.inQueue([state[0], action_data, reward, next_state[0], done])
+        if np.random.uniform() <= self.epsilon and reward < self.avg_reward:
 
-    #计算单条的y值
+            action_data = np.array([])
+            action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[0]), self.action_dim))
+            action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[1]), config.QUEUED))
+            action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[2]), config.MY_UNIT_NUMBER))
+            action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[3]), config.ENEMY_UNIT_NUMBER))
+            action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[4]), config.POINT_NUMBER))
+
+            self.replay_buffer.inQueue([state[0], action_data, reward, next_state[0], done])
+
+        elif reward > self.avg_reward:
+            action_data = np.array([])
+            action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[0]), self.action_dim))
+            action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[1]), config.QUEUED))
+            action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[2]), config.MY_UNIT_NUMBER))
+            action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[3]), config.ENEMY_UNIT_NUMBER))
+            action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[4]), config.POINT_NUMBER))
+            self.replay_buffer.inQueue([state[0], action_data, reward, next_state[0], done])
+
+        self.step += 1
+        self.all_reward += reward
+
+
+        # 计算单条的y值
+
     def get_y_value(self, Q_value, reward, mark):
         y_value = []
 
@@ -147,8 +170,6 @@ class DQN():
                                                   self.net.action_input: action_batch,
                                                   self.net.state_input: state_batch})
             self.saveRecord(modelSavePath, loss)
-
-
 
     def get_random_action_and_parameter_one_hot(self):
         random_action_and_parameter = np.array([])
