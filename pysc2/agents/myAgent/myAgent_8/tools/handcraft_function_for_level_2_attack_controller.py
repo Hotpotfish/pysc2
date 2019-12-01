@@ -40,10 +40,10 @@ def reward_compute_1(obs):
 
     for unit in obs.observation.raw_units:
         if unit.alliance == features.PlayerRelative.SELF:
-            my_fighting_capacity += unit.health * 0.5 + 5 * 0.5
+            my_fighting_capacity += unit.health * 0.1 + 5 * 0.9
 
         elif unit.alliance == features.PlayerRelative.ENEMY:
-            enemy_fighting_capacity += unit.health * 0.5 + 5 * 0.5
+            enemy_fighting_capacity += unit.health * 0.1 + 5 * 0.9
 
     all_fighting_capacity = my_fighting_capacity + enemy_fighting_capacity
 
