@@ -82,8 +82,8 @@ class DQN():
         self.recordCount += 1
 
     def perceive(self, state, action, reward, next_state, done):  # 感知存储信息
-        if self.step % 2000 == 0:
-            self.avg_reward = self.all_reward / 2000
+        if self.step % 100 == 0:
+            self.avg_reward = self.all_reward / 100
             self.all_reward = 0
             print(self.avg_reward)
 
