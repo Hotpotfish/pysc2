@@ -107,32 +107,32 @@ class Lenet():
                 fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
 
                 self.target_point = slim.fully_connected(fc2, config.POINT_NUMBER, activation_fn=tf.nn.softmax, scope='target_point')
-                self.Q_value = -tf.log(tf.concat([self.action, self.queued, self.my_unit, self.enemy_unit, self.target_point], axis=1))
+                self.prob_value = tf.concat([self.action, self.queued, self.my_unit, self.enemy_unit, self.target_point], axis=1)
 
     def _compute_loss_graph(self):
         with tf.name_scope(self.name + "_loss_function"):
-            self.Q_action = tf.multiply(self.Q_value, self.action_input)
+            self.action_prob = tf.multiply(self.prob_value, self.action_input)
 
             start = 0
             end = self.action_dim
-            self.action_Q = tf.reduce_sum(self.Q_action[:, start:end], axis=1)
+            self.action_Q = tf.reduce_sum(self.action_prob[:, start:end], axis=1)
 
             start = end
             end += config.QUEUED
-            self.queued_Q = tf.reduce_sum(self.Q_action[:, start:end], axis=1)
+            self.queued_Q = tf.reduce_sum(self.action_prob[:, start:end], axis=1)
 
             start = end
             end += config.MY_UNIT_NUMBER
-            self.my_unit_Q = tf.reduce_sum(self.Q_action[:, start:end], axis=1)
+            self.my_unit_Q = tf.reduce_sum(self.action_prob[:, start:end], axis=1)
 
             start += end
             end += config.ENEMY_UNIT_NUMBER
-            self.enemy_unit_Q = tf.reduce_sum(self.Q_action[:, start:end], axis=1)
+            self.enemy_unit_Q = tf.reduce_sum(self.action_prob[:, start:end], axis=1)
             start = end
-            self.target_point_Q = tf.reduce_sum(self.Q_action[:, start:], axis=1)
+            self.target_point_Q = tf.reduce_sum(self.action_prob[:, start:], axis=1)
             self.Q_action_1 = tf.stack([self.action_Q, self.queued_Q, self.my_unit_Q, self.enemy_unit_Q, self.target_point_Q], 1)
 
-            self.loss = tf.reduce_mean(tf.multiply(self.Q_action_1 * self.reward_input, axis=1))
+            self.loss = tf.reduce_mean(tf.multiply(self.Q_action_1, self.reward_input))
         # tf.summary.scalar(self.name + "_loss_function", self.loss)
 
     def _compute_acc_graph(self):

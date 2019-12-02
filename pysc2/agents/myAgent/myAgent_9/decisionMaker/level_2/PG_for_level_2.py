@@ -7,7 +7,7 @@ import numpy as np
 import tensorflow as tf
 import pysc2.agents.myAgent.myAgent_9.config.config as config
 
-from pysc2.agents.myAgent.myAgent_9.net.lenet_for_level_2_DQN import Lenet
+from pysc2.agents.myAgent.myAgent_9.net.lenet_for_level_2_PG import Lenet
 
 import pysc2.agents.myAgent.myAgent_9.tools.handcraft_function as handcraft_function
 from pysc2.agents.myAgent.myAgent_9.tools.SqQueue import SqQueue
@@ -91,8 +91,9 @@ class PG():
             action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[3]), config.ENEMY_UNIT_NUMBER))
             action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[4]), config.POINT_NUMBER))
             self.reward_add = self.reward_add * config.GAMMA + reward
+            temp_reward = np.array([self.reward_add for i in range(config.ORDERLENTH)]).flatten()
 
-            self.epsiod_record.append([state[0], action_data, self.reward_add, done])
+            self.epsiod_record.append([state[0], action_data, temp_reward, done])
 
             # self.replay_buffer.inQueue([state[0], action_data, reward, next_state[0], done])
 
@@ -127,34 +128,36 @@ class PG():
         return np.array(y_value)
 
     def train_Q_network(self, modelSavePath):  # 训练网络
-        if self.replay_buffer.real_size > config.BATCH_SIZE:
-            minibatch = random.sample(self.replay_buffer.queue, config.BATCH_SIZE)
-            state_batch = np.array([data[0] for data in minibatch])
-            action_batch = np.array([data[1] for data in minibatch])
-            reward_batch = np.array([data[2] for data in minibatch])
-            next_state_batch = np.array([data[3] for data in minibatch])
+        if self.replay_buffer.real_size >= config.BATCH_SIZE:
+            last_loss = None
+            for i in range(config.BATCH_SIZE):
+                minibatch = random.sample(self.replay_buffer.queue, 1)[0]
+                state_batch = np.array([data[0] for data in minibatch])
+                action_batch = np.array([data[1] for data in minibatch])
+                reward_batch = np.array([data[2] for data in minibatch])
 
-            # Step 2: calculate y
-            y_batch = []
-            Q_value_batch = np.array(self.session.run(self.net.Q_value, {self.net.state_input: next_state_batch}))
+                # # Step 2: calculate y
+                # y_batch = []
+                # Q_value_batch = np.array(self.session.run(self.net.Q_value, {self.net.state_input: state_batch}))
+                #
+                # for i in range(0, config.BATCH_SIZE):
+                #     done = minibatch[i][4]
+                #     if done:
+                #         temp = self.get_y_value(Q_value_batch[i], reward_batch[i], done)
+                #         y_batch = np.append(y_batch, temp)
+                #
+                #     else:
+                #         temp = self.get_y_value(Q_value_batch[i], reward_batch[i], done)
+                #         temp = temp.reshape((1, config.ORDERLENTH))
+                #         y_batch = np.append(y_batch, temp)
+                # y_batch = np.array(y_batch).reshape(config.BATCH_SIZE, config.ORDERLENTH)
 
-            for i in range(0, config.BATCH_SIZE):
-                done = minibatch[i][4]
-                if done:
-                    temp = self.get_y_value(Q_value_batch[i], reward_batch[i], done)
-                    y_batch = np.append(y_batch, temp)
-
-                else:
-                    temp = self.get_y_value(Q_value_batch[i], reward_batch[i], done)
-                    temp = temp.reshape((1, config.ORDERLENTH))
-                    y_batch = np.append(y_batch, temp)
-            y_batch = np.array(y_batch).reshape(config.BATCH_SIZE, config.ORDERLENTH)
-
-            _, loss = self.session.run([self.net.train_op, self.net.loss],
-                                       feed_dict={self.net.y_input: y_batch,
-                                                  self.net.action_input: action_batch,
-                                                  self.net.state_input: state_batch})
-            self.saveRecord(modelSavePath, loss)
+                _, loss = self.session.run([self.net.train_op, self.net.loss],
+                                           feed_dict={self.net.reward_input: reward_batch,
+                                                      self.net.action_input: action_batch,
+                                                      self.net.state_input: state_batch})
+                last_loss = loss
+            self.saveRecord(modelSavePath, last_loss)
 
     def get_random_action_and_parameter_one_hot(self):
         random_action_and_parameter = np.array([])
@@ -181,15 +184,15 @@ class PG():
 
     def egreedy_action(self, state):  # 输出带随机的动作
 
-        Q_value = self.session.run(self.net.Q_value, {self.net.state_input: state})[0]
+        prob_value = self.session.run(self.net.prob_value, {self.net.state_input: state})[0]
         # self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 10000
         if np.random.uniform() <= self.epsilon:
             random_action_and_parameter = self.get_random_action_and_parameter_one_hot()
             return random_action_and_parameter
 
         else:
-            return Q_value
+            return prob_value
 
     def action(self, state):
-        Q_value = self.session.run(self.net.Q_value, {self.net.state_input: state})[0]
+        Q_value = self.session.run(self.net.prob_value, {self.net.state_input: state})[0]
         return Q_value
