@@ -52,6 +52,7 @@ class PG():
 
         self.epsiod_record = []
         self.reward_add = 0
+        self.reward_avg = 0
 
     def restoreModel(self, modelLoadPath):
         self.modelSaver.restore(self.session, modelLoadPath + '/' + self.name + '.ckpt')
@@ -80,9 +81,16 @@ class PG():
     def perceive(self, state, action, reward, done):  # 感知存储信息
 
         if done:
-            self.epsiod_record.clear()
-            self.reward_add = 0
+            # if (self.reward_add / len(self.epsiod_record)) > self.reward_avg:
+            #     self.reward_avg = self.reward_add / len(self.epsiod_record)
+            #     self.replay_buffer.inQueue(self.epsiod_record)
+            #
+            # self.epsiod_record.clear()
+            # self.reward_add = 0
+            # print('reward_avg:' + str(self.reward_avg))
             self.replay_buffer.inQueue(self.epsiod_record)
+
+
         else:
             action_data = np.array([])
             action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[0]), self.action_dim))
@@ -92,7 +100,6 @@ class PG():
             action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[4]), config.POINT_NUMBER))
             self.reward_add = self.reward_add * config.GAMMA + reward
             temp_reward = np.array([self.reward_add for i in range(config.ORDERLENTH)]).flatten()
-
             self.epsiod_record.append([state[0], action_data, temp_reward, done])
 
             # self.replay_buffer.inQueue([state[0], action_data, reward, next_state[0], done])
@@ -155,7 +162,8 @@ class PG():
                 _, loss = self.session.run([self.net.train_op, self.net.loss],
                                            feed_dict={self.net.reward_input: reward_batch,
                                                       self.net.action_input: action_batch,
-                                                      self.net.state_input: state_batch})
+                                                      self.net.state_input: state_batch,
+                                                      self.net.train: True})
                 last_loss = loss
             self.saveRecord(modelSavePath, last_loss)
 
@@ -184,7 +192,8 @@ class PG():
 
     def egreedy_action(self, state):  # 输出带随机的动作
 
-        prob_value = self.session.run(self.net.prob_value, {self.net.state_input: state})[0]
+        prob_value = self.session.run(self.net.prob_value, {self.net.state_input: state, self.net.train: True})[0]
+        # print(prob_value)
         # self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 10000
         if np.random.uniform() <= self.epsilon:
             random_action_and_parameter = self.get_random_action_and_parameter_one_hot()
@@ -194,5 +203,5 @@ class PG():
             return prob_value
 
     def action(self, state):
-        prob_value = self.session.run(self.net.prob_value, {self.net.state_input: state})[0]
+        prob_value = self.session.run(self.net.prob_value, {self.net.state_input: state, self.net.train: False})[0]
         return prob_value
