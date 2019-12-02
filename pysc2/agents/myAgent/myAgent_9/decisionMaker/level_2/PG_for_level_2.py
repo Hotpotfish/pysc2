@@ -194,5 +194,5 @@ class PG():
             return prob_value
 
     def action(self, state):
-        Q_value = self.session.run(self.net.prob_value, {self.net.state_input: state})[0]
-        return Q_value
+        prob_value = self.session.run(self.net.prob_value, {self.net.state_input: state})[0]
+        return prob_value

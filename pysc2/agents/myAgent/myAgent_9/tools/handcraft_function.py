@@ -10,7 +10,7 @@ from pysc2.agents.myAgent.myAgent_9.decisionMaker.level_2.level_2_train_controll
 
 # 平铺嵌套数组
 from pysc2.env.environment import StepType
-from pysc2.lib import actions
+from pysc2.lib import actions, features
 
 
 def my_flatten(input_list):
@@ -60,23 +60,31 @@ def reflect(actiondim, action_and_parameter):
 # 动作组装
 # 将动作组装成可执行的结果
 def assembly_action(obs, controller_number, macro_and_parameter):
-    raw_units = obs.observation['raw_units']
-    raw_units_lenth = len(raw_units)
+    # raw_units = obs.observation['raw_units']
+    # raw_units_lenth = len(raw_units)
     action = sa.controllers[controller_number][int(macro_and_parameter[0])]
     parameter = []
+    my_units = [unit for unit in obs.observation.raw_units
+                if unit.alliance == features.PlayerRelative.SELF]
+    my_units_length = len(my_units)
+    enemy_units = [unit for unit in obs.observation.raw_units
+                   if unit.alliance == features.PlayerRelative.ENEMY]
+    enemy_units_length = len(enemy_units)
 
-    # if macro_and_parameter[2] >= raw_units_lenth or macro_and_parameter[3] >= raw_units_lenth:
-    #     return actions.RAW_FUNCTIONS.no_op()
+    if enemy_units_length == 0 or my_units_length == 0:
+        return actions.RAW_FUNCTIONS.no_op()
+
+
     # 根据参数名字填内容
     for i in range(len(action[5])):
         if action[5][i].name == 'queued':
             parameter.append(int(macro_and_parameter[1]))
             continue
         if action[5][i].name == 'unit_tags':
-            parameter.append(raw_units[int(macro_and_parameter[2]) % raw_units_lenth].tag)
+            parameter.append(my_units[int(macro_and_parameter[2]) % my_units_length].tag)
             continue
         if action[5][i].name == 'target_unit_tag':
-            parameter.append(raw_units[int(macro_and_parameter[3]) % raw_units_lenth].tag)
+            parameter.append(enemy_units[int(macro_and_parameter[3]) % enemy_units_length].tag)
             continue
         if action[5][i].name == 'world':
             number = macro_and_parameter[4]
