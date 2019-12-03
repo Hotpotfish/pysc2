@@ -14,6 +14,7 @@
       <option name="ignoredIdentifiers">
         <list>
           <option value="tensorflow.Session" />
+          <option value="tensorflow.*" />
         </list>
       </option>
     </inspection_tool>

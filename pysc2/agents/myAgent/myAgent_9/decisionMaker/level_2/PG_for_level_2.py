@@ -1,6 +1,5 @@
-import datetime
 import os
-from collections import deque
+
 import random
 
 import numpy as np
@@ -135,36 +134,41 @@ class PG():
         return np.array(y_value)
 
     def train_Q_network(self, modelSavePath):  # 训练网络
-        if self.replay_buffer.real_size >= config.BATCH_SIZE:
+        if self.replay_buffer.real_size >= config.EP_SIZE:
             last_loss = None
-            for i in range(config.BATCH_SIZE):
-                minibatch = random.sample(self.replay_buffer.queue, 1)[0]
-                state_batch = np.array([data[0] for data in minibatch])
-                action_batch = np.array([data[1] for data in minibatch])
-                reward_batch = np.array([data[2] for data in minibatch])
+            for i in range(config.EP_SIZE):
+                episode_data = np.array(random.sample(self.replay_buffer.queue, 1)[0])
+                episode_data_len = len(episode_data)
+                start = 0
+                end = config.BATCH_SIZE
+                while 1:
+                    if end <= episode_data_len:
+                        input_batch = episode_data[start:end]
+                        state_batch = np.array([data[0] for data in input_batch])
+                        action_batch = np.array([data[1] for data in input_batch])
+                        reward_batch = np.array([data[2] for data in input_batch])
+                        start += config.BATCH_SIZE
+                        end += config.BATCH_SIZE
+                        _, loss = self.session.run([self.net.train_op, self.net.loss],
+                                                   feed_dict={self.net.reward_input: reward_batch,
+                                                              self.net.action_input: action_batch,
+                                                              self.net.state_input: state_batch,
+                                                              self.net.train: True})
+                    else:
+                        input_batch = episode_data[start:]
+                        state_batch = np.array([data[0] for data in input_batch])
+                        action_batch = np.array([data[1] for data in input_batch])
+                        reward_batch = np.array([data[2] for data in input_batch])
+                        _, loss = self.session.run([self.net.train_op, self.net.loss],
+                                                   feed_dict={self.net.reward_input: reward_batch,
+                                                              self.net.action_input: action_batch,
+                                                              self.net.state_input: state_batch,
+                                                              self.net.train: True})
+                        break
 
-                # # Step 2: calculate y
-                # y_batch = []
-                # Q_value_batch = np.array(self.session.run(self.net.Q_value, {self.net.state_input: state_batch}))
-                #
-                # for i in range(0, config.BATCH_SIZE):
-                #     done = minibatch[i][4]
-                #     if done:
-                #         temp = self.get_y_value(Q_value_batch[i], reward_batch[i], done)
-                #         y_batch = np.append(y_batch, temp)
-                #
-                #     else:
-                #         temp = self.get_y_value(Q_value_batch[i], reward_batch[i], done)
-                #         temp = temp.reshape((1, config.ORDERLENTH))
-                #         y_batch = np.append(y_batch, temp)
-                # y_batch = np.array(y_batch).reshape(config.BATCH_SIZE, config.ORDERLENTH)
-
-                _, loss = self.session.run([self.net.train_op, self.net.loss],
-                                           feed_dict={self.net.reward_input: reward_batch,
-                                                      self.net.action_input: action_batch,
-                                                      self.net.state_input: state_batch,
-                                                      self.net.train: True})
-                last_loss = loss
+                    last_loss = loss
+                # self.session.close()
+                # self.session = tf.Session()
             self.saveRecord(modelSavePath, last_loss)
 
     def get_random_action_and_parameter_one_hot(self):

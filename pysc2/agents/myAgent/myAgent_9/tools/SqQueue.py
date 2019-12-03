@@ -15,9 +15,6 @@ class SqQueue(object):
         self.head = (self.head + 1) % self.size
         if self.real_size == self.size:
             self.queue[self.head] = n
-        # if self.real_size == self.size:
-        #     self.queue.clear()
-        #     self.real_size = 0
         else:
             self.real_size += 1
             self.queue.append(n)
