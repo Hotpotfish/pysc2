@@ -46,17 +46,17 @@ class Lenet():
                                 weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),  # mu，sigma
                                 weights_regularizer=slim.l2_regularizer(0.1)):
                 conv1 = slim.conv2d(self.state_input, 6, [5, 5], stride=1, padding="VALID", scope='layer_1_conv')
-                pool1 = slim.max_pool2d(conv1, [2, 2], stride=2, padding="VALID", scope='layer_1_pooling')
+                bn1 = tf.layers.batch_normalization(conv1, training=self.train)
+                pool1 = slim.max_pool2d(bn1, [2, 2], stride=2, padding="VALID", scope='layer_1_pooling')
 
                 conv2 = slim.conv2d(pool1, 16, [5, 5], stride=1, padding="VALID", scope='layer_2_conv')
-
-                pool2 = slim.max_pool2d(conv2, [2, 2], stride=2, padding="VALID", scope='layer_2_pooling')
+                bn2 = tf.layers.batch_normalization(conv2, training=self.train)
+                pool2 = slim.max_pool2d(bn2, [2, 2], stride=2, padding="VALID", scope='layer_2_pooling')
                 # 传给下一阶段
                 self.action_flatten = slim.flatten(pool2, scope="flatten")
-                # bn3 = tf.layers.batch_normalization(self.action_flatten, training=self.train)
 
                 fc1 = slim.fully_connected(self.action_flatten, 120, scope='full_connected1')
-                # bn4 = tf.layers.batch_normalization(fc1, training=self.train)
+
                 fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
 
                 self.action_logits = slim.fully_connected(fc2, self.action_dim, scope='action_logits')
@@ -159,6 +159,7 @@ class Lenet():
 
             self.loss = tf.reduce_mean(tf.multiply(self.Q_action_1, self.reward_input))
         # tf.summary.scalar(self.name + "_loss_function", self.loss)
+
     #
     # def _compute_acc_graph(self):
     #     with tf.name_scope(self.name + "_acc_function"):
