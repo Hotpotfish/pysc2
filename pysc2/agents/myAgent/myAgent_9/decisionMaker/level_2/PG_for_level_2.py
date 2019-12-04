@@ -79,6 +79,8 @@ class PG():
 
     def perceive(self, state, action, reward, done):  # 感知存储信息
 
+        # print('reward:'+str(reward))
+
         if done:
             # if (self.reward_add / len(self.epsiod_record)) > self.reward_avg:
             #     self.reward_avg = self.reward_add / len(self.epsiod_record)
@@ -87,7 +89,10 @@ class PG():
             # self.epsiod_record.clear()
             # self.reward_add = 0
             # print('reward_avg:' + str(self.reward_avg))
+
             self.replay_buffer.inQueue(self.epsiod_record)
+            self.reward_add = 0
+            self.epsiod_record.clear()
 
 
         else:
@@ -164,9 +169,10 @@ class PG():
                                                               self.net.action_input: action_batch,
                                                               self.net.state_input: state_batch,
                                                               self.net.train: True})
+                        last_loss = loss
                         break
 
-                    last_loss = loss
+
                 # self.session.close()
                 # self.session = tf.Session()
             self.saveRecord(modelSavePath, last_loss)

@@ -39,7 +39,7 @@ class level_2_attack_controller:
         self.controller.current_state = get_raw_units_observation(obs)
         # self.controller.current_state = handcraft_function.get_all_observation(obs)
         self.controller.current_reward = reward_compute_1(obs)
-        if self.controller.previous_action is not None:
+        if self.controller.previous_action is not None and self.controller.current_reward:
             self.controller.network.perceive(self.controller.current_state,
                                              self.controller.previous_action,
                                              self.controller.current_reward,
