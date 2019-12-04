@@ -169,4 +169,7 @@ class Lenet():
     #         tf.summary.scalar("accuracy", self.accuracy)
 
     def _create_train_op_graph(self):
-        self.train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
+        optimizer = tf.train.AdamOptimizer(self.learning_rate)
+        extra_update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        with tf.control_dependencies(extra_update_ops):
+            self.train_op = optimizer.minimize(self.loss)
