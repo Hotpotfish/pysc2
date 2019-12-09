@@ -1,8 +1,8 @@
-import pysc2.agents.myAgent.myAgent_8.config.config as config
+import pysc2.agents.myAgent.myAgent_9.config.config as config
 from absl import app
 from pysc2.agents import base_agent
-from pysc2.agents.myAgent.myAgent_8.decisionMaker.hierarchical_learning_structure import hierarchical_learning_structure
-from pysc2.agents.myAgent.myAgent_8.tools.plt_function import plt_function
+from pysc2.agents.myAgent.myAgent_10.decisionMaker.hierarchical_learning_structure import hierarchical_learning_structure
+from pysc2.agents.myAgent.myAgent_10.tools.plt_function import plt_function
 from pysc2.env.environment import StepType
 
 from pysc2.lib import actions, features
@@ -25,9 +25,9 @@ class myAgent(base_agent.BaseAgent):
     def step(self, obs):
         # self.add_or_plt(obs, self.steps)
         super(myAgent, self).step(obs)
-        action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'e:/model/', None)
-        # action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'e:/model/', 'E:/model/20191129105654/episode_80')
-        # action = self.hierarchical_learning_structure.execute(obs, 'TEST', None, 'e:/model/taopao/episode_180')
+        # action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'e:/model/', None)
+        # action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'e:/model/', 'E:/model/20191204093055/episode_800')
+        action = self.hierarchical_learning_structure.execute(obs, 'TEST', None, 'e:/model/20191204223628/episode_89600')
         # print(action)
         return action
 
@@ -50,7 +50,7 @@ def main(unused_argv):
                     use_unit_counts=True
                 ),
                 score_index=0,
-                step_mul=4,
+                step_mul=0.0001,
                 disable_fog=False,
                 visualize=True,
                 realtime=True

@@ -4,12 +4,12 @@ import random
 
 import numpy as np
 import tensorflow as tf
-import pysc2.agents.myAgent.myAgent_9.config.config as config
+import pysc2.agents.myAgent.myAgent_10.config.config as config
 
-from pysc2.agents.myAgent.myAgent_9.net.lenet_for_level_2_PG import Lenet
+# from pysc2.agents.myAgent.myAgent_10.net.lenet_for_level_2_PG import Lenet
 
-import pysc2.agents.myAgent.myAgent_9.tools.handcraft_function as handcraft_function
-from pysc2.agents.myAgent.myAgent_9.tools.SqQueue import SqQueue
+import pysc2.agents.myAgent.myAgent_10.tools.handcraft_function as handcraft_function
+from pysc2.agents.myAgent.myAgent_10.tools.SqQueue import SqQueue
 
 
 class PG():
@@ -33,7 +33,7 @@ class PG():
 
         # 网络结构初始化
         self.name = name
-        self.net = Lenet(self.mu, self.sigma, self.learning_rate, self.action_dim, self.parameterdim, self.state_dim, self.name)
+        # self.net = Lenet(self.mu, self.sigma, self.learning_rate, self.action_dim, self.parameterdim, self.state_dim, self.name)
 
         # Init session
         self.session = tf.Session()

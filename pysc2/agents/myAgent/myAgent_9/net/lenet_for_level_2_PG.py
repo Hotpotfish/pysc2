@@ -136,28 +136,27 @@ class Lenet():
 
     def _compute_loss_graph(self):
         with tf.name_scope(self.name + "_loss_function"):
-            self.action_prob = tf.multiply(self.prob_value, self.action_input)
+                self.action_prob = tf.multiply(self.prob_value, self.action_input)
+                start = 0
+                end = self.action_dim
+                self.action_Q = tf.reduce_sum(self.action_prob[:, start:end], axis=1)
 
-            start = 0
-            end = self.action_dim
-            self.action_Q = tf.reduce_sum(self.action_prob[:, start:end], axis=1)
+                start = end
+                end += config.QUEUED
+                self.queued_Q = tf.reduce_sum(self.action_prob[:, start:end], axis=1)
 
-            start = end
-            end += config.QUEUED
-            self.queued_Q = tf.reduce_sum(self.action_prob[:, start:end], axis=1)
+                start = end
+                end += config.MY_UNIT_NUMBER
+                self.my_unit_Q = tf.reduce_sum(self.action_prob[:, start:end], axis=1)
 
-            start = end
-            end += config.MY_UNIT_NUMBER
-            self.my_unit_Q = tf.reduce_sum(self.action_prob[:, start:end], axis=1)
+                start += end
+                end += config.ENEMY_UNIT_NUMBER
+                self.enemy_unit_Q = tf.reduce_sum(self.action_prob[:, start:end], axis=1)
+                start = end
+                self.target_point_Q = tf.reduce_sum(self.action_prob[:, start:], axis=1)
+                self.Q_action_1 = tf.stack([self.action_Q, self.queued_Q, self.my_unit_Q, self.enemy_unit_Q, self.target_point_Q], 1)
 
-            start += end
-            end += config.ENEMY_UNIT_NUMBER
-            self.enemy_unit_Q = tf.reduce_sum(self.action_prob[:, start:end], axis=1)
-            start = end
-            self.target_point_Q = tf.reduce_sum(self.action_prob[:, start:], axis=1)
-            self.Q_action_1 = tf.stack([self.action_Q, self.queued_Q, self.my_unit_Q, self.enemy_unit_Q, self.target_point_Q], 1)
-
-            self.loss = tf.reduce_mean(tf.multiply(self.Q_action_1, self.reward_input))
+                self.loss = tf.reduce_mean(tf.multiply(self.Q_action_1, self.reward_input))
         # tf.summary.scalar(self.name + "_loss_function", self.loss)
 
     #
