@@ -17,8 +17,5 @@ class soldier():
                 self.energy,
                 self.x,
                 self.y,
-                self.order_length,
-                self.frend_health,
-                self.enemy_health,
-                self.order_length]
+                self.order_length] + self.frend_health + self.enemy_health
         return data

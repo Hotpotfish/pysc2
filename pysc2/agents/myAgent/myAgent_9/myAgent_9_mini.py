@@ -50,7 +50,7 @@ def main(unused_argv):
                     use_unit_counts=True
                 ),
                 score_index=0,
-                step_mul=0.0001,
+                step_mul=0.001,
                 disable_fog=False,
                 visualize=True,
                 realtime=True

@@ -33,7 +33,7 @@ class PG():
 
         # 网络结构初始化
         self.name = name
-        # self.net = Lenet(self.mu, self.sigma, self.learning_rate, self.action_dim, self.parameterdim, self.state_dim, self.name)
+        self.net = Lenet(self.mu, self.sigma, self.learning_rate, self.action_dim, self.parameterdim, self.state_dim, self.name)
 
         # Init session
         self.session = tf.Session()
