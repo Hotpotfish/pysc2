@@ -34,8 +34,11 @@ class bicnet_actor():
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e) for t, e in zip(self.t_params, self.e_params)]
 
     def _setup_placeholders_graph(self):
+        # s
         self.state_input = tf.placeholder("float", shape=self.statedim, name=self.name + '_' + 'state_input')  # 全局状态
         self.agents_local_observation = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation')
+        self.action_input = tf.placeholder("float", shape=[None, self.agents_number, self.action_dim + self.parameterdim], name='action_input')
+        self.reward_input = tf.placeholder("float", shape=[None, self.agents_number, 1], name='action_input')
 
     def _build_graph(self, scope_name, train):
         # 环境和智能体本地的共同观察
@@ -184,12 +187,10 @@ class bicnet_actor():
     def _get_outputs(self, action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, target_point_outputs):
         outputs = tf.concat([action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, target_point_outputs], axis=2)
         tf.transpose(outputs, [1, 0, 2])  # (batch_size, agents_number,outputs_prob)
-
         return outputs
 
     def _soft_replace(self):
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e) for t, e in zip(self.t_params, self.e_params)]
-
 
 #
 # def _compute_loss_graph(self):
