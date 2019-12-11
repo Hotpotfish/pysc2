@@ -26,23 +26,28 @@ class bicnet_actor():
 
     def _setup_placeholders_graph(self):
         self.state_input = tf.placeholder("float", shape=self.statedim, name=self.name + '_' + 'state_input')  # 全局状态
-        self.agents_local_observation = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM])
+        self.agents_local_observation = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation')
 
     def _build_graph(self, name, train):
         self._observation_encoder(name, train)
 
     def _observation_encoder(self, scope_name, train):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
-            state_input_flatten = tf.contrib.layers.flatten(self.state_input[:, :])
-            agents_local_observation_flatten = tf.contrib.layers.flatten(self.agents_local_observation[:])
-            encoder = tf.concat([state_input_flatten, agents_local_observation_flatten])
+            state_input_flatten = tf.contrib.layers.flatten(self.state_input)
+            # agents_local_observation_flatten = tf.contrib.layers.flatten(self.agents_local_observation[:])
+            # encoder = tf.concat([state_input_flatten, agents_local_observation_flatten])
+            # for i in range(tf.shape(self.state_input)[0]):
+            encoder = []
+            for i in range(self.agents_number):
+                encoder.append(tf.concat([self.agents_local_observation[:, i, :], self.state_input], axis=1))
+            encoder = tf.transpose(encoder, [1, 0, 2])
             fc1 = slim.fully_connected(encoder, 4096, scope='full_connected1')
             bn1 = tf.layers.batch_normalization(fc1, training=train)
             fc2 = slim.fully_connected(bn1, 512, scope='full_connected2')
             bn2 = tf.layers.batch_normalization(fc2, training=train)
             fc3 = slim.fully_connected(bn2, 64, scope='full_connected3')
             bn3 = tf.layers.batch_normalization(fc3, training=train)
-            encoder = tf.unstack(bn3, self.agents_number, 1)  # (self.agents_number,batch_size)
+            encoder = tf.unstack(bn3, self.agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
             return encoder
 
     def _bicnet_build(self, encoder):
@@ -50,7 +55,7 @@ class bicnet_actor():
         lstm_bw_cell = tf.nn.rnn_cell.BasicLSTMCell(64, forget_bias=1.0, name="lstm_bw_cell")
         encoder_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder, dtype=tf.float32)
         encoder_outputs = tf.unstack(encoder_outputs, config.COOP_AGENTS_NUMBER, axis=1)
-        return encoder_outputs  # (agents_number,batch_size,obs_dim)
+        return encoder_outputs  # (agents_number,batch_size,64*2)
 
     def _action_network_graph(self, encoder_outputs, scope_name, train):
         self.action_outputs = []
@@ -79,7 +84,7 @@ class bicnet_actor():
                                 weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),  # mu，sigma
                                 weights_regularizer=slim.l2_regularizer(0.1)):
                 for i in range(self.agents_number):
-                    encoder_output = tf.concat(encoder_outputs[i, :, :], self.action_outputs[i, :, :], axis=1)
+                    encoder_output = tf.concat([encoder_outputs[i, :, :], self.action_outputs[i, :, :]], axis=1)
                     fc1 = slim.fully_connected(encoder_output, 120, scope='full_connected1')
 
                     fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
@@ -98,8 +103,8 @@ class bicnet_actor():
                                 weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),  # mu，sigma
                                 weights_regularizer=slim.l2_regularizer(0.1)):
                 for i in range(self.agents_number):
-                    encoder_output = tf.concat(encoder_outputs[i, :, :], self.action_outputs[i, :, :], axis=1)
-                    encoder_output = tf.concat(encoder_output, self.queued_outputs[i, :, :], axis=1)
+                    encoder_output = tf.concat([encoder_outputs[i, :, :], self.action_outputs[i, :, :],self.queued_outputs[i, :, :]], axis=1)
+                    # encoder_output = tf.concat(encoder_output, self.queued_outputs[i, :, :], axis=1)
                     fc1 = slim.fully_connected(encoder_output, 120, scope='full_connected1')
 
                     fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
@@ -118,9 +123,9 @@ class bicnet_actor():
                                 weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),  # mu，sigma
                                 weights_regularizer=slim.l2_regularizer(0.1)):
                 for i in range(self.agents_number):
-                    encoder_output = tf.concat(encoder_outputs[i, :, :], self.action_outputs[i, :, :], axis=1)
-                    encoder_output = tf.concat(encoder_output, self.queued_outputs[i, :, :], axis=1)
-                    encoder_output = tf.concat(encoder_output, self.my_unit_outputs[i, :, :], axis=1)
+                    encoder_output = tf.concat([encoder_outputs[i, :, :], self.action_outputs[i, :, :],self.queued_outputs[i, :, :],self.my_unit_outputs[i, :, :]], axis=1)
+                    # encoder_output = tf.concat(encoder_output, self.queued_outputs[i, :, :], axis=1)
+                    # encoder_output = tf.concat(encoder_output, self.my_unit_outputs[i, :, :], axis=1)
                     fc1 = slim.fully_connected(encoder_output, 120, scope='full_connected1')
 
                     fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
@@ -139,18 +144,19 @@ class bicnet_actor():
                                 weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),  # mu，sigma
                                 weights_regularizer=slim.l2_regularizer(0.1)):
                 for i in range(self.agents_number):
-                    encoder_output = tf.concat(encoder_outputs[i, :, :], self.action_outputs[i, :, :], axis=1)
-                    encoder_output = tf.concat(encoder_output, self.queued_outputs[i, :, :], axis=1)
-                    encoder_output = tf.concat(encoder_output, self.my_unit_outputs[i, :, :], axis=1)
+                    encoder_output = tf.concat([encoder_outputs[i, :, :], self.action_outputs[i, :, :], self.queued_outputs[i, :, :],self.my_unit_outputs[i, :, :],self.enemy_unit_outputs[i, :, :]], axis=1)
                     fc1 = slim.fully_connected(encoder_output, 120, scope='full_connected1')
 
                     fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
 
-                    target_point_logits = slim.fully_connected(fc2, config.ENEMY_UNIT_NUMBER, scope='enemy_unit_logits')
+                    target_point_logits = slim.fully_connected(fc2, config.POINT_NUMBER, scope='target_point_logits')
                     target_point_logits_bn = tf.contrib.layers.batch_norm(target_point_logits, is_training=train)
 
                     target_point_output = tf.nn.softmax(target_point_logits_bn)  # (batch_size,obs_dim)
-                    self.target_point_outputs.append(target_point_output)  # (agents_number,batch_size,enemy_unit_dim)
+                    self.target_point_outputs.append(target_point_output)  # (agents_number,batch_size,target_point_dim)
+
+    def _get_outputs(self):
+
 
 # def _build_graph(self):
 #     self._setup_placeholders_graph()
