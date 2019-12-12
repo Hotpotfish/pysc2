@@ -6,7 +6,7 @@ from pysc2.agents.myAgent.myAgent_10.config import config
 
 class bicnet_critic():
 
-    def __init__(self, mu, sigma, learning_rate, action_dim, parameterdim, statedim, agents_number, gamma, name):
+    def __init__(self, mu, sigma, learning_rate, action_dim, parameterdim, statedim, agents_number, enemy_number, gamma, name):
         self.mu = mu
         self.sigma = sigma
         self.learning_rate = learning_rate
@@ -18,7 +18,7 @@ class bicnet_critic():
         self.gamma = gamma
 
         self.agents_number = agents_number
-        # self.enemy_number = enemy_number
+        self.enemy_number = enemy_number
 
         self.name = name
 
@@ -26,14 +26,14 @@ class bicnet_critic():
         self._setup_placeholders_graph()
 
         # 两个A网络
-        with tf.variable_scope('Actor'):
+        with tf.variable_scope('Critic'):
             # a
             self.a = self._build_graph(self.state_input, self.agents_local_observation, self.action_input, 'eval_net', True)
             # a_
             self.a_ = self._build_graph(self.state_input, self.agents_local_observation, self.action_input, 'target_net', False)
 
-        self.e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/eval_net')
-        self.t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/target_net')
+        self.e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/eval_net')
+        self.t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/target_net')
 
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e) for t, e in zip(self.t_params, self.e_params)]
 
@@ -55,8 +55,8 @@ class bicnet_critic():
             my_unit_outputs = self._my_unit_network_graph(encoder_outputs, action_outputs, queued_outputs, '_my_unit_network_graph', train)
             enemy_unit_outputs = self._enemy_unit_network_graph(encoder_outputs, action_outputs, queued_outputs, my_unit_outputs, '_enemy_unit_network_graph', train)
             target_point_outputs = self._target_point_network_graph(encoder_outputs, action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, '_target_point_network_graph', train)
-            outputs = self._get_outputs(action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, target_point_outputs)
-            return outputs
+            q_out = self._get_Q(action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, target_point_outputs, self.action_input)
+            return q_out
 
     def _observation_encoder(self, state_input, agents_local_observation, action_input, agents_number, scope_name, train):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
@@ -97,8 +97,8 @@ class bicnet_critic():
                     action_logits = slim.fully_connected(fc2, self.action_dim, scope='action_logits')
                     action_logits_bn = tf.contrib.layers.batch_norm(action_logits, is_training=train)
 
-                    action_output = tf.nn.softmax(action_logits_bn)  # (batch_size,obs_dim)
-                    action_outputs.append(action_output)  # (agents_number,batch_size,action_dim)
+                    # action_output = tf.nn.softmax(action_logits_bn)  # (batch_size,obs_dim)
+                    action_outputs.append(action_logits_bn)  # (agents_number,batch_size,action_dim)
 
                 return action_outputs
 
@@ -118,8 +118,8 @@ class bicnet_critic():
                     queued_logits = slim.fully_connected(fc2, config.QUEUED, scope='queued_logits')
                     queued_logits_bn = tf.contrib.layers.batch_norm(queued_logits, is_training=train)
 
-                    queued_output = tf.nn.softmax(queued_logits_bn)  # (batch_size,obs_dim)
-                    queued_outputs.append(queued_output)  # (agents_number,batch_size,queued_dim)
+                    # queued_output = tf.nn.softmax(queued_logits_bn)  # (batch_size,obs_dim)
+                    queued_outputs.append(queued_logits_bn)  # (agents_number,batch_size,queued_dim)
 
                 return queued_outputs
 
@@ -140,8 +140,8 @@ class bicnet_critic():
                     my_unit_logits = slim.fully_connected(fc2, self.agents_number, scope='my_unit_logits')
                     my_unit_logits_bn = tf.contrib.layers.batch_norm(my_unit_logits, is_training=train)
 
-                    my_unit_output = tf.nn.softmax(my_unit_logits_bn)  # (batch_size,obs_dim)
-                    my_unit_outputs.append(my_unit_output)  # (agents_number,batch_size,my_unit_dim)
+                    # my_unit_output = tf.nn.softmax(my_unit_logits_bn)  # (batch_size,obs_dim)
+                    my_unit_outputs.append(my_unit_logits_bn)  # (agents_number,batch_size,my_unit_dim)
 
                 return my_unit_outputs
 
@@ -154,8 +154,7 @@ class bicnet_critic():
                                 weights_regularizer=slim.l2_regularizer(0.1)):
                 for i in range(self.agents_number):
                     encoder_output = tf.concat([encoder_outputs[i, :, :], action_outputs[i, :, :], queued_outputs[i, :, :], my_unit_outputs[i, :, :]], axis=1)
-                    # encoder_output = tf.concat(encoder_output, self.queued_outputs[i, :, :], axis=1)
-                    # encoder_output = tf.concat(encoder_output, self.my_unit_outputs[i, :, :], axis=1)
+
                     fc1 = slim.fully_connected(encoder_output, 120, scope='full_connected1')
 
                     fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
@@ -163,8 +162,8 @@ class bicnet_critic():
                     enemy_unit_logits = slim.fully_connected(fc2, self.enemy_number, scope='enemy_unit_logits')
                     enemy_unit_logits_bn = tf.contrib.layers.batch_norm(enemy_unit_logits, is_training=train)
 
-                    enemy_unit_output = tf.nn.softmax(enemy_unit_logits_bn)  # (batch_size,obs_dim)
-                    enemy_unit_outputs.append(enemy_unit_output)  # (agents_number,batch_size,enemy_unit_dim)
+                    # enemy_unit_output = tf.nn.softmax(enemy_unit_logits_bn)  # (batch_size,obs_dim)
+                    enemy_unit_outputs.append(enemy_unit_logits_bn)  # (agents_number,batch_size,enemy_unit_dim)
                 return enemy_unit_outputs
 
     def _target_point_network_graph(self, encoder_outputs, action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, scope_name, train):
@@ -184,15 +183,17 @@ class bicnet_critic():
                     target_point_logits = slim.fully_connected(fc2, config.POINT_NUMBER, scope='target_point_logits')
                     target_point_logits_bn = tf.contrib.layers.batch_norm(target_point_logits, is_training=train)
 
-                    target_point_output = tf.nn.softmax(target_point_logits_bn)  # (batch_size,obs_dim)
-                    target_point_outputs.append(target_point_output)  # (agents_number,batch_size,target_point_dim)
+                    # target_point_output = tf.nn.softmax(target_point_logits_bn)  # (batch_size,obs_dim)
+                    target_point_outputs.append(target_point_logits_bn)  # (agents_number,batch_size,target_point_dim)
 
                 return target_point_outputs
 
-    def _get_outputs(self, action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, target_point_outputs):
-        outputs = tf.concat([action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, target_point_outputs], axis=2)
-        tf.transpose(outputs, [1, 0, 2])  # (batch_size, agents_number,outputs_prob)
-        return outputs
+    def _get_Q(self, action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, target_point_outputs, action_input):
+        all_q = tf.concat([action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, target_point_outputs], axis=2)  # (agents_number, batch_size,outputs_prob)
+        all_q = tf.transpose(all_q, [1, 0, 2])  # (batch_size, agents_number,outputs_prob)
+        q_out = tf.multiply(all_q, action_input)
+
+        return q_out
 
     def _soft_replace(self):
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e) for t, e in zip(self.t_params, self.e_params)]

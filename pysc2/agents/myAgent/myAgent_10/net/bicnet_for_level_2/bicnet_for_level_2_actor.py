@@ -196,7 +196,7 @@ class bicnet_actor():
 
     def _get_outputs(self, action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, target_point_outputs):
         outputs = tf.concat([action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, target_point_outputs], axis=2)
-        tf.transpose(outputs, [1, 0, 2])  # (batch_size, agents_number,outputs_prob)
+        outputs = tf.transpose(outputs, [1, 0, 2])  # (batch_size, agents_number,outputs_prob)
         return outputs
 
     def _soft_replace(self):
