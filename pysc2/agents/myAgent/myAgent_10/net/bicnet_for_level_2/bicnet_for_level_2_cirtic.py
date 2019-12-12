@@ -4,9 +4,9 @@ import tensorflow.contrib.slim as slim
 from pysc2.agents.myAgent.myAgent_10.config import config
 
 
-class bicnet_actor():
+class bicnet_critic():
 
-    def __init__(self, mu, sigma, learning_rate, action_dim, parameterdim, statedim, agents_number, enemy_number, name):
+    def __init__(self, mu, sigma, learning_rate, action_dim, parameterdim, statedim, agents_number, gamma, name):
         self.mu = mu
         self.sigma = sigma
         self.learning_rate = learning_rate
@@ -15,8 +15,10 @@ class bicnet_actor():
         self.parameterdim = parameterdim
         self.statedim = statedim
 
+        self.gamma = gamma
+
         self.agents_number = agents_number
-        self.enemy_number = enemy_number
+        # self.enemy_number = enemy_number
 
         self.name = name
 
@@ -25,8 +27,10 @@ class bicnet_actor():
 
         # 两个A网络
         with tf.variable_scope('Actor'):
-            self.a = self._build_graph('eval_net', True)
-            self.a_ = self._build_graph('target_net', False)
+            # a
+            self.a = self._build_graph(self.state_input, self.agents_local_observation, self.action_input, 'eval_net', True)
+            # a_
+            self.a_ = self._build_graph(self.state_input, self.agents_local_observation, self.action_input, 'target_net', False)
 
         self.e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/eval_net')
         self.t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/target_net')
@@ -37,16 +41,14 @@ class bicnet_actor():
         # s
         self.state_input = tf.placeholder("float", shape=self.statedim, name=self.name + '_' + 'state_input')  # 全局状态
         self.agents_local_observation = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation')
+
+        # a
         self.action_input = tf.placeholder("float", shape=[None, self.agents_number, self.action_dim + self.parameterdim], name='action_input')
-        self.reward_input = tf.placeholder("float", shape=[None, self.agents_number, 1], name='action_input')
 
-        self.state_input_next = tf.placeholder("float", shape=self.statedim, name=self.name + '_' + 'state_input_next')  # 全局状态
-        self.agents_local_observation_next = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation_next')
-
-    def _build_graph(self, scope_name, train):
+    def _build_graph(self, state_input, agents_local_observation, action_input, scope_name, train):
         # 环境和智能体本地的共同观察
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
-            encoder_outputs = self._observation_encoder(self.state_input, self.agents_local_observation, config.COOP_AGENTS_NUMBER, '_observation_encoder', train)
+            encoder_outputs = self._observation_encoder(state_input, agents_local_observation, action_input, config.COOP_AGENTS_NUMBER, '_observation_encoder', train)
             bicnet_outputs = self._bicnet_build(encoder_outputs, '_bicnet_build')
             action_outputs = self._action_network_graph(bicnet_outputs, '_action_network_graph', train)
             queued_outputs = self._queued_network_graph(encoder_outputs, action_outputs, '_queued_network_graph', train)
@@ -56,11 +58,11 @@ class bicnet_actor():
             outputs = self._get_outputs(action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, target_point_outputs)
             return outputs
 
-    def _observation_encoder(self, state_input, agents_local_observation, agents_number, scope_name, train):
+    def _observation_encoder(self, state_input, agents_local_observation, action_input, agents_number, scope_name, train):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             encoder = []
             for i in range(agents_number):
-                encoder.append(tf.concat([agents_local_observation[:, i, :], state_input], axis=1))
+                encoder.append(tf.concat([agents_local_observation[:, i, :], state_input, action_input[:, i, :]], axis=1))
             encoder = tf.transpose(encoder, [1, 0, 2])
             fc1 = slim.fully_connected(encoder, 4096, scope='full_connected1')
             bn1 = tf.layers.batch_normalization(fc1, training=train)
@@ -195,42 +197,6 @@ class bicnet_actor():
     def _soft_replace(self):
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e) for t, e in zip(self.t_params, self.e_params)]
 
-#
-# def _compute_loss_graph(self):
-#     with tf.name_scope(self.name + "_loss_function"):
-#             self.action_prob = tf.multiply(self.prob_value, self.action_input)
-#             start = 0
-#             end = self.action_dim
-#             self.action_Q = tf.reduce_sum(self.action_prob[:, start:end], axis=1)
-#
-#             start = end
-#             end += config.QUEUED
-#             self.queued_Q = tf.reduce_sum(self.action_prob[:, start:end], axis=1)
-#
-#             start = end
-#             end += config.MY_UNIT_NUMBER
-#             self.my_unit_Q = tf.reduce_sum(self.action_prob[:, start:end], axis=1)
-#
-#             start += end
-#             end += config.ENEMY_UNIT_NUMBER
-#             self.enemy_unit_Q = tf.reduce_sum(self.action_prob[:, start:end], axis=1)
-#             start = end
-#             self.target_point_Q = tf.reduce_sum(self.action_prob[:, start:], axis=1)
-#             self.Q_action_1 = tf.stack([self.action_Q, self.queued_Q, self.my_unit_Q, self.enemy_unit_Q, self.target_point_Q], 1)
-#
-#             self.loss = tf.reduce_mean(tf.multiply(self.Q_action_1, self.reward_input))
-#     # tf.summary.scalar(self.name + "_loss_function", self.loss)
-#
-# #
-# # def _compute_acc_graph(self):
-# #     with tf.name_scope(self.name + "_acc_function"):
-# #         self.accuracy = \
-# #             tf.metrics.accuracy(labels=tf.argmax(self.y, axis=1), predictions=tf.argmax(self.y_predicted, axis=1))[
-# #                 1]
-# #         tf.summary.scalar("accuracy", self.accuracy)
-#
-# def _create_train_op_graph(self):
-#     optimizer = tf.train.AdamOptimizer(self.learning_rate)
-#     extra_update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-#     with tf.control_dependencies(extra_update_ops):
-#         self.train_op = optimizer.minimize(self.loss)
+    def add_grad_to_graph(self, a_grads):
+        with tf.variable_scope('policy_grads'):
+            self.policy_grads = tf.gradients(ys=self.a, xs=self.e_params, grad_ys=a_grads)
