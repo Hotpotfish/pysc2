@@ -30,7 +30,7 @@ class bicnet_critic():
             # a
             self.a = self._build_graph(self.state_input, self.agents_local_observation, self.action_input, 'eval_net', True)
             # a_
-            self.a_ = self._build_graph(self.state_input, self.agents_local_observation, self.action_input, 'target_net', False)
+            self.a_ = self._build_graph(self.state_input_next, self.agents_local_observation_next, self.action_input_next, 'target_net', False)
 
         self.e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/eval_net')
         self.t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/target_net')
@@ -44,6 +44,13 @@ class bicnet_critic():
 
         # a
         self.action_input = tf.placeholder("float", shape=[None, self.agents_number, self.action_dim + self.parameterdim], name='action_input')
+
+        # s_
+        self.state_input_next = tf.placeholder("float", shape=self.statedim, name=self.name + '_' + 'state_input_next')  # 全局状态
+        self.agents_local_observation_next = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation_next')
+
+        # a_
+        self.action_input_next = tf.placeholder("float", shape=[None, self.agents_number, self.action_dim + self.parameterdim], name='action_input_next')
 
     def _build_graph(self, state_input, agents_local_observation, action_input, scope_name, train):
         # 环境和智能体本地的共同观察
