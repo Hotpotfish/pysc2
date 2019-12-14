@@ -24,11 +24,11 @@ class bicnet_actor():
         self._setup_placeholders_graph()
 
         # 两个A网络
-        with tf.variable_scope('Actor'):
-            # a
-            self.a = self._build_graph(self.state_input, self.agents_local_observation, 'eval_net', True)
-            # a_
-            self.a_ = self._build_graph(self.state_input_next, self.agents_local_observation_next, 'target_net', False)
+
+        # a
+        self.a = self._build_graph(self.state_input, self.agents_local_observation, 'eval_net', True)
+        # a_
+        self.a_ = self._build_graph(self.state_input_next, self.agents_local_observation_next, 'target_net', False)
 
         self.e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/eval_net')
         self.t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/target_net')

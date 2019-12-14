@@ -6,7 +6,7 @@ from pysc2.agents.myAgent.myAgent_10.config import config
 
 class bicnet_critic():
 
-    def __init__(self, mu, sigma, learning_rate, action_dim, parameterdim, statedim, agents_number, enemy_number, gamma, name):
+    def __init__(self, mu, sigma, learning_rate, action_dim, parameterdim, statedim, agents_number, enemy_number, name):
         self.mu = mu
         self.sigma = sigma
         self.learning_rate = learning_rate
@@ -14,8 +14,6 @@ class bicnet_critic():
         self.action_dim = action_dim
         self.parameterdim = parameterdim
         self.statedim = statedim
-
-        self.gamma = gamma
 
         self.agents_number = agents_number
         self.enemy_number = enemy_number
@@ -52,6 +50,9 @@ class bicnet_critic():
         # a_
         self.action_input_next = tf.placeholder("float", shape=[None, self.agents_number, self.action_dim + self.parameterdim], name='action_input_next')
 
+        # r
+        self.reward = tf.placeholder("float", shape=[None, self.agents_number, 1], name='reward')
+
     def _build_graph(self, state_input, agents_local_observation, action_input, scope_name, train):
         # 环境和智能体本地的共同观察
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
@@ -62,7 +63,8 @@ class bicnet_critic():
             my_unit_outputs = self._my_unit_network_graph(encoder_outputs, action_outputs, queued_outputs, '_my_unit_network_graph', train)
             enemy_unit_outputs = self._enemy_unit_network_graph(encoder_outputs, action_outputs, queued_outputs, my_unit_outputs, '_enemy_unit_network_graph', train)
             target_point_outputs = self._target_point_network_graph(encoder_outputs, action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, '_target_point_network_graph', train)
-            q_out = self._get_Q(action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, target_point_outputs, self.action_input)
+            q_out = self._get_Q(action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, target_point_outputs, self.action_input, '_get_Q')
+            train_op = self._compute_loss_graph()
             return q_out
 
     def _observation_encoder(self, state_input, agents_local_observation, action_input, agents_number, scope_name, train):
@@ -195,16 +197,24 @@ class bicnet_critic():
 
                 return target_point_outputs
 
-    def _get_Q(self, action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, target_point_outputs, action_input):
-        all_q = tf.concat([action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, target_point_outputs], axis=2)  # (agents_number, batch_size,outputs_prob)
-        all_q = tf.transpose(all_q, [1, 0, 2])  # (batch_size, agents_number,outputs_prob)
-        q_out = tf.multiply(all_q, action_input)
+    def _get_Q(self, action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, target_point_outputs, action_input, scope_name):
+        with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
+            all_q = tf.concat([action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, target_point_outputs], axis=2)  # (agents_number, batch_size,outputs_prob)
+            all_q = tf.transpose(all_q, [1, 0, 2])  # (batch_size, agents_number,outputs_prob)
+            q_out = tf.multiply(all_q, action_input)  # (batch_size, agents_number,outputs_prob)
+            q_out = tf.reduce_sum(q_out, axis=2)  # (batch_size, agents_number,1)
 
-        return q_out
+            return q_out
 
     def _soft_replace(self):
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e) for t, e in zip(self.t_params, self.e_params)]
 
-    def add_grad_to_graph(self, a_grads):
-        with tf.variable_scope('policy_grads'):
-            self.policy_grads = tf.gradients(ys=self.a, xs=self.e_params, grad_ys=a_grads)
+    def _compute_loss_graph(self, scope_name):
+        with tf.name_scope(scope_name + "_compute_loss_graph"):
+            self.Q_action = tf.reduce_sum(tf.multiply(self.Q_value, self.action_input))
+            self.loss = tf.reduce_mean(tf.square(self.y_input - self.Q_action))
+            tf.summary.scalar("loss", self.loss)
+
+    # def add_grad_to_graph(self, a_grads):
+    #     with tf.variable_scope('policy_grads'):
+    #         self.policy_grads = tf.gradients(ys=self.a, xs=self.e_params, grad_ys=a_grads)

@@ -87,7 +87,7 @@ class PG():
             # if (self.reward_add / len(self.epsiod_record)) > self.reward_avg:
             #     self.reward_avg = self.reward_add / len(self.epsiod_record)
             #     self.replay_buffer.inQueue(self.epsiod_record)
-            #
+
             # self.epsiod_record.clear()
             # self.reward_add = 0
             # print('reward_avg:' + str(self.reward_avg))
@@ -173,7 +173,6 @@ class PG():
                                                               self.net.train: True})
                         last_loss = loss
                         break
-
 
                 # self.session.close()
                 # self.session = tf.Session()
