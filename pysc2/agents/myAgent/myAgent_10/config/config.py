@@ -9,7 +9,7 @@ INITIAL_EPSILON = 0.05  # starting value of epsilon
 FINAL_EPSILON = 0.01  # final value of epsilon
 REPLAY_SIZE = 35  # experience replay buffer size
 EP_SIZE = 1
-BATCH_SIZE = 512   # size of minibatch
+BATCH_SIZE = 512  # size of minibatch
 
 # 神经网络初始化参数
 MU = 0
@@ -33,11 +33,8 @@ POINT_NUMBER = MAP_SIZE * MAP_SIZE
 
 ATTACT_CONTROLLER_PARAMETERDIM = QUEUED + MY_UNIT_NUMBER + ENEMY_UNIT_NUMBER + MAP_SIZE * MAP_SIZE
 
-
+K = 5
 COOP_AGENTS_NUMBER = MY_UNIT_NUMBER
-COOP_AGENTS_OBDIM = 16
+COOP_AGENTS_OBDIM = 6 + K * 2
 
 GAMMA_FOR_UPDATE = 0.99
-
-
-

@@ -2,7 +2,7 @@ from pysc2.agents.myAgent.myAgent_10.config import config
 
 from pysc2.agents.myAgent.myAgent_10.decisionMaker.decision_maker import decision_maker
 import pysc2.agents.myAgent.myAgent_10.smart_actions as sa
-# from pysc2.agents.myAgent.myAgent_10.decisionMaker.level_2.PG_for_level_2 import PG
+from pysc2.agents.myAgent.myAgent_10.decisionMaker.level_2.Bicnet_for_level_2 import Bicnet
 from pysc2.agents.myAgent.myAgent_10.tools import handcraft_function, handcraft_function_for_level_2_attack_controller
 
 from pysc2.agents.myAgent.myAgent_10.tools.handcraft_function_for_level_2_attack_controller import reward_compute_1, get_raw_units_observation
@@ -12,7 +12,7 @@ class level_2_attack_controller:
     def __init__(self):
         self.DataShape = (None, 200, config.FEATURE_UNITS_LENGTH, 1)
         # self.DataShape = (None, config.MAP_SIZE, config.MAP_SIZE, 39)
-        self.controller = decision_maker(PG(config.MU, config.SIGMA, config.LEARING_RATE, len(sa.attack_controller), config.ATTACT_CONTROLLER_PARAMETERDIM, self.DataShape, 'attack_controller'))
+        self.controller = decision_maker(Bicnet(config.MU, config.SIGMA, config.LEARING_RATE, len(sa.attack_controller), config.ATTACT_CONTROLLER_PARAMETERDIM, self.DataShape, 'attack_controller'))
         self.index = handcraft_function.find_controller_index(sa.attack_controller)
 
     def train_action(self, obs):

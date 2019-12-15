@@ -4,7 +4,7 @@ import numpy as np
 
 # 获得全局的观察
 from pysc2.agents.myAgent.myAgent_10.tools.local_unit import soldier
-
+from pysc2.agents.myAgent.myAgent_10.config import config
 from pysc2.lib import features
 
 
@@ -54,6 +54,7 @@ def get_agents_local_observation(obs):
     # my_unit = [unit for unit in obs.observation.raw_units if unit.alliance == features.PlayerRelative.SELF]
 
     agents_local_observation = []
+    output = np.zeros((config.COOP_AGENTS_NUMBER, config.COOP_AGENTS_OBDIM))
 
     for unit in obs.observation.raw_units:
 
@@ -66,11 +67,18 @@ def get_agents_local_observation(obs):
             unit_local.y = unit.y
             unit_local.order_length = unit.order_length
 
-            from pysc2.agents.myAgent.myAgent_10.config import config
-            friend_k, enemy_k = get_friend_and_enemy_health(unit, obs, config.COOP_AGENTS_NUMBER)
+            friend_k, enemy_k = get_friend_and_enemy_health(unit, obs, config.K)
 
-            unit_local.frend_health = unit.order_length
-            unit_local.enemy_health = unit.order_length
+            unit_local.frend_health = friend_k
+            unit_local.enemy_health = enemy_k
+            agents_local_observation.append(unit_local.get_list)
+
+    if len(agents_local_observation) >= config.K:
+        output = agents_local_observation[:config.K]
+    else:
+        output[:len(agents_local_observation)] = agents_local_observation[:]
+
+    return output
 
 
 def get_raw_units_observation(obs):
