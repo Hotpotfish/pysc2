@@ -10,9 +10,12 @@ from pysc2.agents.myAgent.myAgent_10.tools.handcraft_function_for_level_2_attack
 
 class level_2_attack_controller:
     def __init__(self):
-        self.DataShape = (None, 200, config.FEATURE_UNITS_LENGTH, 1)
+        # self.DataShape = (None, 200, config.FEATURE_UNITS_LENGTH, 1)
         # self.DataShape = (None, config.MAP_SIZE, config.MAP_SIZE, 39)
-        self.controller = decision_maker(Bicnet(config.MU, config.SIGMA, config.LEARING_RATE, len(sa.attack_controller), config.ATTACT_CONTROLLER_PARAMETERDIM, self.DataShape, 'attack_controller'))
+        self.DataShape = (None, config.MAP_SIZE, config.MAP_SIZE, 1)
+        self.controller = decision_maker(
+            Bicnet(config.MU, config.SIGMA, config.LEARING_RATE, len(sa.attack_controller), config.ATTACT_CONTROLLER_PARAMETERDIM, config.COOP_AGENTS_NUMBER, config.ENEMY_UNIT_NUMBER,
+                   self.DataShape, 'attack_controller'))
         self.index = handcraft_function.find_controller_index(sa.attack_controller)
 
     def train_action(self, obs):
