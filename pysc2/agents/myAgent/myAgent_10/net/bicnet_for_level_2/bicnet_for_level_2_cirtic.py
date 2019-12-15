@@ -35,6 +35,10 @@ class bicnet_critic():
 
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e) for t, e in zip(self.t_params, self.e_params)]
 
+        self.loss = self._compute_loss_graph(self.q_input, self.a, 'Critic')
+        self.trian_op = self._create_train_op_graph()
+        self.action_grad = self._compute_action_grad(self.a, self.action_input)
+
     def _setup_placeholders_graph(self):
         # s
         self.state_input = tf.placeholder("float", shape=self.statedim, name=self.name + '_' + 'state_input')  # 全局状态
@@ -50,8 +54,8 @@ class bicnet_critic():
         # a_
         self.action_input_next = tf.placeholder("float", shape=[None, self.agents_number, self.action_dim + self.parameterdim], name='action_input_next')
 
-        # r
-        self.reward = tf.placeholder("float", shape=[None, self.agents_number, 1], name='reward')
+        # q_input
+        self.q_input = tf.placeholder("float", shape=[None, self.agents_number], name='q_input')
 
     def _build_graph(self, state_input, agents_local_observation, action_input, scope_name, train):
         # 环境和智能体本地的共同观察
@@ -64,7 +68,6 @@ class bicnet_critic():
             enemy_unit_outputs = self._enemy_unit_network_graph(encoder_outputs, action_outputs, queued_outputs, my_unit_outputs, '_enemy_unit_network_graph', train)
             target_point_outputs = self._target_point_network_graph(encoder_outputs, action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, '_target_point_network_graph', train)
             q_out = self._get_Q(action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, target_point_outputs, self.action_input, '_get_Q')
-            train_op = self._compute_loss_graph()
             return q_out
 
     def _observation_encoder(self, state_input, agents_local_observation, action_input, agents_number, scope_name, train):
@@ -202,19 +205,24 @@ class bicnet_critic():
             all_q = tf.concat([action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, target_point_outputs], axis=2)  # (agents_number, batch_size,outputs_prob)
             all_q = tf.transpose(all_q, [1, 0, 2])  # (batch_size, agents_number,outputs_prob)
             q_out = tf.multiply(all_q, action_input)  # (batch_size, agents_number,outputs_prob)
-            q_out = tf.reduce_sum(q_out, axis=2)  # (batch_size, agents_number,1)
+            q_out = tf.reduce_sum(q_out, axis=2)  # (batch_size, agents_number)
 
             return q_out
 
     def _soft_replace(self):
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e) for t, e in zip(self.t_params, self.e_params)]
 
-    def _compute_loss_graph(self, scope_name):
+    def _compute_loss_graph(self, qin, qout, scope_name):
         with tf.name_scope(scope_name + "_compute_loss_graph"):
-            self.Q_action = tf.reduce_sum(tf.multiply(self.Q_value, self.action_input))
-            self.loss = tf.reduce_mean(tf.square(self.y_input - self.Q_action))
-            tf.summary.scalar("loss", self.loss)
+            loss = tf.reduce_sum(qin - qout)
+            return loss
+            # tf.o
 
-    # def add_grad_to_graph(self, a_grads):
-    #     with tf.variable_scope('policy_grads'):
-    #         self.policy_grads = tf.gradients(ys=self.a, xs=self.e_params, grad_ys=a_grads)
+    def _create_train_op_graph(self):
+        train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
+        return train_op
+
+    def _compute_action_grad(self, qout, action_input):
+
+        action_grad = tf.gradients((qout[:, i], action_input) for i in range(self.agents_number))
+        return action_grad
