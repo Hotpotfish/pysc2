@@ -47,7 +47,7 @@ def main(unused_argv):
                     use_raw_units=True,
                     # use_feature_units= True,
                     raw_resolution=config.MAP_SIZE,
-                    use_unit_counts=True
+                    # use_unit_counts=True
                 ),
                 score_index=0,
                 step_mul=0.0001,

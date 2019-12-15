@@ -214,7 +214,8 @@ class bicnet_critic():
 
     def _compute_loss_graph(self, qin, qout, scope_name):
         with tf.name_scope(scope_name + "_compute_loss_graph"):
-            loss = tf.reduce_sum(qin - qout)
+            m = tf.to_float(tf.shape(qout)[0])
+            loss = tf.reduce_sum(qin - qout) / m
             return loss
             # tf.o
 
@@ -224,5 +225,6 @@ class bicnet_critic():
 
     def _compute_action_grad(self, qout, action_input):
 
-        action_grad = tf.gradients((qout[:, i], action_input) for i in range(self.agents_number))
-        return action_grad
+        action_grads = [tf.gradients((qout[:, i], action_input) for i in range(self.agents_number))]  # (batch_size,agent_number,agent_number,action_dim)
+        action_grads = tf.reshape(action_grads, [self.agents_number, None, self.agents_number, self.action_dim + self.parameterdim])
+        return action_grads

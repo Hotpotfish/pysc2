@@ -2,6 +2,7 @@ import tensorflow as tf
 import tensorflow.contrib.slim as slim
 
 from pysc2.agents.myAgent.myAgent_10.config import config
+import numpy as np
 
 
 class bicnet_actor():
@@ -35,10 +36,14 @@ class bicnet_actor():
 
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e) for t, e in zip(self.t_params, self.e_params)]
 
+        self.train_op = self._optimizer(self.a)
+
     def _setup_placeholders_graph(self):
         # s
         self.state_input = tf.placeholder("float", shape=self.statedim, name=self.name + '_' + 'state_input')  # 全局状态
         self.agents_local_observation = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation')
+
+        self.action_gradient = tf.placeholder(tf.float32, [self.agents_number, None, self.agents_number, self.action_dim + self.parameterdim], name="action_gradient")
 
         # # a
         # self.action_input = tf.placeholder("float", shape=[None, self.agents_number, self.action_dim + self.parameterdim], name='action_input')
@@ -202,42 +207,17 @@ class bicnet_actor():
     def _soft_replace(self):
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e) for t, e in zip(self.t_params, self.e_params)]
 
-#
-# def _compute_loss_graph(self):
-#     with tf.name_scope(self.name + "_loss_function"):
-#             self.action_prob = tf.multiply(self.prob_value, self.action_input)
-#             start = 0
-#             end = self.action_dim
-#             self.action_Q = tf.reduce_sum(self.action_prob[:, start:end], axis=1)
-#
-#             start = end
-#             end += config.QUEUED
-#             self.queued_Q = tf.reduce_sum(self.action_prob[:, start:end], axis=1)
-#
-#             start = end
-#             end += config.MY_UNIT_NUMBER
-#             self.my_unit_Q = tf.reduce_sum(self.action_prob[:, start:end], axis=1)
-#
-#             start += end
-#             end += config.ENEMY_UNIT_NUMBER
-#             self.enemy_unit_Q = tf.reduce_sum(self.action_prob[:, start:end], axis=1)
-#             start = end
-#             self.target_point_Q = tf.reduce_sum(self.action_prob[:, start:], axis=1)
-#             self.Q_action_1 = tf.stack([self.action_Q, self.queued_Q, self.my_unit_Q, self.enemy_unit_Q, self.target_point_Q], 1)
-#
-#             self.loss = tf.reduce_mean(tf.multiply(self.Q_action_1, self.reward_input))
-#     # tf.summary.scalar(self.name + "_loss_function", self.loss)
-#
-# #
-# # def _compute_acc_graph(self):
-# #     with tf.name_scope(self.name + "_acc_function"):
-# #         self.accuracy = \
-# #             tf.metrics.accuracy(labels=tf.argmax(self.y, axis=1), predictions=tf.argmax(self.y_predicted, axis=1))[
-# #                 1]
-# #         tf.summary.scalar("accuracy", self.accuracy)
-#
-# def _create_train_op_graph(self):
-#     optimizer = tf.train.AdamOptimizer(self.learning_rate)
-#     extra_update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-#     with tf.control_dependencies(extra_update_ops):
-#         self.train_op = optimizer.minimize(self.loss)
+    def _optimizer(self, aout):
+        grads = []
+        batch_size = tf.to_float(tf.shape(aout)[0])
+        for i in range(self.agents_number):
+            for j in range(self.agents_number):
+                grads.append(tf.gradients(aout[:, j], self.e_params, -self.action_gradient[j][:, i]))
+        grads = np.array(grads)
+        unnormalized_actor_gradients = [tf.reduce_sum(list(grads[:, i]), axis=0) for i in range(len(self.e_params))]
+        actor_gradients = list(map(lambda x: tf.div(x, batch_size), unnormalized_actor_gradients))
+
+        optimizer = tf.train.AdamOptimizer(self.learning_rate)
+        optimizer = optimizer.apply_gradients(zip(actor_gradients, self.e_params))
+
+        return optimizer

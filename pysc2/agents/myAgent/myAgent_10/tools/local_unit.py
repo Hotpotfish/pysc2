@@ -1,7 +1,6 @@
 class soldier():
     def __init__(self):
         self.unit_type = None
-        self.alliance = None
         self.health = None
         self.energy = None
         self.x = None
@@ -12,7 +11,6 @@ class soldier():
 
     def get_list(self):
         data = [self.unit_type,
-                self.alliance,
                 self.health,
                 self.energy,
                 self.x,

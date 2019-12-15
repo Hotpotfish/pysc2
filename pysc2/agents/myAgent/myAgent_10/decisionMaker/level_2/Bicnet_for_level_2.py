@@ -9,12 +9,14 @@ import pysc2.agents.myAgent.myAgent_10.config.config as config
 # from pysc2.agents.myAgent.myAgent_10.net.lenet_for_level_2_PG import Lenet
 
 import pysc2.agents.myAgent.myAgent_10.tools.handcraft_function as handcraft_function
+from pysc2.agents.myAgent.myAgent_10.net.bicnet_for_level_2.bicnet_for_level_2_actor import bicnet_actor
+from pysc2.agents.myAgent.myAgent_10.net.bicnet_for_level_2.bicnet_for_level_2_cirtic import bicnet_critic
 from pysc2.agents.myAgent.myAgent_10.tools.SqQueue import SqQueue
 
 
-class PG():
+class Bicnet():
 
-    def __init__(self, mu, sigma, learning_rate, actiondim, parameterdim, statedim, name):  # 初始化
+    def __init__(self, mu, sigma, learning_rate, action_dim, parameterdim, statedim, agents_number, enemy_number, name):  # 初始化
         # 初始化回放缓冲区，用REPLAY_SIZE定义其最大长度
         self.replay_buffer = SqQueue(config.REPLAY_SIZE)
 
@@ -27,13 +29,17 @@ class PG():
         self.epsilon = config.INITIAL_EPSILON
 
         # 动作维度数，动作参数维度数（默认为6）,状态维度数
-        self.action_dim = actiondim
+        self.action_dim = action_dim
         self.parameterdim = parameterdim
         self.state_dim = statedim
 
+        self.agents_number = agents_number
+        self.enemy_number = enemy_number
+
         # 网络结构初始化
         self.name = name
-        self.net = Lenet(self.mu, self.sigma, self.learning_rate, self.action_dim, self.parameterdim, self.state_dim, self.name)
+        self.actor_net = bicnet_actor(self.mu, self.sigma, self.learning_rate, self.action_dim, self.parameterdim, self.state_dim, self.agents_number, self.enemy_number, self.name)
+        self.critic_net = bicnet_critic(self.mu, self.sigma, self.learning_rate, self.action_dim, self.parameterdim, self.state_dim, self.agents_number, self.enemy_number, self.name)
 
         # Init session
         self.session = tf.Session()
@@ -64,20 +70,18 @@ class PG():
             os.makedirs(thisPath)
         except OSError:
             pass
-        # var_list = [var for var in tf.global_variables() if "moving" in var.name]
-        # var_list += tf.trainable_variables()
         self.modelSaver.save(self.session, thisPath + self.name + '.ckpt', )
 
         print(self.name + ' ' + 'saved!')
 
-    def saveRecord(self, modelSavePath, data):
-        if self.recordSaver is None:
-            thisPath = modelSavePath
-            self.recordSaver = tf.summary.FileWriter(thisPath, self.session.graph)
-
-        data_summary = tf.Summary(value=[tf.Summary.Value(tag=self.name + '_' + "loss", simple_value=data)])
-        self.recordSaver.add_summary(summary=data_summary, global_step=self.recordCount)
-        self.recordCount += 1
+    # def saveRecord(self, modelSavePath, data):
+    #     if self.recordSaver is None:
+    #         thisPath = modelSavePath
+    #         self.recordSaver = tf.summary.FileWriter(thisPath, self.session.graph)
+    #
+    #     data_summary = tf.Summary(value=[tf.Summary.Value(tag=self.name + '_' + "loss", simple_value=data)])
+    #     self.recordSaver.add_summary(summary=data_summary, global_step=self.recordCount)
+    #     self.recordCount += 1
 
     def perceive(self, state, action, reward, done):  # 感知存储信息
 
@@ -174,10 +178,9 @@ class PG():
                         last_loss = loss
                         break
 
-
                 # self.session.close()
                 # self.session = tf.Session()
-            self.saveRecord(modelSavePath, last_loss)
+            # self.saveRecord(modelSavePath, last_loss)
 
     def get_random_action_and_parameter_one_hot(self):
         random_action_and_parameter = np.array([])
