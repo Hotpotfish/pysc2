@@ -62,10 +62,10 @@ class bicnet_actor():
             bicnet_outputs = self._bicnet_build(encoder_outputs, '_bicnet_build')
             action_outputs = self._action_network_graph(bicnet_outputs, '_action_network_graph', train)
             queued_outputs = self._queued_network_graph(encoder_outputs, action_outputs, '_queued_network_graph', train)
-            my_unit_outputs = self._my_unit_network_graph(encoder_outputs, action_outputs, queued_outputs, '_my_unit_network_graph', train)
-            enemy_unit_outputs = self._enemy_unit_network_graph(encoder_outputs, action_outputs, queued_outputs, my_unit_outputs, '_enemy_unit_network_graph', train)
-            target_point_outputs = self._target_point_network_graph(encoder_outputs, action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, '_target_point_network_graph', train)
-            outputs = self._get_outputs(action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, target_point_outputs)
+            # my_unit_outputs = self._my_unit_network_graph(encoder_outputs, action_outputs, queued_outputs, '_my_unit_network_graph', train)
+            enemy_unit_outputs = self._enemy_unit_network_graph(encoder_outputs, action_outputs, queued_outputs, '_enemy_unit_network_graph', train)
+            target_point_outputs = self._target_point_network_graph(encoder_outputs, action_outputs, queued_outputs, enemy_unit_outputs, '_target_point_network_graph', train)
+            outputs = self._get_outputs(action_outputs, queued_outputs, enemy_unit_outputs, target_point_outputs)
             return outputs
 
     def _observation_encoder(self, state_input, agents_local_observation, agents_number, scope_name, train):
@@ -133,29 +133,29 @@ class bicnet_actor():
 
                 return queued_outputs
 
-    def _my_unit_network_graph(self, encoder_outputs, action_outputs, queued_outputs, scope_name, train):
-        my_unit_outputs = []
-        with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
-            with slim.arg_scope([slim.conv2d, slim.fully_connected],
-                                activation_fn=None,
-                                weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),  # mu，sigma
-                                weights_regularizer=slim.l2_regularizer(0.1)):
-                for i in range(self.agents_number):
-                    encoder_output = tf.concat([encoder_outputs[i, :, :], action_outputs[i, :, :], queued_outputs[i, :, :]], axis=1)
-                    # encoder_output = tf.concat(encoder_output, self.queued_outputs[i, :, :], axis=1)
-                    fc1 = slim.fully_connected(encoder_output, 120, scope='full_connected1')
+    # def _my_unit_network_graph(self, encoder_outputs, action_outputs, queued_outputs, scope_name, train):
+    #     my_unit_outputs = []
+    #     with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
+    #         with slim.arg_scope([slim.conv2d, slim.fully_connected],
+    #                             activation_fn=None,
+    #                             weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),  # mu，sigma
+    #                             weights_regularizer=slim.l2_regularizer(0.1)):
+    #             for i in range(self.agents_number):
+    #                 encoder_output = tf.concat([encoder_outputs[i, :, :], action_outputs[i, :, :], queued_outputs[i, :, :]], axis=1)
+    #                 # encoder_output = tf.concat(encoder_output, self.queued_outputs[i, :, :], axis=1)
+    #                 fc1 = slim.fully_connected(encoder_output, 120, scope='full_connected1')
+    #
+    #                 fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
+    #
+    #                 my_unit_logits = slim.fully_connected(fc2, self.agents_number, scope='my_unit_logits')
+    #                 my_unit_logits_bn = tf.contrib.layers.batch_norm(my_unit_logits, is_training=train)
+    #
+    #                 my_unit_output = tf.nn.softmax(my_unit_logits_bn)  # (batch_size,obs_dim)
+    #                 my_unit_outputs.append(my_unit_output)  # (agents_number,batch_size,my_unit_dim)
+    #
+    #             return my_unit_outputs
 
-                    fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
-
-                    my_unit_logits = slim.fully_connected(fc2, self.agents_number, scope='my_unit_logits')
-                    my_unit_logits_bn = tf.contrib.layers.batch_norm(my_unit_logits, is_training=train)
-
-                    my_unit_output = tf.nn.softmax(my_unit_logits_bn)  # (batch_size,obs_dim)
-                    my_unit_outputs.append(my_unit_output)  # (agents_number,batch_size,my_unit_dim)
-
-                return my_unit_outputs
-
-    def _enemy_unit_network_graph(self, encoder_outputs, action_outputs, queued_outputs, my_unit_outputs, scope_name, train):
+    def _enemy_unit_network_graph(self, encoder_outputs, action_outputs, queued_outputs,scope_name, train):
         enemy_unit_outputs = []
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             with slim.arg_scope([slim.conv2d, slim.fully_connected],
@@ -163,7 +163,7 @@ class bicnet_actor():
                                 weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),  # mu，sigma
                                 weights_regularizer=slim.l2_regularizer(0.1)):
                 for i in range(self.agents_number):
-                    encoder_output = tf.concat([encoder_outputs[i, :, :], action_outputs[i, :, :], queued_outputs[i, :, :], my_unit_outputs[i, :, :]], axis=1)
+                    encoder_output = tf.concat([encoder_outputs[i, :, :], action_outputs[i, :, :], queued_outputs[i, :, :]], axis=1)
                     # encoder_output = tf.concat(encoder_output, self.queued_outputs[i, :, :], axis=1)
                     # encoder_output = tf.concat(encoder_output, self.my_unit_outputs[i, :, :], axis=1)
                     fc1 = slim.fully_connected(encoder_output, 120, scope='full_connected1')
@@ -177,7 +177,7 @@ class bicnet_actor():
                     enemy_unit_outputs.append(enemy_unit_output)  # (agents_number,batch_size,enemy_unit_dim)
                 return enemy_unit_outputs
 
-    def _target_point_network_graph(self, encoder_outputs, action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, scope_name, train):
+    def _target_point_network_graph(self, encoder_outputs, action_outputs, queued_outputs, enemy_unit_outputs, scope_name, train):
         target_point_outputs = []
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             with slim.arg_scope([slim.conv2d, slim.fully_connected],
@@ -185,7 +185,7 @@ class bicnet_actor():
                                 weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),  # mu，sigma
                                 weights_regularizer=slim.l2_regularizer(0.1)):
                 for i in range(self.agents_number):
-                    encoder_output = tf.concat([encoder_outputs[i, :, :], action_outputs[i, :, :], queued_outputs[i, :, :], my_unit_outputs[i, :, :], enemy_unit_outputs[i, :, :]],
+                    encoder_output = tf.concat([encoder_outputs[i, :, :], action_outputs[i, :, :], queued_outputs[i, :, :], enemy_unit_outputs[i, :, :]],
                                                axis=1)
                     fc1 = slim.fully_connected(encoder_output, 120, scope='full_connected1')
 
@@ -199,8 +199,8 @@ class bicnet_actor():
 
                 return target_point_outputs
 
-    def _get_outputs(self, action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, target_point_outputs):
-        outputs = tf.concat([action_outputs, queued_outputs, my_unit_outputs, enemy_unit_outputs, target_point_outputs], axis=2)
+    def _get_outputs(self, action_outputs, queued_outputs, enemy_unit_outputs, target_point_outputs):
+        outputs = tf.concat([action_outputs, queued_outputs, enemy_unit_outputs, target_point_outputs], axis=2)
         outputs = tf.transpose(outputs, [1, 0, 2])  # (batch_size, agents_number,outputs_prob)
         return outputs
 

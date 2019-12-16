@@ -73,8 +73,8 @@ def get_agents_local_observation(obs):
             unit_local.enemy_health = enemy_k
             agents_local_observation.append(unit_local.get_list)
 
-    if len(agents_local_observation) >= config.K:
-        output = agents_local_observation[:config.K]
+    if len(agents_local_observation) >= config.COOP_AGENTS_NUMBER:
+        output = agents_local_observation[:config.COOP_AGENTS_NUMBER]
     else:
         output[:len(agents_local_observation)] = agents_local_observation[:]
 
@@ -125,3 +125,9 @@ def reward_compute_1(obs):
     reward = obs.reward * 5 + win_rate_reward - (obs.observation.game_loop / 1000)
     # print("step: %d  reward : %f" % (obs.observation.game_loop, reward))
     return reward
+
+
+def reward_compute_2(previous_state, current_state):
+    rward_all = np.array(current_state[1][:, 6:]) - np.array(previous_state[1][:, 6:])
+    rward_all = np.sum(rward_all[:, 0:5] - rward_all[:, 5:10], axis=1)
+    return rward_all

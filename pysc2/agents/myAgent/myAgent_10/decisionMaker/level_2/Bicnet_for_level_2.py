@@ -83,38 +83,9 @@ class Bicnet():
     #     self.recordSaver.add_summary(summary=data_summary, global_step=self.recordCount)
     #     self.recordCount += 1
 
-    def perceive(self, state, action, reward, done):  # 感知存储信息
+    def perceive(self, state, action, reward, next_state, done):  # 感知存储信息
 
-        # print('reward:'+str(reward))
-
-        if done:
-            # if (self.reward_add / len(self.epsiod_record)) > self.reward_avg:
-            #     self.reward_avg = self.reward_add / len(self.epsiod_record)
-            #     self.replay_buffer.inQueue(self.epsiod_record)
-            #
-            # self.epsiod_record.clear()
-            # self.reward_add = 0
-            # print('reward_avg:' + str(self.reward_avg))
-
-            self.replay_buffer.inQueue(self.epsiod_record)
-            self.reward_add = 0
-            self.epsiod_record.clear()
-
-
-        else:
-            action_data = np.array([])
-            action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[0]), self.action_dim))
-            action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[1]), config.QUEUED))
-            action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[2]), config.MY_UNIT_NUMBER))
-            action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[3]), config.ENEMY_UNIT_NUMBER))
-            action_data = np.append(action_data, handcraft_function.one_hot_encoding(int(action[4]), config.POINT_NUMBER))
-            self.reward_add = self.reward_add * config.GAMMA + reward
-            temp_reward = np.array([self.reward_add for i in range(config.ORDERLENTH)]).flatten()
-            self.epsiod_record.append([state[0], action_data, temp_reward, done])
-
-            # self.replay_buffer.inQueue([state[0], action_data, reward, next_state[0], done])
-
-        # 计算单条的y值
+        self.replay_buffer.inQueue([state, action, reward, next_state, done])
 
     def get_y_value(self, Q_value, reward, mark):
         y_value = []
@@ -145,69 +116,71 @@ class Bicnet():
         return np.array(y_value)
 
     def train_Q_network(self, modelSavePath):  # 训练网络
-        if self.replay_buffer.real_size >= config.EP_SIZE:
-            last_loss = None
-            for i in range(config.EP_SIZE):
-                episode_data = np.array(random.sample(self.replay_buffer.queue, 1)[0])
-                episode_data_len = len(episode_data)
-                start = 0
-                end = config.BATCH_SIZE
-                while 1:
-                    if end <= episode_data_len:
-                        input_batch = episode_data[start:end]
-                        state_batch = np.array([data[0] for data in input_batch])
-                        action_batch = np.array([data[1] for data in input_batch])
-                        reward_batch = np.array([data[2] for data in input_batch])
-                        start += config.BATCH_SIZE
-                        end += config.BATCH_SIZE
-                        _, loss = self.session.run([self.net.train_op, self.net.loss],
-                                                   feed_dict={self.net.reward_input: reward_batch,
-                                                              self.net.action_input: action_batch,
-                                                              self.net.state_input: state_batch,
-                                                              self.net.train: True})
-                    else:
-                        input_batch = episode_data[start:]
-                        state_batch = np.array([data[0] for data in input_batch])
-                        action_batch = np.array([data[1] for data in input_batch])
-                        reward_batch = np.array([data[2] for data in input_batch])
-                        _, loss = self.session.run([self.net.train_op, self.net.loss],
-                                                   feed_dict={self.net.reward_input: reward_batch,
-                                                              self.net.action_input: action_batch,
-                                                              self.net.state_input: state_batch,
-                                                              self.net.train: True})
-                        last_loss = loss
-                        break
+        if self.replay_buffer.real_size > config.BATCH_SIZE:
+            minibatch = random.sample(self.replay_buffer.queue, config.BATCH_SIZE)
+            state_batch = np.array([data[0] for data in minibatch])
+            action_batch = np.array([data[1] for data in minibatch])
+            reward_batch = np.array([data[2] for data in minibatch])
+            next_state_batch = np.array([data[3] for data in minibatch])
 
-                # self.session.close()
-                # self.session = tf.Session()
-            # self.saveRecord(modelSavePath, last_loss)
+            # Q_cusp =
+
+            # Step 2: calculate y
+            y_batch = np.array([])
+            Q_value_batch = np.array(self.session.run(self.net.Q_value, {self.net.state_input: next_state_batch}))
+
+            for i in range(0, config.BATCH_SIZE):
+                done = minibatch[i][4]
+                if done:
+                    temp = np.append(np.array(reward_batch[i]), np.array(Q_value_batch[i][self.action_dim:]))
+                    temp = temp.reshape((1, 1 + self.parameterdim))
+                    y_batch = np.append(y_batch, temp)
+                else:
+                    temp = np.append(np.array(reward_batch[i] + config.GAMMA * np.max(Q_value_batch[i][0:self.action_dim])),
+                                     Q_value_batch[i][self.action_dim:])
+                    temp = temp.reshape((1, 1 + self.parameterdim))
+                    y_batch = np.append(y_batch, temp)
+            y_batch = np.array(y_batch).reshape(config.BATCH_SIZE, 1 + self.parameterdim)
+
+            _, loss = self.session.run([self.net.train_op, self.net.loss],
+                                       feed_dict={self.net.y_input: y_batch,
+                                                  self.net.action_input: action_batch,
+                                                  self.net.state_input: state_batch})
 
     def get_random_action_and_parameter_one_hot(self):
-        random_action_and_parameter = np.array([])
-        random_action = np.random.randint(0, self.action_dim)
-        random_action_one_hot = handcraft_function.one_hot_encoding(random_action, self.action_dim)
-        random_action_and_parameter = np.append(random_action_and_parameter, random_action_one_hot)
+        actions = []
 
-        random_queued = np.random.randint(0, config.QUEUED)
-        random_queued_one_hot = handcraft_function.one_hot_encoding(random_queued, config.QUEUED)
-        random_action_and_parameter = np.append(random_action_and_parameter, random_queued_one_hot)
+        for i in range(config.COOP_AGENTS_NUMBER):
 
-        random_my_unit = np.random.randint(0, config.MY_UNIT_NUMBER)
-        random_my_unit_one_hot = handcraft_function.one_hot_encoding(random_my_unit, config.MY_UNIT_NUMBER)
-        random_action_and_parameter = np.append(random_action_and_parameter, random_my_unit_one_hot)
+            random_action_and_parameter = np.array([])
+            random_action = np.random.randint(0, self.action_dim)
+            random_action_one_hot = handcraft_function.one_hot_encoding(random_action, self.action_dim)
+            random_action_and_parameter = np.append(random_action_and_parameter, random_action_one_hot)
 
-        random_enemy_unit = np.random.randint(0, config.ENEMY_UNIT_NUMBER)
-        random_enemy_unit_one_hot = handcraft_function.one_hot_encoding(random_enemy_unit, config.ENEMY_UNIT_NUMBER)
-        random_action_and_parameter = np.append(random_action_and_parameter, random_enemy_unit_one_hot)
+            random_queued = np.random.randint(0, config.QUEUED)
+            random_queued_one_hot = handcraft_function.one_hot_encoding(random_queued, config.QUEUED)
+            random_action_and_parameter = np.append(random_action_and_parameter, random_queued_one_hot)
 
-        random_target_point = np.random.randint(0, config.POINT_NUMBER)
-        random_target_point_one_hot = handcraft_function.one_hot_encoding(random_target_point, config.POINT_NUMBER)
-        random_action_and_parameter = np.append(random_action_and_parameter, random_target_point_one_hot)
-        return random_action_and_parameter
+            random_my_unit = np.random.randint(0, config.MY_UNIT_NUMBER)
+            random_my_unit_one_hot = handcraft_function.one_hot_encoding(random_my_unit, config.MY_UNIT_NUMBER)
+            random_action_and_parameter = np.append(random_action_and_parameter, random_my_unit_one_hot)
+
+            random_enemy_unit = np.random.randint(0, config.ENEMY_UNIT_NUMBER)
+            random_enemy_unit_one_hot = handcraft_function.one_hot_encoding(random_enemy_unit, config.ENEMY_UNIT_NUMBER)
+            random_action_and_parameter = np.append(random_action_and_parameter, random_enemy_unit_one_hot)
+
+            random_target_point = np.random.randint(0, config.POINT_NUMBER)
+            random_target_point_one_hot = handcraft_function.one_hot_encoding(random_target_point, config.POINT_NUMBER)
+            random_action_and_parameter = np.append(random_action_and_parameter, random_target_point_one_hot)
+
+            actions.append(random_action_and_parameter)
+
+        return actions
 
     def egreedy_action(self, state):  # 输出带随机的动作
 
-        prob_value = self.session.run(self.net.prob_value, {self.net.state_input: state, self.net.train: True})[0]
+        prob_value = self.session.run(self.actor_net.a_, {self.actor_net.state_input_next: state[0],
+                                                          self.actor_net.agents_local_observation_next: state[1]})[0]
         # print(prob_value)
         # self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 10000
         if np.random.uniform() <= self.epsilon:
