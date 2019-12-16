@@ -71,46 +71,46 @@ class Bicnet():
 
         print(self.name + ' ' + 'saved!')
 
-    # def saveRecord(self, modelSavePath, data):
-    #     if self.recordSaver is None:
-    #         thisPath = modelSavePath
-    #         self.recordSaver = tf.summary.FileWriter(thisPath, self.session.graph)
-    #
-    #     data_summary = tf.Summary(value=[tf.Summary.Value(tag=self.name + '_' + "loss", simple_value=data)])
-    #     self.recordSaver.add_summary(summary=data_summary, global_step=self.recordCount)
-    #     self.recordCount += 1
+    def saveRecord(self, modelSavePath, data):
+        if self.recordSaver is None:
+            thisPath = modelSavePath
+            self.recordSaver = tf.summary.FileWriter(thisPath, self.session.graph)
+
+        data_summary = tf.Summary(value=[tf.Summary.Value(tag=self.name + '_' + "loss", simple_value=data)])
+        self.recordSaver.add_summary(summary=data_summary, global_step=self.recordCount)
+        self.recordCount += 1
 
     def perceive(self, state, action, reward, next_state, done):  # 感知存储信息
 
         self.replay_buffer.inQueue([state, action, reward, next_state, done])
 
-    def get_y_value(self, Q_value, reward, mark):
-        y_value = []
-
-        if mark == 0:
-            start = 0
-            end = self.action_dim
-            y_value.append(config.GAMMA * np.max(Q_value[start: end]) + reward)
-
-            start = end
-            end += config.QUEUED
-            y_value.append(config.GAMMA * np.max(Q_value[start: end]) + reward)
-
-            start = end
-            end += config.MY_UNIT_NUMBER
-            y_value.append(config.GAMMA * np.max(Q_value[start: end]) + reward)
-
-            start += end
-            end += config.ENEMY_UNIT_NUMBER
-            y_value.append(config.GAMMA * np.max(Q_value[start: end]) + reward)
-
-            start = end
-            y_value.append(config.GAMMA * np.max(Q_value[start:]) + reward)
-
-        else:
-            y_value = [reward, reward, reward, reward, reward]
-
-        return np.array(y_value)
+    # def get_y_value(self, Q_value, reward, mark):
+    #     y_value = []
+    #
+    #     if mark == 0:
+    #         start = 0
+    #         end = self.action_dim
+    #         y_value.append(config.GAMMA * np.max(Q_value[start: end]) + reward)
+    #
+    #         start = end
+    #         end += config.QUEUED
+    #         y_value.append(config.GAMMA * np.max(Q_value[start: end]) + reward)
+    #
+    #         start = end
+    #         end += config.MY_UNIT_NUMBER
+    #         y_value.append(config.GAMMA * np.max(Q_value[start: end]) + reward)
+    #
+    #         start += end
+    #         end += config.ENEMY_UNIT_NUMBER
+    #         y_value.append(config.GAMMA * np.max(Q_value[start: end]) + reward)
+    #
+    #         start = end
+    #         y_value.append(config.GAMMA * np.max(Q_value[start:]) + reward)
+    #
+    #     else:
+    #         y_value = [reward, reward, reward, reward, reward]
+    #
+    #     return np.array(y_value)
 
     def train_Q_network(self, modelSavePath):  # 训练网络
         if self.replay_buffer.real_size > config.BATCH_SIZE:
@@ -138,11 +138,18 @@ class Bicnet():
             agents_local_observation = state_batch[:, 1]
 
             # critic update
-            _, action_grad = self.session.run([self.critic_net.trian_op, self.critic_net.action_grad], {self.critic_net.state_input: state_input,
-                                                                                                        self.critic_net.agents_local_observation: agents_local_observation,  # s_
-                                                                                                        self.critic_net.q_input: q_cusp  # a_
-                                                                                                        })
+            _, loss, action_grad = self.session.run([self.critic_net.trian_op, self.critic_net.loss, self.critic_net.action_grad], {self.critic_net.state_input: state_input,
+                                                                                                                                    self.critic_net.agents_local_observation: agents_local_observation,
+                                                                                                                                    # s_
+                                                                                                                                    self.critic_net.action_input: action_batch,
+                                                                                                                                    self.critic_net.q_input: q_cusp  # a_
+                                                                                                                                    })
             # actor_update
+            _, = self.session.run([self.actor_net.train_op], {self.actor_net.state_input: state_input,
+                                                              self.actor_net.agents_local_observation: agents_local_observation,  # s_
+                                                              self.actor_net.action_gradient: action_grad  # a_
+                                                              })
+            self.saveRecord(modelSavePath, loss)
 
 
             # # Step 2: calculate y
