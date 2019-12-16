@@ -26,18 +26,18 @@ class bicnet_critic():
         # 两个A网络
         with tf.variable_scope('Critic'):
             # a
-            self.a = self._build_graph(self.state_input, self.agents_local_observation, self.action_input, 'eval_net', True)
+            self.q = self._build_graph(self.state_input, self.agents_local_observation, self.action_input, 'eval_net', True)
             # a_
-            self.a_ = self._build_graph(self.state_input_next, self.agents_local_observation_next, self.action_input_next, 'target_net', False)
+            self.q_ = self._build_graph(self.state_input_next, self.agents_local_observation_next, self.action_input_next, 'target_net', False)
 
         self.e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/eval_net')
         self.t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/target_net')
 
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e) for t, e in zip(self.t_params, self.e_params)]
 
-        self.loss = self._compute_loss_graph(self.q_input, self.a, 'Critic')
+        self.loss = self._compute_loss_graph(self.q_input, self.q, 'Critic')
         self.trian_op = self._create_train_op_graph()
-        self.action_grad = self._compute_action_grad(self.a, self.action_input)
+        self.action_grad = self._compute_action_grad(self.q, self.action_input)
 
     def _setup_placeholders_graph(self):
         # s

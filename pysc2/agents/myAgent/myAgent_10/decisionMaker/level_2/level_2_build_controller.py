@@ -13,8 +13,6 @@ class level_2_build_controller:
 
     # 重训练模式 无需读取外部模型
 
-
-
     def train_action(self, obs):
         self.controller.current_state = handcraft_function.get_all_observation(obs)
         if self.controller.previous_action is not None:

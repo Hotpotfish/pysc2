@@ -5,9 +5,6 @@ import random
 import numpy as np
 import tensorflow as tf
 import pysc2.agents.myAgent.myAgent_10.config.config as config
-
-# from pysc2.agents.myAgent.myAgent_10.net.lenet_for_level_2_PG import Lenet
-
 import pysc2.agents.myAgent.myAgent_10.tools.handcraft_function as handcraft_function
 from pysc2.agents.myAgent.myAgent_10.net.bicnet_for_level_2.bicnet_for_level_2_actor import bicnet_actor
 from pysc2.agents.myAgent.myAgent_10.net.bicnet_for_level_2.bicnet_for_level_2_cirtic import bicnet_critic
@@ -123,35 +120,57 @@ class Bicnet():
             reward_batch = np.array([data[2] for data in minibatch])
             next_state_batch = np.array([data[3] for data in minibatch])
 
-            # Q_cusp =
+            # a_
+            state_input_next = next_state_batch[:, 0]
+            agents_local_observation_next = next_state_batch[:, 1]
+            a_ = self.session.run(self.actor_net.a_, {self.actor_net.state_input_next: state_input_next,
+                                                      self.actor_net.agents_local_observation_next: agents_local_observation_next  # s_
+                                                      })
+            # q_
+            q_ = self.session.run(self.critic_net.q_, {self.critic_net.state_input_next: state_input_next,
+                                                       self.critic_net.agents_local_observation_next: agents_local_observation_next,  # s_
+                                                       self.critic_net.action_input_next: a_  # a_
+                                                       })
+            # q尖
+            q_cusp = reward_batch + config.GAMMA * q_
 
-            # Step 2: calculate y
-            y_batch = np.array([])
-            Q_value_batch = np.array(self.session.run(self.net.Q_value, {self.net.state_input: next_state_batch}))
+            state_input = state_batch[:, 0]
+            agents_local_observation = state_batch[:, 1]
 
-            for i in range(0, config.BATCH_SIZE):
-                done = minibatch[i][4]
-                if done:
-                    temp = np.append(np.array(reward_batch[i]), np.array(Q_value_batch[i][self.action_dim:]))
-                    temp = temp.reshape((1, 1 + self.parameterdim))
-                    y_batch = np.append(y_batch, temp)
-                else:
-                    temp = np.append(np.array(reward_batch[i] + config.GAMMA * np.max(Q_value_batch[i][0:self.action_dim])),
-                                     Q_value_batch[i][self.action_dim:])
-                    temp = temp.reshape((1, 1 + self.parameterdim))
-                    y_batch = np.append(y_batch, temp)
-            y_batch = np.array(y_batch).reshape(config.BATCH_SIZE, 1 + self.parameterdim)
+            # critic update
+            _, action_grad = self.session.run([self.critic_net.trian_op, self.critic_net.action_grad], {self.critic_net.state_input: state_input,
+                                                                                                        self.critic_net.agents_local_observation: agents_local_observation,  # s_
+                                                                                                        self.critic_net.q_input: q_cusp  # a_
+                                                                                                        })
+            # actor_update
 
-            _, loss = self.session.run([self.net.train_op, self.net.loss],
-                                       feed_dict={self.net.y_input: y_batch,
-                                                  self.net.action_input: action_batch,
-                                                  self.net.state_input: state_batch})
+
+            # # Step 2: calculate y
+            # y_batch = np.array([])
+            # Q_value_batch = np.array(self.session.run(self.net.Q_value, {self.net.state_input: next_state_batch}))
+
+            # for i in range(0, config.BATCH_SIZE):
+            #     done = minibatch[i][4]
+            #     if done:
+            #         temp = np.append(np.array(reward_batch[i]), np.array(Q_value_batch[i][self.action_dim:]))
+            #         temp = temp.reshape((1, 1 + self.parameterdim))
+            #         y_batch = np.append(y_batch, temp)
+            #     else:
+            #         temp = np.append(np.array(reward_batch[i] + config.GAMMA * np.max(Q_value_batch[i][0:self.action_dim])),
+            #                          Q_value_batch[i][self.action_dim:])
+            #         temp = temp.reshape((1, 1 + self.parameterdim))
+            #         y_batch = np.append(y_batch, temp)
+            # y_batch = np.array(y_batch).reshape(config.BATCH_SIZE, 1 + self.parameterdim)
+            #
+            # _, loss = self.session.run([self.net.train_op, self.net.loss],
+            #                            feed_dict={self.net.y_input: y_batch,
+            #                                       self.net.action_input: action_batch,
+            #                                       self.net.state_input: state_batch})
 
     def get_random_action_and_parameter_one_hot(self):
         actions = []
 
         for i in range(config.COOP_AGENTS_NUMBER):
-
             random_action_and_parameter = np.array([])
             random_action = np.random.randint(0, self.action_dim)
             random_action_one_hot = handcraft_function.one_hot_encoding(random_action, self.action_dim)
@@ -161,9 +180,9 @@ class Bicnet():
             random_queued_one_hot = handcraft_function.one_hot_encoding(random_queued, config.QUEUED)
             random_action_and_parameter = np.append(random_action_and_parameter, random_queued_one_hot)
 
-            random_my_unit = np.random.randint(0, config.MY_UNIT_NUMBER)
-            random_my_unit_one_hot = handcraft_function.one_hot_encoding(random_my_unit, config.MY_UNIT_NUMBER)
-            random_action_and_parameter = np.append(random_action_and_parameter, random_my_unit_one_hot)
+            # random_my_unit = np.random.randint(0, config.MY_UNIT_NUMBER)
+            # random_my_unit_one_hot = handcraft_function.one_hot_encoding(random_my_unit, config.MY_UNIT_NUMBER)
+            # random_action_and_parameter = np.append(random_action_and_parameter, random_my_unit_one_hot)
 
             random_enemy_unit = np.random.randint(0, config.ENEMY_UNIT_NUMBER)
             random_enemy_unit_one_hot = handcraft_function.one_hot_encoding(random_enemy_unit, config.ENEMY_UNIT_NUMBER)

@@ -36,7 +36,7 @@ class bicnet_actor():
 
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e) for t, e in zip(self.t_params, self.e_params)]
 
-        self.train_op = self._optimizer(self.a)
+        self.train_op = self._optimizer(self.a, self.action_gradient)
 
     def _setup_placeholders_graph(self):
         # s
@@ -155,7 +155,7 @@ class bicnet_actor():
     #
     #             return my_unit_outputs
 
-    def _enemy_unit_network_graph(self, encoder_outputs, action_outputs, queued_outputs,scope_name, train):
+    def _enemy_unit_network_graph(self, encoder_outputs, action_outputs, queued_outputs, scope_name, train):
         enemy_unit_outputs = []
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             with slim.arg_scope([slim.conv2d, slim.fully_connected],
@@ -207,12 +207,12 @@ class bicnet_actor():
     def _soft_replace(self):
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e) for t, e in zip(self.t_params, self.e_params)]
 
-    def _optimizer(self, aout):
+    def _optimizer(self, aout, action_gradient):
         grads = []
         batch_size = tf.to_float(tf.shape(aout)[0])
         for i in range(self.agents_number):
             for j in range(self.agents_number):
-                grads.append(tf.gradients(aout[:, j], self.e_params, -self.action_gradient[j][:, i]))
+                grads.append(tf.gradients(aout[:, j], self.e_params, -action_gradient[j][:, i]))
         grads = np.array(grads)
         unnormalized_actor_gradients = [tf.reduce_sum(list(grads[:, i]), axis=0) for i in range(len(self.e_params))]
         actor_gradients = list(map(lambda x: tf.div(x, batch_size), unnormalized_actor_gradients))
