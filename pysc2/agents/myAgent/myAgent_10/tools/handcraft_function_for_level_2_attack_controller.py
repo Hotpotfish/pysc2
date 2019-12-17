@@ -1,11 +1,110 @@
 import math
 
 import numpy as np
-
+import pysc2.agents.myAgent.myAgent_10.smart_actions as sa
 # 获得全局的观察
 from pysc2.agents.myAgent.myAgent_10.tools.local_unit import soldier
 from pysc2.agents.myAgent.myAgent_10.config import config
 from pysc2.lib import features
+
+
+def assembly_action(obs, action):
+    my_raw_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
+    enemy_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
+
+    my_raw_units_lenth = len(my_raw_units)
+    enemy_units_lenth = len(enemy_units)
+
+    # action = sa.controllers[controller_number][int(action_and_parameter[0])]
+
+    # if macro_and_parameter[2] >= raw_units_lenth or macro_and_parameter[3] >= raw_units_lenth:
+    #     return actions.RAW_FUNCTIONS.no_op()
+    actions = []
+    # 根据参数名字填内容
+    if my_raw_units_lenth > config.COOP_AGENTS_NUMBER:
+        for i in range(config.COOP_AGENTS_NUMBER):
+            controller = sa.attack_controller
+            parameter = []
+
+            aciton_bin = str(bin(int(action[i]))).replace('0b', '')
+
+            action_number = int(aciton_bin[0:1], base=2)
+            a = controller[action_number]
+
+            queued = int(aciton_bin[1:2], base=2)
+            parameter.append(queued)
+            parameter.append(my_raw_units[i].tag)
+            enemy_or_dire = int(aciton_bin[2:], base=2)
+
+            if a == action.RAW_FUNCTIONS.Attack_unit:
+                parameter.append(enemy_units[enemy_or_dire % enemy_units_lenth].tag)
+                # parameter.append([queued, my_raw_units[i].tag, enemy_units[enemy_or_dire % enemy_units_lenth]])
+                # parameter = parameter.flatten()
+            elif a == action.RAW_FUNCTIONS.Move_pt:
+                if enemy_or_dire == 0:
+                    parameter.append((my_raw_units[i].x + 1, my_raw_units[i].y + 1))
+                elif enemy_or_dire == 1:
+                    parameter.append((my_raw_units[i].x - 1, my_raw_units[i].y - 1))
+                elif enemy_or_dire == 2:
+                    parameter.append((my_raw_units[i].x + 1, my_raw_units[i].y - 1))
+                else:
+                    parameter.append((my_raw_units[i].x - 1, my_raw_units[i].y + 1))
+
+            parameter = tuple(parameter)
+            actions.append(a(*parameter))
+
+    else:
+
+        for i in range(my_raw_units_lenth):
+
+            controller = sa.attack_controller
+
+            parameter = []
+
+            aciton_bin = str(bin(int(action[i]))).replace('0b', '')
+
+            action_number = int(aciton_bin[0:1], base=2)
+
+            a = controller[action_number]
+
+            queued = int(aciton_bin[1:2], base=2)
+
+            parameter.append(queued)
+
+            parameter.append(my_raw_units[i].tag)
+
+            enemy_or_dire = int(aciton_bin[2:], base=2)
+
+            if a == action.RAW_FUNCTIONS.Attack_unit:
+
+                parameter.append(enemy_units[enemy_or_dire % enemy_units_lenth].tag)
+
+                # parameter.append([queued, my_raw_units[i].tag, enemy_units[enemy_or_dire % enemy_units_lenth]])
+
+                # parameter = parameter.flatten()
+
+            elif a == action.RAW_FUNCTIONS.Move_pt:
+
+                if enemy_or_dire == 0:
+
+                    parameter.append((my_raw_units[i].x + 1, my_raw_units[i].y + 1))
+
+                elif enemy_or_dire == 1:
+
+                    parameter.append((my_raw_units[i].x - 1, my_raw_units[i].y - 1))
+
+                elif enemy_or_dire == 2:
+
+                    parameter.append((my_raw_units[i].x + 1, my_raw_units[i].y - 1))
+
+                else:
+
+                    parameter.append((my_raw_units[i].x - 1, my_raw_units[i].y + 1))
+
+            parameter = tuple(parameter)
+
+            actions.append(a(*parameter))
+    return actions
 
 
 def get_friend_and_enemy_health(unit, obs, k):

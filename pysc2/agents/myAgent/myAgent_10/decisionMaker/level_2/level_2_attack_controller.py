@@ -12,9 +12,10 @@ class level_2_attack_controller:
     def __init__(self):
         self.state_data_shape = (None, config.MAP_SIZE, config.MAP_SIZE, 1)
         self.controller = decision_maker(
-            Bicnet(config.MU, config.SIGMA, config.LEARING_RATE, len(sa.attack_controller) * config.ATTACT_CONTROLLER_ACTIONDIM, self.state_data_shape, config.COOP_AGENTS_NUMBER,
+            Bicnet(config.MU, config.SIGMA, config.LEARING_RATE, config.ATTACT_CONTROLLER_ACTIONDIM, self.state_data_shape, config.COOP_AGENTS_NUMBER,
                    config.ENEMY_UNIT_NUMBER, 'attack_controller'))
         self.index = handcraft_function.find_controller_index(sa.attack_controller)
+
 
     def train_action(self, obs):
         self.controller.current_state = [obs.observation['feature_screen'][5], get_agents_local_observation(obs)]

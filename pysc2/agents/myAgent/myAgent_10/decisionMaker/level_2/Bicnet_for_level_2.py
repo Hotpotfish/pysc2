@@ -35,8 +35,10 @@ class Bicnet():
 
         # 网络结构初始化
         self.name = name
+
         self.actor_net = bicnet_actor(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number, self.enemy_number, self.name)
         self.critic_net = bicnet_critic(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number, self.enemy_number, self.name)
+
 
         # Init session
         self.session = tf.Session()
