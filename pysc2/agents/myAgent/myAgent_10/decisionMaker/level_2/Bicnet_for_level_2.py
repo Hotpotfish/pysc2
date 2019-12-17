@@ -13,7 +13,7 @@ from pysc2.agents.myAgent.myAgent_10.tools.SqQueue import SqQueue
 
 class Bicnet():
 
-    def __init__(self, mu, sigma, learning_rate, action_dim, parameterdim, statedim, agents_number, enemy_number, name):  # 初始化
+    def __init__(self, mu, sigma, learning_rate, action_dim,statedim, agents_number, enemy_number, name):  # 初始化
         # 初始化回放缓冲区，用REPLAY_SIZE定义其最大长度
         self.replay_buffer = SqQueue(config.REPLAY_SIZE)
 
@@ -27,7 +27,7 @@ class Bicnet():
 
         # 动作维度数，动作参数维度数（默认为6）,状态维度数
         self.action_dim = action_dim
-        self.parameterdim = parameterdim
+        # self.parameterdim = parameterdim
         self.state_dim = statedim
 
         self.agents_number = agents_number
@@ -35,8 +35,8 @@ class Bicnet():
 
         # 网络结构初始化
         self.name = name
-        self.actor_net = bicnet_actor(self.mu, self.sigma, self.learning_rate, self.action_dim, self.parameterdim, self.state_dim, self.agents_number, self.enemy_number, self.name)
-        self.critic_net = bicnet_critic(self.mu, self.sigma, self.learning_rate, self.action_dim, self.parameterdim, self.state_dim, self.agents_number, self.enemy_number, self.name)
+        self.actor_net = bicnet_actor(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number, self.enemy_number, self.name)
+        self.critic_net = bicnet_critic(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number, self.enemy_number, self.name)
 
         # Init session
         self.session = tf.Session()
@@ -151,7 +151,6 @@ class Bicnet():
                                                               })
             self.saveRecord(modelSavePath, loss)
 
-
             # # Step 2: calculate y
             # y_batch = np.array([])
             # Q_value_batch = np.array(self.session.run(self.net.Q_value, {self.net.state_input: next_state_batch}))
@@ -204,9 +203,10 @@ class Bicnet():
         return actions
 
     def egreedy_action(self, state):  # 输出带随机的动作
-
-        prob_value = self.session.run(self.actor_net.a_, {self.actor_net.state_input_next: state[0],
-                                                          self.actor_net.agents_local_observation_next: state[1]})[0]
+        state_input = state[0]
+        agents_local_observation = state[1]
+        prob_value = self.session.run(self.actor_net.a, {self.actor_net.state_input: state_input,
+                                                         self.actor_net.agents_local_observation: agents_local_observation})[0]
         # print(prob_value)
         # self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 10000
         if np.random.uniform() <= self.epsilon:

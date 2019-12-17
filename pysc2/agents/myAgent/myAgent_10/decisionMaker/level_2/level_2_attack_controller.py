@@ -12,16 +12,13 @@ class level_2_attack_controller:
     def __init__(self):
         self.state_data_shape = (None, config.MAP_SIZE, config.MAP_SIZE, 1)
         self.controller = decision_maker(
-            Bicnet(config.MU, config.SIGMA, config.LEARING_RATE, len(sa.attack_controller), config.ATTACT_CONTROLLER_PARAMETERDIM, self.state_data_shape, config.COOP_AGENTS_NUMBER,
-                   config.ENEMY_UNIT_NUMBER,
-                   'attack_controller'))
+            Bicnet(config.MU, config.SIGMA, config.LEARING_RATE, len(sa.attack_controller) * config.ATTACT_CONTROLLER_ACTIONDIM, self.state_data_shape, config.COOP_AGENTS_NUMBER,
+                   config.ENEMY_UNIT_NUMBER, 'attack_controller'))
         self.index = handcraft_function.find_controller_index(sa.attack_controller)
 
     def train_action(self, obs):
         self.controller.current_state = [obs.observation['feature_screen'][5], get_agents_local_observation(obs)]
 
-        # self.controller.current_state = handcraft_function.get_all_observation(obs)
-        # self.controller.current_reward = reward_compute_2(,self.controller.current_state)
         if self.controller.previous_action is not None:
             self.controller.previous_reward = reward_compute_2(self.controller.previous_state, self.controller.current_state)
             self.controller.network.perceive(self.controller.previous_state,
@@ -29,11 +26,11 @@ class level_2_attack_controller:
                                              self.controller.previous_reward,
                                              self.controller.current_state,
                                              obs.last())
-        action_and_parameter = self.controller.network.egreedy_action(self.controller.current_state)
-        action_and_parameter = handcraft_function.reflect(len(sa.attack_controller), action_and_parameter)
+        action = self.controller.network.egreedy_action(self.controller.current_state)
+        action = handcraft_function.reflect(len(sa.attack_controller), action)
         self.controller.previous_state = self.controller.current_state
-        self.controller.previous_action = action_and_parameter
-        action = handcraft_function.assembly_action(obs, self.index, action_and_parameter)
+        self.controller.previous_action = action
+        action = handcraft_function.assembly_action(obs, self.index, action)
         return action
 
     def test_action(self, obs):

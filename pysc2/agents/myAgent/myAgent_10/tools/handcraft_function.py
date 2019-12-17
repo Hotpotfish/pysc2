@@ -32,41 +32,42 @@ def my_flatten(input_list):
 
 # 参数映射
 # 将神经网络的参数映射到可以执行的程度
-def reflect(actiondim, action_and_parameter):
+def reflect(actiondim, action):
     # macro_and_parameter 分别代表：动作（一维），RAW_TYPES.queued, RAW_TYPES.unit_tags, RAW_TYPES.target_unit_tag 和RAW_TYPES.world（占两位）
     # m_a_p = np.array([])
-    start = 0
-    end = actiondim
-    action_number = np.argmax(action_and_parameter[:, start: end])
-
-    start = end
-    end += config.QUEUED
-    queued = np.argmax(action_and_parameter[:, start: end])
-
+    # start = 0
+    # end = actiondim
+    # action_number = np.argmax(action_and_parameter[:, start: end])
+    #
     # start = end
-    # end += config.MY_UNIT_NUMBER
-    # m_a_p = np.append(m_a_p, np.argmax(action_and_parameter[:, start: end]))
+    # end += config.QUEUED
+    # queued = np.argmax(action_and_parameter[:, start: end])
+    #
+    # # start = end
+    # # end += config.MY_UNIT_NUMBER
+    # # m_a_p = np.append(m_a_p, np.argmax(action_and_parameter[:, start: end]))
+    #
+    # start = end
+    # end += config.ENEMY_UNIT_NUMBER
+    # enemy = np.argmax(action_and_parameter[:, start: end])
+    #
+    # start = end
+    # end += config.MAP_SIZE
+    # point_x = np.argmax(action_and_parameter[:, start:end])
+    #
+    # start = end
+    #
+    # point_y = np.argmax(action_and_parameter[:, start])
+    #
+    # actions = np.hstack[action_number, queued, enemy, point_x, point_y]
+    action_number = np.argmax(action, axis=1)
 
-    start = end
-    end += config.ENEMY_UNIT_NUMBER
-    enemy = np.argmax(action_and_parameter[:, start: end])
-
-    start = end
-    end += config.MAP_SIZE
-    point_x = np.argmax(action_and_parameter[:, start:end])
-
-    start = end
-
-    point_y = np.argmax(action_and_parameter[:, start])
-
-    actions = np.hstack[action_number, queued, enemy, point_x, point_y]
-
-    return actions
+    return action_number
 
 
 # 动作组装
 # 将动作组装成可执行的结果
-def assembly_action(obs, controller_number, action_and_parameter):
+def assembly_action(obs, controller_number, action):
     my_raw_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
     enemy_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
 
@@ -81,45 +82,48 @@ def assembly_action(obs, controller_number, action_and_parameter):
     # 根据参数名字填内容
     if my_raw_units_lenth > config.COOP_AGENTS_NUMBER:
         for i in range(config.COOP_AGENTS_NUMBER):
-            action = sa.controllers[controller_number][int(action_and_parameter[i][0])]
+            controller = sa.controllers[controller_number]
+            action_number = action[i] % len(controller)
+            a = controller[action_number]
             parameter = []
-            for j in range(len(action[5])):
-                if action[5][j].name == 'queued':
-                    parameter.append(int(action_and_parameter[j][1]))
+            for j in range(len(a[5])):
+                if a[5][j].name == 'queued':
+                    parameter.append(action[i] % config.QUEUED)
                     continue
-                if action[5][j].name == 'unit_tags':
+                if a[5][j].name == 'unit_tags':
                     parameter.append(my_raw_units[i].tag)
                     continue
-                if action[5][j].name == 'target_unit_tag':
-                    parameter.append(enemy_units[int(action_and_parameter[j][3]) % enemy_units_lenth].tag)
-                    continue
-                if action[5][j].name == 'world':
-                    x = action_and_parameter[j][4]
-                    y = action_and_parameter[j][5]
-                    # y = int(number / config.MAP_SIZE)
-                    # x = int(number % config.MAP_SIZE)
+                # if a[5][j].name == 'target_unit_tag':
+                #     parameter.append(enemy_units[int(a[j][3]) % enemy_units_lenth].tag)
+                #     continue
+                if a[5][j].name == 'world':
+                    # x = a[j][4]
+                    # y = a[j][5]
+                    point = action[i] % config.POINT_NUMBER
+                    y = int(point / config.MAP_SIZE)
+                    x = int(point % config.MAP_SIZE)
                     parameter.append((x, y))
                     continue
             parameter = tuple(parameter)
-            actions.append(action(*parameter))
+            actions.append(a(*parameter))
 
     else:
         for i in range(my_raw_units_lenth):
-            action = sa.controllers[controller_number][int(action_and_parameter[i][0])]
+            action = sa.controllers[controller_number][int(action[i][0])]
             parameter = []
             for j in range(len(action[5])):
                 if action[5][j].name == 'queued':
-                    parameter.append(int(action_and_parameter[j][1]))
+                    parameter.append(int(action[j][1]))
                     continue
                 if action[5][j].name == 'unit_tags':
                     parameter.append(my_raw_units[i].tag)
                     continue
                 if action[5][j].name == 'target_unit_tag':
-                    parameter.append(enemy_units[int(action_and_parameter[j][3]) % enemy_units_lenth].tag)
+                    parameter.append(enemy_units[int(action[j][3]) % enemy_units_lenth].tag)
                     continue
                 if action[5][j].name == 'world':
-                    x = action_and_parameter[j][4]
-                    y = action_and_parameter[j][5]
+                    x = action[j][4]
+                    y = action[j][5]
                     parameter.append((x, y))
                     continue
             parameter = tuple(parameter)
