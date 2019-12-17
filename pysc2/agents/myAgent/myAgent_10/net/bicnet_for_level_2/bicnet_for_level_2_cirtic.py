@@ -62,13 +62,6 @@ class bicnet_critic():
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             encoder_outputs = self._observation_encoder(state_input, agents_local_observation, action_input, config.COOP_AGENTS_NUMBER, '_observation_encoder', train)
             bicnet_outputs = self._bicnet_build(encoder_outputs, '_bicnet_build', train)
-            # action_outputs = self._action_network_graph(bicnet_outputs, '_action_network_graph', train)
-            # queued_outputs = self._queued_network_graph(encoder_outputs, action_outputs, '_queued_network_graph', train)
-            # # my_unit_outputs = self._my_unit_network_graph(encoder_outputs, action_outputs, queued_outputs, '_my_unit_network_graph', train)
-            # enemy_unit_outputs = self._enemy_unit_network_graph(encoder_outputs, action_outputs, queued_outputs, '_enemy_unit_network_graph', train)
-            # target_point_x_outputs = self._target_point_network_x_graph(encoder_outputs, action_outputs, queued_outputs, enemy_unit_outputs, '_target_point_x_network_graph', train)
-            # target_point_y_outputs = self._target_point_network_y_graph(encoder_outputs, action_outputs, queued_outputs, enemy_unit_outputs, target_point_x_outputs, '_target_point_y_network_graph',
-            #                                                             train)
             q_out = self._get_Q(bicnet_outputs, self.action_input, '_get_Q')
             return q_out
 

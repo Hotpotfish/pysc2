@@ -36,14 +36,14 @@ class bicnet_actor():
 
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e) for t, e in zip(self.t_params, self.e_params)]
 
-        self.train_op = self._optimizer(self.a, self.q_input)
+        self.train_op = self._optimizer(self.a, self.action_gradient)
 
     def _setup_placeholders_graph(self):
         # s
         self.state_input = tf.placeholder("float", shape=self.statedim, name=self.name + '_' + 'state_input')  # 全局状态
         self.agents_local_observation = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation')
 
-        self.q_input = tf.placeholder(tf.float32, [None, self.agents_number], name="action_gradient")
+        self.action_gradient = tf.placeholder(tf.float32, [self.agents_number, None, self.agents_number, self.action_dim], name="action_gradient")
 
         self.state_input_next = tf.placeholder("float", shape=self.statedim, name=self.name + '_' + 'state_input_next')  # 全局状态
         self.agents_local_observation_next = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation_next')
@@ -60,17 +60,17 @@ class bicnet_actor():
             encoder = []
             conv1 = slim.conv2d(state_input, 1, [5, 5], stride=4, padding="VALID", scope='layer_1_conv')
             pool1 = slim.max_pool2d(conv1, [2, 2], stride=2, padding="VALID", scope='layer_1_pooling')
-            bn1 = tf.layers.batch_normalization(pool1, training=train)
+            # bn1 = tf.layers.batch_normalization(pool1, training=train)
 
             # 传给下一阶段
-            state_input_flatten = slim.flatten(bn1, scope="flatten")
+            state_input_flatten = slim.flatten(pool1, scope="flatten")
 
             for i in range(agents_number):
                 encoder.append(tf.concat([agents_local_observation[:, i, :], state_input_flatten], axis=1))
             encoder = tf.transpose(encoder, [1, 0, 2])
             fc1 = slim.fully_connected(encoder, 30, scope='full_connected1')
-            bn3 = tf.layers.batch_normalization(fc1, training=train)
-            encoder = tf.unstack(bn3, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
+            # bn3 = tf.layers.batch_normalization(fc1, training=train)
+            encoder = tf.unstack(fc1, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
             return encoder
 
     def _bicnet_build(self, encoder_outputs, scope_name, train):
