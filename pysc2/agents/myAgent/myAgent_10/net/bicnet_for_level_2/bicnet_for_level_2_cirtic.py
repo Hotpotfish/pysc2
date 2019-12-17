@@ -75,15 +75,22 @@ class bicnet_critic():
     def _observation_encoder(self, state_input, agents_local_observation, action_input, agents_number, scope_name, train):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             encoder = []
+            conv1 = slim.conv2d(state_input, 1, [5, 5], stride=1, padding="VALID", scope='layer_1_conv')
+            pool1 = slim.max_pool2d(conv1, [2, 2], stride=2, padding="VALID", scope='layer_1_pooling')
+            bn1 = tf.layers.batch_normalization(pool1, training=train)
+
+            conv2 = slim.conv2d(bn1, 1, [5, 5], stride=1, padding="VALID", scope='layer_2_conv')
+            pool2 = slim.max_pool2d(conv2, [2, 2], stride=2, padding="VALID", scope='layer_2_pooling')
+            bn2 = tf.layers.batch_normalization(pool2, training=train)
+
+            # 传给下一阶段
+            state_input_flatten = slim.flatten(bn2, scope="flatten")
+            # state_input_flatten = tf.layers.flatten(state_input)
             for i in range(agents_number):
-                encoder.append(tf.concat([agents_local_observation[:, i, :], state_input, action_input[:, i, :]], axis=1))
+                encoder.append(tf.concat([agents_local_observation[:, i, :], state_input_flatten, action_input], axis=1))
             encoder = tf.transpose(encoder, [1, 0, 2])
-            fc1 = slim.fully_connected(encoder, 100, scope='full_connected1')
-            bn1 = tf.layers.batch_normalization(fc1, training=train)
-            fc2 = slim.fully_connected(bn1, 80, scope='full_connected2')
-            bn2 = tf.layers.batch_normalization(fc2, training=train)
-            fc3 = slim.fully_connected(bn2, 60, scope='full_connected3')
-            bn3 = tf.layers.batch_normalization(fc3, training=train)
+            fc1 = slim.fully_connected(encoder, 60, scope='full_connected3')
+            bn3 = tf.layers.batch_normalization(fc1, training=train)
             encoder = tf.unstack(bn3, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
             return encoder
 
@@ -104,11 +111,11 @@ class bicnet_critic():
                                 weights_regularizer=slim.l2_regularizer(0.1)):
                 for i in range(self.agents_number):
                     encoder_output = bicnet_outputs[i]
-                    fc1 = slim.fully_connected(encoder_output, 100, scope='full_connected1')
+                    # fc1 = slim.fully_connected(encoder_output, 100, scope='full_connected1')
+                    #
+                    # fc2 = slim.fully_connected(fc1, 80, scope='full_connected2')
 
-                    fc2 = slim.fully_connected(fc1, 80, scope='full_connected2')
-
-                    action_logits = slim.fully_connected(fc2, self.action_dim, scope='action_logits')
+                    action_logits = slim.fully_connected(encoder_output, self.action_dim, scope='action_logits')
                     action_logits_bn = tf.contrib.layers.batch_norm(action_logits, is_training=train)
 
                     # action_output = tf.nn.softmax(action_logits_bn)  # (batch_size,obs_dim)

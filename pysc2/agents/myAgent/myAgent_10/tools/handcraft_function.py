@@ -10,7 +10,7 @@ from pysc2.agents.myAgent.myAgent_10.decisionMaker.level_2.level_2_train_control
 
 # 平铺嵌套数组
 from pysc2.env.environment import StepType
-from pysc2.lib import actions, features
+from pysc2.lib import features
 
 
 def my_flatten(input_list):
@@ -52,9 +52,14 @@ def reflect(actiondim, action_and_parameter):
     enemy = np.argmax(action_and_parameter[:, start: end])
 
     start = end
-    point = np.argmax(action_and_parameter[:, start:])
+    end += config.MAP_SIZE
+    point_x = np.argmax(action_and_parameter[:, start:end])
 
-    actions = np.hstack[action_number, queued, enemy, point]
+    start = end
+
+    point_y = np.argmax(action_and_parameter[:, start])
+
+    actions = np.hstack[action_number, queued, enemy, point_x, point_y]
 
     return actions
 
@@ -89,9 +94,10 @@ def assembly_action(obs, controller_number, action_and_parameter):
                     parameter.append(enemy_units[int(action_and_parameter[j][3]) % enemy_units_lenth].tag)
                     continue
                 if action[5][j].name == 'world':
-                    number = action_and_parameter[j][4]
-                    y = int(number / config.MAP_SIZE)
-                    x = int(number % config.MAP_SIZE)
+                    x = action_and_parameter[j][4]
+                    y = action_and_parameter[j][5]
+                    # y = int(number / config.MAP_SIZE)
+                    # x = int(number % config.MAP_SIZE)
                     parameter.append((x, y))
                     continue
             parameter = tuple(parameter)
@@ -112,17 +118,13 @@ def assembly_action(obs, controller_number, action_and_parameter):
                     parameter.append(enemy_units[int(action_and_parameter[j][3]) % enemy_units_lenth].tag)
                     continue
                 if action[5][j].name == 'world':
-                    number = action_and_parameter[j][4]
-                    y = int(number / config.MAP_SIZE)
-                    x = int(number % config.MAP_SIZE)
+                    x = action_and_parameter[j][4]
+                    y = action_and_parameter[j][5]
                     parameter.append((x, y))
                     continue
             parameter = tuple(parameter)
             actions.append(action(*parameter))
     return actions
-
-
-
 
     # for j in range(my_raw_units_lenth):
     #     action = sa.controllers[controller_number][int(action_and_parameter[j][0])]
