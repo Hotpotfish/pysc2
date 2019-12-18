@@ -36,8 +36,8 @@ class Bicnet():
         # 网络结构初始化
         self.name = name
 
-        self.actor_net = bicnet_actor(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number, self.enemy_number, self.name)
-        self.critic_net = bicnet_critic(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number, self.enemy_number, self.name)
+        self.actor_net = bicnet_actor(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number, self.enemy_number, self.name + '_actor')
+        self.critic_net = bicnet_critic(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number, self.enemy_number, self.name + '_critic')
 
         # Init session
         self.session = tf.Session()
@@ -88,7 +88,8 @@ class Bicnet():
     def train_Q_network(self, modelSavePath):  # 训练网络
         if self.replay_buffer.real_size > config.BATCH_SIZE:
             minibatch = random.sample(self.replay_buffer.queue, config.BATCH_SIZE)
-            state_batch = np.array([data[0] for data in minibatch])
+            state_input = np.array([data[0][0] for data in minibatch])
+            agents_local_observation = np.array([data[0][1] for data in minibatch])
             action_batch = np.array([data[1] for data in minibatch])
             reward_batch = np.array([data[2] for data in minibatch])
             state_input_next = np.array([data[3][0] for data in minibatch])
@@ -98,7 +99,7 @@ class Bicnet():
             # state_input_next = next_state_batch[:, 0]  # .reshape((config.BATCH_SIZE, config.MAP_SIZE, config.MAP_SIZE, 1))
             # agents_local_observation_next = next_state_batch[:, 1]  # .reshape(config.BATCH_SIZE, config.COOP_AGENTS_NUMBER, config.COOP_AGENTS_OBDIM)
             a_ = self.session.run(self.actor_net.a_, {self.actor_net.state_input_next: state_input_next, self.actor_net.agents_local_observation_next: agents_local_observation_next})  # s_
-            a_ = np.argmax(a_, axis=2).astype(np.float32)
+            a_ = np.eye(self.action_dim)[np.argmax(a_, axis=2)].astype(np.float32)
             # q_
             q_ = self.session.run(self.critic_net.q_, {self.critic_net.state_input_next: state_input_next,
                                                        self.critic_net.agents_local_observation_next: agents_local_observation_next,
@@ -106,9 +107,9 @@ class Bicnet():
             # q尖
             q_cusp = reward_batch + config.GAMMA * q_
 
-            state_input = state_batch[:, 0]
-            agents_local_observation = state_batch[:, 1]
-
+            # state_input = state_batch[:, 0]
+            # agents_local_observation = state_batch[:, 1]
+            action_batch = np.eye(self.action_dim)[action_batch]
             # critic update
             _, loss, action_grad = self.session.run([self.critic_net.trian_op, self.critic_net.loss, self.critic_net.action_grad], {self.critic_net.state_input: state_input,
                                                                                                                                     self.critic_net.agents_local_observation: agents_local_observation,
@@ -117,10 +118,10 @@ class Bicnet():
                                                                                                                                     self.critic_net.q_input: q_cusp  # a_
                                                                                                                                     })
             # actor_update
-            _, = self.session.run([self.actor_net.train_op], {self.actor_net.state_input: state_input,
-                                                              self.actor_net.agents_local_observation: agents_local_observation,  # s_
-                                                              self.actor_net.action_gradient: action_grad  # a_
-                                                              })
+            _, = self.session.run(self.actor_net.train_op, {self.actor_net.state_input: state_input,
+                                                            self.actor_net.agents_local_observation: agents_local_observation,  # s_
+                                                            self.actor_net.action_gradient: action_grad  # a_
+                                                            })
             self.saveRecord(modelSavePath, loss)
 
     def get_random_action_and_parameter_one_hot(self):

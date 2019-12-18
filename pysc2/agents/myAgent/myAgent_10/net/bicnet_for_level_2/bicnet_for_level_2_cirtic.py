@@ -21,17 +21,19 @@ class bicnet_critic():
         self.name = name
 
         # 建立输入管道
-        self._setup_placeholders_graph()
+        # self._setup_placeholders_graph()
 
-        # 两个A网络
-        with tf.variable_scope('critic', reuse=tf.AUTO_REUSE):
-            # a
+        # 两个q网络
+
+        with tf.variable_scope(name, reuse=tf.AUTO_REUSE):
+            self._setup_placeholders_graph()
+            # q
             self.q = self._build_graph(self.state_input, self.agents_local_observation, self.action_input, 'eval_net', True)
-            # a_
+            # q_
             self.q_ = self._build_graph(self.state_input_next, self.agents_local_observation_next, self.action_input_next, 'target_net', False)
 
-        self.e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='critic/eval_net')
-        self.t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='critic/target_net')
+        self.e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=name + '/eval_net')
+        self.t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=name + '/target_net')
 
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e) for t, e in zip(self.t_params, self.e_params)]
 
@@ -41,18 +43,18 @@ class bicnet_critic():
 
     def _setup_placeholders_graph(self):
         # s
-        self.state_input = tf.placeholder("float", shape=self.statedim, name=self.name + '_' + 'state_input')  # 全局状态
+        self.state_input = tf.placeholder("float", shape=self.statedim, name='state_input')  # 全局状态
         self.agents_local_observation = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation')
 
         # a
-        self.action_input = tf.placeholder("float", shape=[None, self.agents_number], name='action_input')
+        self.action_input = tf.placeholder("float", shape=[None, self.agents_number, self.action_dim], name='action_input')
 
         # s_
-        self.state_input_next = tf.placeholder("float", shape=self.statedim, name=self.name + '_' + 'state_input_next')  # 全局状态
+        self.state_input_next = tf.placeholder("float", shape=self.statedim, name='state_input_next')  # 全局状态
         self.agents_local_observation_next = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation_next')
 
         # a_
-        self.action_input_next = tf.placeholder("float", shape=[None, self.agents_number], name='action_input_next')
+        self.action_input_next = tf.placeholder("float", shape=[None, self.agents_number, self.action_dim], name='action_input_next')
 
         # q_input
         self.q_input = tf.placeholder("float", shape=[None, self.agents_number], name='q_input')
@@ -62,7 +64,7 @@ class bicnet_critic():
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             encoder_outputs = self._observation_encoder(state_input, agents_local_observation, action_input, config.COOP_AGENTS_NUMBER, '_observation_encoder', train)
             bicnet_outputs = self._bicnet_build(encoder_outputs, '_bicnet_build', train)
-            q_out = self._get_Q(bicnet_outputs, self.action_input, '_get_Q')
+            q_out = self._get_Q(bicnet_outputs, action_input, '_get_Q')
             return q_out
 
     def _observation_encoder(self, state_input, agents_local_observation, action_input, agents_number, scope_name, train):
@@ -80,7 +82,7 @@ class bicnet_critic():
             state_input_flatten = slim.flatten(pool2, scope="flatten")
             # state_input_flatten = tf.layers.flatten(state_input)
             for i in range(agents_number):
-                encoder.append(tf.concat([agents_local_observation[:, i, :], state_input_flatten, action_input], axis=1))
+                encoder.append(tf.concat([agents_local_observation[:, i, :], state_input_flatten, action_input[:, i]], axis=1))
             encoder = tf.transpose(encoder, [1, 0, 2])
             fc1 = slim.fully_connected(encoder, 60, scope='full_connected3')
             bn3 = tf.layers.batch_normalization(fc1, training=train)
@@ -89,8 +91,8 @@ class bicnet_critic():
 
     def _bicnet_build(self, encoder_outputs, scope_name, train):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
-            lstm_fw_cell = tf.nn.rnn_cell.BasicLSTMCell(self.action_dim/2, forget_bias=1.0, name="lstm_fw_cell")
-            lstm_bw_cell = tf.nn.rnn_cell.BasicLSTMCell(self.action_dim/2, forget_bias=1.0, name="lstm_bw_cell")
+            lstm_fw_cell = tf.nn.rnn_cell.BasicLSTMCell(self.action_dim / 2, forget_bias=1.0, name="lstm_fw_cell")
+            lstm_bw_cell = tf.nn.rnn_cell.BasicLSTMCell(self.action_dim / 2, forget_bias=1.0, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             fc1 = slim.fully_connected(bicnet_outputs, self.action_dim, scope='full_connected1')
             bn1 = tf.layers.batch_normalization(fc1, training=train)
@@ -102,7 +104,7 @@ class bicnet_critic():
 
     def _get_Q(self, bicnet_outputs, action_input, scope_name):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
-            action_input = tf.one_hot(tf.to_int32(action_input), depth=self.action_dim, axis=2)
+            # action_input = tf.one_hot(tf.to_int32(action_input), depth=self.action_dim, axis=2)
             q_out = tf.multiply(bicnet_outputs, action_input)  # (batch_size, agents_number,outputs_prob)
             q_out = tf.reduce_sum(q_out, axis=2)  # (batch_size, agents_number)
 
@@ -123,8 +125,8 @@ class bicnet_critic():
         return train_op
 
     def _compute_action_grad(self, qout, action_input):
-        action_input = tf.one_hot(tf.to_int32(action_input), depth=self.action_dim, axis=2)
+        # action_input = tf.one_hot(tf.to_int32(action_input), depth=self.action_dim, axis=2)
         action_grads = [tf.gradients(qout[:, i], action_input) for i in range(self.agents_number)]  # (batch_size,agent_number,agent_number,action_dim)
         # action_grads = tf.gradients(qout, action_input)
-        action_grads = tf.reshape(action_grads, [self.agents_number, None, self.agents_number, self.action_dim])
+        action_grads = tf.reshape(action_grads, [self.agents_number, -1, self.agents_number, self.action_dim])
         return action_grads
