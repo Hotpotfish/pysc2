@@ -1,4 +1,4 @@
-import pysc2.agents.myAgent.myAgent_9.config.config as config
+import pysc2.agents.myAgent.myAgent_10.config.config as config
 from absl import app
 from pysc2.agents import base_agent
 from pysc2.agents.myAgent.myAgent_10.decisionMaker.hierarchical_learning_structure import hierarchical_learning_structure
@@ -50,10 +50,10 @@ def main(unused_argv):
                     # use_unit_counts=True
                 ),
                 score_index=0,
-                step_mul=0.0001,
+                step_mul=4,
                 disable_fog=False,
                 visualize=True,
-                realtime=True
+                realtime=False
 
         ) as env:
             run_loop.run_loop([agent1], env)

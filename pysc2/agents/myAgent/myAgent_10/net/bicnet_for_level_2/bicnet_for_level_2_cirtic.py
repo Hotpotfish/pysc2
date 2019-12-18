@@ -24,20 +24,20 @@ class bicnet_critic():
         self._setup_placeholders_graph()
 
         # 两个A网络
-
+        with tf.variable_scope('critic', reuse=tf.AUTO_REUSE):
             # a
-        self.q = self._build_graph(self.state_input, self.agents_local_observation, self.action_input, 'eval_net', True)
-        # a_
-        self.q_ = self._build_graph(self.state_input_next, self.agents_local_observation_next, self.action_input_next, 'target_net', False)
+            self.q = self._build_graph(self.state_input, self.agents_local_observation, self.action_input, 'eval_net', True)
+            # a_
+            self.q_ = self._build_graph(self.state_input_next, self.agents_local_observation_next, self.action_input_next, 'target_net', False)
 
-        self.e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='eval_net')
-        self.t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='target_net')
+        self.e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='critic/eval_net')
+        self.t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='critic/target_net')
 
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e) for t, e in zip(self.t_params, self.e_params)]
 
         self.loss = self._compute_loss_graph(self.q_input, self.q, 'Critic')
         self.trian_op = self._create_train_op_graph()
-        # self.action_grad = self._compute_action_grad(self.q, self.action_input)
+        self.action_grad = self._compute_action_grad(self.q, self.action_input)
 
     def _setup_placeholders_graph(self):
         # s
@@ -70,14 +70,14 @@ class bicnet_critic():
             encoder = []
             conv1 = slim.conv2d(state_input, 1, [5, 5], stride=1, padding="VALID", scope='layer_1_conv')
             pool1 = slim.max_pool2d(conv1, [2, 2], stride=2, padding="VALID", scope='layer_1_pooling')
-            bn1 = tf.layers.batch_normalization(pool1, training=train)
+            # bn1 = tf.layers.batch_normalization(pool1, training=train)
 
-            conv2 = slim.conv2d(bn1, 1, [5, 5], stride=1, padding="VALID", scope='layer_2_conv')
+            conv2 = slim.conv2d(pool1, 1, [5, 5], stride=1, padding="VALID", scope='layer_2_conv')
             pool2 = slim.max_pool2d(conv2, [2, 2], stride=2, padding="VALID", scope='layer_2_pooling')
-            bn2 = tf.layers.batch_normalization(pool2, training=train)
+            # bn2 = tf.layers.batch_normalization(pool2, training=train)
 
             # 传给下一阶段
-            state_input_flatten = slim.flatten(bn2, scope="flatten")
+            state_input_flatten = slim.flatten(pool2, scope="flatten")
             # state_input_flatten = tf.layers.flatten(state_input)
             for i in range(agents_number):
                 encoder.append(tf.concat([agents_local_observation[:, i, :], state_input_flatten, action_input], axis=1))
@@ -103,8 +103,6 @@ class bicnet_critic():
     def _get_Q(self, bicnet_outputs, action_input, scope_name):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             action_input = tf.one_hot(tf.to_int32(action_input), depth=self.action_dim, axis=2)
-            # all_q = tf.concat([action_outputs, queued_outputs, enemy_unit_outputs, target_point_x_outputs, target_point_y_outputs], axis=2)  # (agents_number, batch_size,outputs_prob)
-            # all_q = tf.transpose(bicnet_outputs, [1, 0, 2])  # (batch_size, agents_number,outputs_prob)
             q_out = tf.multiply(bicnet_outputs, action_input)  # (batch_size, agents_number,outputs_prob)
             q_out = tf.reduce_sum(q_out, axis=2)  # (batch_size, agents_number)
 
@@ -124,9 +122,9 @@ class bicnet_critic():
         train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
         return train_op
 
-    # def _compute_action_grad(self, qout, action_input):
-    #     action_input = tf.one_hot(tf.to_int32(action_input), depth=self.action_dim, axis=2)
-    #     action_grads = [tf.gradients(qout[:, i], action_input) for i in range(self.agents_number)]  # (batch_size,agent_number,agent_number,action_dim)
-    #     # action_grads = tf.gradients(qout, action_input)
-    #     # action_grads = tf.reshape(action_grads, [self.agents_number, None, self.agents_number, self.action_dim])
-    #     return action_grads
+    def _compute_action_grad(self, qout, action_input):
+        action_input = tf.one_hot(tf.to_int32(action_input), depth=self.action_dim, axis=2)
+        action_grads = [tf.gradients(qout[:, i], action_input) for i in range(self.agents_number)]  # (batch_size,agent_number,agent_number,action_dim)
+        # action_grads = tf.gradients(qout, action_input)
+        # action_grads = tf.reshape(action_grads, [self.agents_number, None, self.agents_number, self.action_dim])
+        return action_grads

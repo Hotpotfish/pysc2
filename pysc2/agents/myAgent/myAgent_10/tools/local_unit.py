@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class soldier():
     def __init__(self):
         self.unit_type = None
@@ -10,10 +13,6 @@ class soldier():
         self.enemy_health = []  # 附近5个敌方单位的生命值
 
     def get_list(self):
-        data = [self.unit_type,
-                self.health,
-                self.energy,
-                self.x,
-                self.y,
-                self.order_length] + self.frend_health + self.enemy_health
+        # data = [self.unit_type, self.health, self.energy, self.x, self.y, self.order_length] + self.frend_health + self.enemy_health
+        data = np.concatenate((np.array([self.unit_type, self.health, self.energy, self.x, self.y, self.order_length]), np.array(self.frend_health), self.enemy_health))
         return data

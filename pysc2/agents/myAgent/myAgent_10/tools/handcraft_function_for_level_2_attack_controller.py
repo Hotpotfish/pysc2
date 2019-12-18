@@ -1,5 +1,5 @@
 import math
-
+from pysc2.lib import actions as Action
 import numpy as np
 import pysc2.agents.myAgent.myAgent_10.smart_actions as sa
 # 获得全局的观察
@@ -8,7 +8,12 @@ from pysc2.agents.myAgent.myAgent_10.config import config
 from pysc2.lib import features
 
 
+# def int2bin(n, count=24):
+#     """returns the binary of integer n, using count number of digits"""
+#     return "".join([str((n >> y) & 1) for y in range(count-1, -1, -1)])
+
 def assembly_action(obs, action):
+    head = '{:0' + str(config.ATTACT_CONTROLLER_ACTIONDIM_BIN) + 'b}'
     my_raw_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
     enemy_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
 
@@ -26,7 +31,7 @@ def assembly_action(obs, action):
             controller = sa.attack_controller
             parameter = []
 
-            aciton_bin = str(bin(int(action[i]))).replace('0b', '')
+            aciton_bin = head.format(action[i])
 
             action_number = int(aciton_bin[0:1], base=2)
             a = controller[action_number]
@@ -36,11 +41,11 @@ def assembly_action(obs, action):
             parameter.append(my_raw_units[i].tag)
             enemy_or_dire = int(aciton_bin[2:], base=2)
 
-            if a == action.RAW_FUNCTIONS.Attack_unit:
+            if a == Action.RAW_FUNCTIONS.Attack_unit:
                 parameter.append(enemy_units[enemy_or_dire % enemy_units_lenth].tag)
                 # parameter.append([queued, my_raw_units[i].tag, enemy_units[enemy_or_dire % enemy_units_lenth]])
                 # parameter = parameter.flatten()
-            elif a == action.RAW_FUNCTIONS.Move_pt:
+            elif a == Action.RAW_FUNCTIONS.Move_pt:
                 if enemy_or_dire == 0:
                     parameter.append((my_raw_units[i].x + 1, my_raw_units[i].y + 1))
                 elif enemy_or_dire == 1:
@@ -75,7 +80,7 @@ def assembly_action(obs, action):
 
             enemy_or_dire = int(aciton_bin[2:], base=2)
 
-            if a == action.RAW_FUNCTIONS.Attack_unit:
+            if a == Action.RAW_FUNCTIONS.Attack_unit:
 
                 parameter.append(enemy_units[enemy_or_dire % enemy_units_lenth].tag)
 
@@ -83,7 +88,7 @@ def assembly_action(obs, action):
 
                 # parameter = parameter.flatten()
 
-            elif a == action.RAW_FUNCTIONS.Move_pt:
+            elif a == Action.RAW_FUNCTIONS.Move_pt:
 
                 if enemy_or_dire == 0:
 
@@ -116,7 +121,7 @@ def get_friend_and_enemy_health(unit, obs, k):
 
     for other_unit in obs.observation.raw_units:
 
-        if unit.tage == other_unit.tag:
+        if unit.tag == other_unit.tag:
             continue
 
         x_difference = math.pow(unit.x - other_unit.x, 2)
@@ -131,8 +136,8 @@ def get_friend_and_enemy_health(unit, obs, k):
         if other_unit.alliance == features.PlayerRelative.ENEMY:
             enemy.append((distance, other_unit.health))
 
-    friend = sorted(friend, key=lambda f: f[0])
-    enemy = sorted(enemy, key=lambda e: e[0])
+    friend = np.array(sorted(friend, key=lambda f: f[0]))
+    enemy = np.array(sorted(enemy, key=lambda e: e[0]))
 
     if len(friend) >= k:
         friend_k = friend[:k, 1]
@@ -155,7 +160,7 @@ def get_agents_local_observation(obs):
     agents_local_observation = []
     output = np.zeros((config.COOP_AGENTS_NUMBER, config.COOP_AGENTS_OBDIM))
 
-    for unit in obs.observation.raw_units:
+    for unit in obs.observation['raw_units']:
 
         if unit.alliance == features.PlayerRelative.SELF:
             unit_local = soldier()
@@ -170,7 +175,7 @@ def get_agents_local_observation(obs):
 
             unit_local.frend_health = friend_k
             unit_local.enemy_health = enemy_k
-            agents_local_observation.append(unit_local.get_list)
+            agents_local_observation.append(unit_local.get_list())
 
     if len(agents_local_observation) >= config.COOP_AGENTS_NUMBER:
         output = agents_local_observation[:config.COOP_AGENTS_NUMBER]

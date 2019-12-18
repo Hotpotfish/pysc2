@@ -1,5 +1,5 @@
 from pysc2.agents.myAgent.myAgent_10.config import config
-
+import numpy as np
 from pysc2.agents.myAgent.myAgent_10.decisionMaker.decision_maker import decision_maker
 import pysc2.agents.myAgent.myAgent_10.smart_actions as sa
 from pysc2.agents.myAgent.myAgent_10.decisionMaker.level_2.Bicnet_for_level_2 import Bicnet
@@ -16,9 +16,8 @@ class level_2_attack_controller:
                    config.ENEMY_UNIT_NUMBER, 'attack_controller'))
         self.index = handcraft_function.find_controller_index(sa.attack_controller)
 
-
     def train_action(self, obs):
-        self.controller.current_state = [obs.observation['feature_screen'][5], get_agents_local_observation(obs)]
+        self.controller.current_state = [obs.observation['feature_minimap'][5][:, :, np.newaxis], np.array(get_agents_local_observation(obs))]
 
         if self.controller.previous_action is not None:
             self.controller.previous_reward = reward_compute_2(self.controller.previous_state, self.controller.current_state)
@@ -31,7 +30,7 @@ class level_2_attack_controller:
         action = handcraft_function.reflect(len(sa.attack_controller), action)
         self.controller.previous_state = self.controller.current_state
         self.controller.previous_action = action
-        action = handcraft_function.assembly_action(obs, self.index, action)
+        action = handcraft_function_for_level_2_attack_controller.assembly_action(obs, action)
         return action
 
     def test_action(self, obs):

@@ -25,14 +25,14 @@ class bicnet_actor():
         self._setup_placeholders_graph()
 
         # 两个A网络
+        with tf.variable_scope('actor', reuse=tf.AUTO_REUSE):
+            # a
+            self.a = self._build_graph(self.state_input, self.agents_local_observation, 'eval_net', True)
+            # a_
+            self.a_ = self._build_graph(self.state_input_next, self.agents_local_observation_next, 'target_net', False)
 
-        # a
-        self.a = self._build_graph(self.state_input, self.agents_local_observation, 'eval_net', True)
-        # a_
-        self.a_ = self._build_graph(self.state_input_next, self.agents_local_observation_next, 'target_net', False)
-
-        self.e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='eval_net')
-        self.t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='target_net')
+        self.e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='actor/eval_net')
+        self.t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='actor/target_net')
 
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e) for t, e in zip(self.t_params, self.e_params)]
 
