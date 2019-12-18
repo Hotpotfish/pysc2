@@ -66,7 +66,7 @@ def assembly_action(obs, action):
 
             parameter = []
 
-            aciton_bin = str(bin(int(action[i]))).replace('0b', '')
+            aciton_bin = head.format(action[i])
 
             action_number = int(aciton_bin[0:1], base=2)
 
@@ -141,13 +141,17 @@ def get_friend_and_enemy_health(unit, obs, k):
 
     if len(friend) >= k:
         friend_k = friend[:k, 1]
-    else:
+    elif len(friend) > 1 and len(friend) < k:
         friend_k[:len(friend)] = friend[:, 1]
+    else:
+        friend_k = np.zeros(k)
 
     if len(enemy) >= k:
         enemy_k = enemy[:k, 1]
-    else:
+    elif len(friend) > 1 and len(friend) < k:
         enemy_k[:len(enemy)] = enemy[:, 1]
+    else:
+        enemy_k = np.zeros(k)
 
     return friend_k, enemy_k
 
@@ -179,8 +183,8 @@ def get_agents_local_observation(obs):
 
     if len(agents_local_observation) >= config.COOP_AGENTS_NUMBER:
         output = agents_local_observation[:config.COOP_AGENTS_NUMBER]
-    else:
-        output[:len(agents_local_observation)] = agents_local_observation[:]
+    elif 1 < len(agents_local_observation) < config.COOP_AGENTS_NUMBER:
+        output[:len(agents_local_observation)] = agents_local_observation
 
     return output
 
