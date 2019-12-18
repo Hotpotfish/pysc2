@@ -126,5 +126,5 @@ class bicnet_critic():
         action_input = tf.one_hot(tf.to_int32(action_input), depth=self.action_dim, axis=2)
         action_grads = [tf.gradients(qout[:, i], action_input) for i in range(self.agents_number)]  # (batch_size,agent_number,agent_number,action_dim)
         # action_grads = tf.gradients(qout, action_input)
-        # action_grads = tf.reshape(action_grads, [self.agents_number, None, self.agents_number, self.action_dim])
+        action_grads = tf.reshape(action_grads, [self.agents_number, None, self.agents_number, self.action_dim])
         return action_grads

@@ -5,11 +5,11 @@ RAW_UNITS_LENGTH = 46
 
 # Hyper Parameters for DQN
 GAMMA = 0.9  # discount factor for target Q
-INITIAL_EPSILON = 0.05  # starting value of epsilon
+INITIAL_EPSILON = 0.1  # starting value of epsilon
 FINAL_EPSILON = 0.01  # final value of epsilon
 REPLAY_SIZE = 35  # experience replay buffer size
 EP_SIZE = 1
-BATCH_SIZE = 512  # size of minibatch
+BATCH_SIZE = 32  # size of minibatch
 
 # 神经网络初始化参数
 MU = 0
@@ -31,7 +31,7 @@ MY_UNIT_NUMBER =5
 ENEMY_UNIT_NUMBER = 11
 POINT_NUMBER = MAP_SIZE * MAP_SIZE
 
-ATTACT_CONTROLLER_PARAMETERDIM = QUEUED + MY_UNIT_NUMBER + ENEMY_UNIT_NUMBER + MAP_SIZE + MAP_SIZE
+
 ATTACT_CONTROLLER_ACTIONDIM = QUEUED * ENEMY_UNIT_NUMBER + QUEUED * 4 #（4为上下左右）
 ATTACT_CONTROLLER_ACTIONDIM_BIN = len('{:b}'.format(ATTACT_CONTROLLER_ACTIONDIM))
 

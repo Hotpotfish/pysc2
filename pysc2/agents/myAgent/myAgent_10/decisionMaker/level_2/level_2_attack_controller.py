@@ -17,7 +17,7 @@ class level_2_attack_controller:
         self.index = handcraft_function.find_controller_index(sa.attack_controller)
 
     def train_action(self, obs):
-        self.controller.current_state = [obs.observation['feature_minimap'][5][:, :, np.newaxis], np.array(get_agents_local_observation(obs))]
+        self.controller.current_state = [np.array(obs.observation['feature_minimap'][5][:, :, np.newaxis]), np.array(get_agents_local_observation(obs))]
 
         if self.controller.previous_action is not None:
             self.controller.previous_reward = reward_compute_2(self.controller.previous_state, self.controller.current_state)

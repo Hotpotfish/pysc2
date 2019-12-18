@@ -91,19 +91,18 @@ class Bicnet():
             state_batch = np.array([data[0] for data in minibatch])
             action_batch = np.array([data[1] for data in minibatch])
             reward_batch = np.array([data[2] for data in minibatch])
-            next_state_batch = np.array([data[3] for data in minibatch])
+            state_input_next = np.array([data[3][0] for data in minibatch])
+            agents_local_observation_next = np.array([data[3][1] for data in minibatch])
 
             # a_
-            state_input_next = next_state_batch[:, 0]
-            agents_local_observation_next = next_state_batch[:, 1]
-            a_ = self.session.run(self.actor_net.a_, {self.actor_net.state_input_next: state_input_next,
-                                                      self.actor_net.agents_local_observation_next: agents_local_observation_next  # s_
-                                                      })
+            # state_input_next = next_state_batch[:, 0]  # .reshape((config.BATCH_SIZE, config.MAP_SIZE, config.MAP_SIZE, 1))
+            # agents_local_observation_next = next_state_batch[:, 1]  # .reshape(config.BATCH_SIZE, config.COOP_AGENTS_NUMBER, config.COOP_AGENTS_OBDIM)
+            a_ = self.session.run(self.actor_net.a_, {self.actor_net.state_input_next: state_input_next, self.actor_net.agents_local_observation_next: agents_local_observation_next})  # s_
+            a_ = np.argmax(a_, axis=2).astype(np.float32)
             # q_
             q_ = self.session.run(self.critic_net.q_, {self.critic_net.state_input_next: state_input_next,
-                                                       self.critic_net.agents_local_observation_next: agents_local_observation_next,  # s_
-                                                       self.critic_net.action_input_next: a_  # a_
-                                                       })
+                                                       self.critic_net.agents_local_observation_next: agents_local_observation_next,
+                                                       self.critic_net.action_input_next: a_})
             # q尖
             q_cusp = reward_batch + config.GAMMA * q_
 
