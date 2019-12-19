@@ -9,7 +9,7 @@ INITIAL_EPSILON = 0.1  # starting value of epsilon
 FINAL_EPSILON = 0.01  # final value of epsilon
 REPLAY_SIZE = 2000  # experience replay buffer size
 EP_SIZE = 1
-BATCH_SIZE = 1024 # size of minibatch
+BATCH_SIZE = 1024  # size of minibatch
 
 # 神经网络初始化参数
 MU = 0
@@ -29,7 +29,7 @@ K = 8
 # 参数维度 = 队列（QUEUED）+我方目标单位(MY_UNIT_NUMBER)+敌方目标单位(ENEMY_UNIT_NUMBER) +坐标(MAP_SIZE *MAP_SIZE)
 QUEUED = 2
 MY_UNIT_NUMBER = K
-ENEMY_UNIT_NUMBER = K
+ENEMY_UNIT_NUMBER = 4
 POINT_NUMBER = MAP_SIZE * MAP_SIZE
 
 ATTACT_CONTROLLER_ACTIONDIM = QUEUED * ENEMY_UNIT_NUMBER + QUEUED * 4  # （4为上下左右）
