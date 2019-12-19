@@ -141,14 +141,14 @@ def get_friend_and_enemy_health(unit, obs, k):
 
     if len(friend) >= k:
         friend_k = friend[:k, 1]
-    elif len(friend) > 1 and len(friend) < k:
+    elif len(friend) >= 1 and len(friend) < k:
         friend_k[:len(friend)] = friend[:, 1]
     else:
         friend_k = np.zeros(k)
 
     if len(enemy) >= k:
         enemy_k = enemy[:k, 1]
-    elif len(enemy) > 1 and len(enemy) < k:
+    elif len(enemy) >= 1 and len(enemy) < k:
         enemy_k[:len(enemy)] = enemy[:, 1]
     else:
         enemy_k = np.zeros(k)
@@ -183,7 +183,7 @@ def get_agents_local_observation(obs):
 
     if len(agents_local_observation) >= config.COOP_AGENTS_NUMBER:
         output = agents_local_observation[:config.COOP_AGENTS_NUMBER]
-    elif 1 < len(agents_local_observation) < config.COOP_AGENTS_NUMBER:
+    elif 1 <= len(agents_local_observation) < config.COOP_AGENTS_NUMBER:
         output[:len(agents_local_observation)] = agents_local_observation
 
     return output

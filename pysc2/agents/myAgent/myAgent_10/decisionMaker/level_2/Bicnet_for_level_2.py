@@ -22,7 +22,6 @@ class Bicnet():
         self.sigma = sigma
         self.learning_rate = learning_rate
 
-        self.time_step = 0
         self.epsilon = config.INITIAL_EPSILON
 
         # 动作维度数，动作参数维度数（默认为6）,状态维度数
@@ -85,19 +84,23 @@ class Bicnet():
         self.lossSaver.add_summary(summary=data_summary, global_step=self.recordCount)
         self.recordCount += 1
 
-    def saveRewardAvg(self, modelSavePath, RewardAvg):
+    def saveRewardAvg(self, modelSavePath):
         # loss save
 
         self.rewardSaver = open(modelSavePath + 'reward.txt', 'a+')
-        self.rewardSaver.write(str(self.recordCount) + ' ' + str(np.mean(RewardAvg)) + '\n')
+        self.rewardSaver.write(str(self.recordCount) + ' ' + str(self.rewardAdd / self.rewardStep) + '\n')
+        print(self.rewardAdd / self.rewardStep)
         self.rewardSaver.close()
 
     def perceive(self, state, action, reward, next_state, done):  # 感知存储信息
-        self.rewardAdd += reward
+        self.rewardAdd += np.sum(reward)
         self.rewardStep += 1
+        # print(np.sum(reward))
 
         if done:
-            self.rewardAvg = self.rewardAdd / self.rewardStep
+            # print(self.rewardAdd)
+
+            # print(self.rewardAvg)
             self.rewardAdd = 0
             self.rewardStep = 0
 
@@ -141,7 +144,11 @@ class Bicnet():
                                                             self.actor_net.action_gradient: action_grad  # a_
                                                             })
             self.saveLoss(modelSavePath, loss)
-            self.saveRewardAvg(modelSavePath, self.rewardAvg)
+            self.saveRewardAvg(modelSavePath)
+        if self.recordCount % 100:
+            self.session.run(self.actor_net.soft_replace)
+            self.session.run(self.critic_net.soft_replace)
+
 
     def get_random_action_and_parameter_one_hot(self):
         actions = []
