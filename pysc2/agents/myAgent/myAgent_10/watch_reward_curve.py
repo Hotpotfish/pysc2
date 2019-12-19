@@ -10,7 +10,7 @@ def read_and_plot(path):
 
         if len(point) != 2:
             break
-        print(point)
+        # print(point)
         x = float(point[0])
         y = float(point[1])
         points.append([x, y])
@@ -27,4 +27,4 @@ def read_and_plot(path):
 
 
 if __name__ == "__main__":
-    read_and_plot('E:/model/20191219203310/reward.txt')
+    read_and_plot('E:/model/20191219213219/reward.txt')

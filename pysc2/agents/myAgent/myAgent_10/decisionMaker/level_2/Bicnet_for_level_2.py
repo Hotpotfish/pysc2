@@ -89,7 +89,7 @@ class Bicnet():
 
         self.rewardSaver = open(modelSavePath + 'reward.txt', 'a+')
         self.rewardSaver.write(str(self.recordCount) + ' ' + str(self.rewardAdd / self.rewardStep) + '\n')
-        print(self.rewardAdd / self.rewardStep)
+        # print(self.rewardAdd / self.rewardStep)
         self.rewardSaver.close()
 
     def perceive(self, state, action, reward, next_state, done):  # 感知存储信息
@@ -145,10 +145,9 @@ class Bicnet():
                                                             })
             self.saveLoss(modelSavePath, loss)
             self.saveRewardAvg(modelSavePath)
-        if self.recordCount % 100:
+        if self.recordCount % 300:
             self.session.run(self.actor_net.soft_replace)
             self.session.run(self.critic_net.soft_replace)
-
 
     def get_random_action_and_parameter_one_hot(self):
         actions = []
