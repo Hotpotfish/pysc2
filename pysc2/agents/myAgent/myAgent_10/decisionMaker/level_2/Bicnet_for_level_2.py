@@ -118,7 +118,7 @@ class Bicnet():
                                                                                                                                     self.critic_net.q_input: q_cusp  # a_
                                                                                                                                     })
             # actor_update
-            _, = self.session.run(self.actor_net.train_op, {self.actor_net.state_input: state_input,
+            __ = self.session.run(self.actor_net.train_op, {self.actor_net.state_input: state_input,
                                                             self.actor_net.agents_local_observation: agents_local_observation,  # s_
                                                             self.actor_net.action_gradient: action_grad  # a_
                                                             })
