@@ -237,5 +237,5 @@ def reward_compute_1(obs):
 
 def reward_compute_2(previous_state, current_state):
     rward_all = np.array(current_state[1][:, 6:]) - np.array(previous_state[1][:, 6:])
-    rward_all = np.sum(rward_all[:, 0:5] - rward_all[:, 5:10], axis=1)
+    rward_all = np.sum(rward_all[:, 0:config.K] - rward_all[:, config.K:config.K + config.K], axis=1)
     return rward_all

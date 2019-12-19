@@ -48,14 +48,17 @@ class Bicnet():
         self.modelSaver = tf.train.Saver()
         self.session.graph.finalize()
 
-        self.recordSaver = None
+        self.lossSaver = None
         self.recordCount = 0
 
-        self.restoreModelMark = True
+        self.rewardSaver = None
+        self.rewardCount = 0
 
-        self.epsiod_record = []
-        self.reward_add = 0
-        self.reward_avg = 0
+        self.rewardAdd = 0
+        self.rewardAvg = 0
+        self.rewardStep = 0
+
+        self.restoreModelMark = True
 
     def restoreModel(self, modelLoadPath):
         self.modelSaver.restore(self.session, modelLoadPath + '/' + self.name + '.ckpt')
@@ -72,16 +75,31 @@ class Bicnet():
 
         print(self.name + ' ' + 'saved!')
 
-    def saveRecord(self, modelSavePath, data):
-        if self.recordSaver is None:
+    def saveLoss(self, modelSavePath, loss):
+        # loss save
+        if self.lossSaver is None:
             thisPath = modelSavePath
-            self.recordSaver = tf.summary.FileWriter(thisPath, self.session.graph)
+            self.lossSaver = tf.summary.FileWriter(thisPath, self.session.graph)
 
-        data_summary = tf.Summary(value=[tf.Summary.Value(tag=self.name + '_' + "loss", simple_value=data)])
-        self.recordSaver.add_summary(summary=data_summary, global_step=self.recordCount)
+        data_summary = tf.Summary(value=[tf.Summary.Value(tag=self.name + '_' + "loss", simple_value=loss)])
+        self.lossSaver.add_summary(summary=data_summary, global_step=self.recordCount)
         self.recordCount += 1
 
+    def saveRewardAvg(self, modelSavePath, RewardAvg):
+        # loss save
+
+        self.rewardSaver = open(modelSavePath + 'reward.txt', 'a+')
+        self.rewardSaver.write(str(self.recordCount) + ' ' + str(np.mean(RewardAvg)) + '\n')
+        self.rewardSaver.close()
+
     def perceive(self, state, action, reward, next_state, done):  # 感知存储信息
+        self.rewardAdd += reward
+        self.rewardStep += 1
+
+        if done:
+            self.rewardAvg = self.rewardAdd / self.rewardStep
+            self.rewardAdd = 0
+            self.rewardStep = 0
 
         self.replay_buffer.inQueue([state, action, reward, next_state, done])
 
@@ -122,7 +140,8 @@ class Bicnet():
                                                             self.actor_net.agents_local_observation: agents_local_observation,  # s_
                                                             self.actor_net.action_gradient: action_grad  # a_
                                                             })
-            self.saveRecord(modelSavePath, loss)
+            self.saveLoss(modelSavePath, loss)
+            self.saveRewardAvg(modelSavePath, self.rewardAvg)
 
     def get_random_action_and_parameter_one_hot(self):
         actions = []
@@ -163,5 +182,7 @@ class Bicnet():
             return prob_value
 
     def action(self, state):
-        prob_value = self.session.run(self.net.prob_value, {self.net.state_input: state, self.net.train: False})[0]
+        state_input = state[0][np.newaxis, :, :]
+        agents_local_observation = state[1][np.newaxis, :, :]
+        prob_value = self.session.run(self.actor_net.a_, {self.actor_net.state_input_next: state_input, self.actor_net.agents_local_observation_next: agents_local_observation})[0]
         return prob_value

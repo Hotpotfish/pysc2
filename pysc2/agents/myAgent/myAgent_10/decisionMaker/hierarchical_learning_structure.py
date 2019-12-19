@@ -61,10 +61,6 @@ class hierarchical_learning_structure():
                 self.train_network(save_path)
 
                 self.episode += 1
-                # if handcraft_function.win_or_loss(obs) == 1:
-                #     self.win += 1
-                #
-                # print('episode:%d   win rate %f' % (self.episode, self.win / self.episode))
                 print('episode:%d   score_cumulative: %f' % (self.episode, obs.observation['score_cumulative'][0]))
 
                 # 模型保存

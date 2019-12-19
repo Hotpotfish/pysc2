@@ -37,7 +37,7 @@ def main(unused_argv):
 
     try:
         with sc2_env.SC2Env(
-                map_name="FindAndDefeatZerglings",
+                map_name="DefeatZerglingsAndBanelings",
                 players=[sc2_env.Agent(sc2_env.Race.terran), ],
                 agent_interface_format=features.AgentInterfaceFormat(
                     feature_dimensions=features.Dimensions(screen=config.MAP_SIZE,
