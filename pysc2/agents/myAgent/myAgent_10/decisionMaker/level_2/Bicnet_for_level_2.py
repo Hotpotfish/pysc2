@@ -137,10 +137,6 @@ class Bicnet():
             random_queued_one_hot = handcraft_function.one_hot_encoding(random_queued, config.QUEUED)
             random_action_and_parameter = np.append(random_action_and_parameter, random_queued_one_hot)
 
-            # random_my_unit = np.random.randint(0, config.MY_UNIT_NUMBER)
-            # random_my_unit_one_hot = handcraft_function.one_hot_encoding(random_my_unit, config.MY_UNIT_NUMBER)
-            # random_action_and_parameter = np.append(random_action_and_parameter, random_my_unit_one_hot)
-
             random_enemy_unit = np.random.randint(0, config.ENEMY_UNIT_NUMBER)
             random_enemy_unit_one_hot = handcraft_function.one_hot_encoding(random_enemy_unit, config.ENEMY_UNIT_NUMBER)
             random_action_and_parameter = np.append(random_action_and_parameter, random_enemy_unit_one_hot)

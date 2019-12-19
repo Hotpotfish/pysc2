@@ -148,7 +148,7 @@ def get_friend_and_enemy_health(unit, obs, k):
 
     if len(enemy) >= k:
         enemy_k = enemy[:k, 1]
-    elif len(friend) > 1 and len(friend) < k:
+    elif len(enemy) > 1 and len(enemy) < k:
         enemy_k[:len(enemy)] = enemy[:, 1]
     else:
         enemy_k = np.zeros(k)

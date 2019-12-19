@@ -102,6 +102,6 @@ class bicnet_actor():
         actor_gradients = list(map(lambda x: tf.div(x, batch_size),  unnormalized_actor_gradients))
 
         optimizer = tf.train.AdamOptimizer(self.learning_rate)
-        train_op = optimizer.apply_gradients(zip(actor_gradients, self.e_params))
+        train_op = optimizer.apply_gradients(list(zip(actor_gradients, self.e_params)))
 
         return train_op
