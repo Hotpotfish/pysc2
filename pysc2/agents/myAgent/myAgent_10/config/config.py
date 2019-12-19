@@ -9,7 +9,7 @@ INITIAL_EPSILON = 0.1  # starting value of epsilon
 FINAL_EPSILON = 0.01  # final value of epsilon
 REPLAY_SIZE = 2000  # experience replay buffer size
 EP_SIZE = 1
-BATCH_SIZE = 256 # size of minibatch
+BATCH_SIZE = 1024 # size of minibatch
 
 # 神经网络初始化参数
 MU = 0
