@@ -24,7 +24,6 @@ class bicnet_actor():
 
         # 建立输入管道
 
-
         # 两个A网络
         with tf.variable_scope(name, reuse=tf.AUTO_REUSE):
             self._setup_placeholders_graph()
@@ -95,11 +94,11 @@ class bicnet_actor():
         batch_size = tf.to_float(tf.shape(aout)[0])
         for i in range(self.agents_number):
             for j in range(self.agents_number):
-                grads.append(tf.gradients(aout[:, j], self.e_params, -action_gradient[j][:, i]))
+                grads.append(tf.gradients(aout[:, j], self.e_params, action_gradient[j][:, i]))
             # grads.append(tf.gradients(aout, self.e_params, -action_gradient[:, i]))
         grads = np.array(grads)
         unnormalized_actor_gradients = [tf.reduce_sum(list(grads[:, i]), axis=0) for i in range(len(self.e_params))]
-        actor_gradients = list(map(lambda x: tf.div(x, batch_size),  unnormalized_actor_gradients))
+        actor_gradients = list(map(lambda x: tf.div(x, batch_size), unnormalized_actor_gradients))
 
         optimizer = tf.train.AdamOptimizer(self.learning_rate)
         train_op = optimizer.apply_gradients(list(zip(actor_gradients, self.e_params)))

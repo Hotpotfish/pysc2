@@ -52,17 +52,8 @@ harvest_controller = [
 ]
 
 attack_controller = [
-    # action.RAW_FUNCTIONS.Attack_pt,
-    action.RAW_FUNCTIONS.Attack_unit,
     action.RAW_FUNCTIONS.Move_pt,
-    # 2 action.RAW_FUNCTIONS.Attack_Attack_pt,
-    # 3 action.RAW_FUNCTIONS.Attack_AttackBuilding_pt,
-    # 4 action.RAW_FUNCTIONS.Attack_Attack_unit,
-    # 5 action.RAW_FUNCTIONS.Attack_AttackBuilding_unit,
-    # 6 action.RAW_FUNCTIONS.Attack_Battlecruiser_pt,
-    # 7 action.RAW_FUNCTIONS.Attack_Battlecruiser_unit,
-    # 8 action.RAW_FUNCTIONS.Attack_Redirect_pt,
-    # 9 action.RAW_FUNCTIONS.Attack_Redirect_unit,
+    action.RAW_FUNCTIONS.Attack_unit,
 ]
 
 research_controller = [
