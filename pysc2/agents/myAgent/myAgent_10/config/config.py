@@ -24,7 +24,7 @@ COLUMN = 4
 
 # 命令参数的最大长度
 ORDERLENTH = 5
-K = 4
+K = 3
 
 # 参数维度 = 队列（QUEUED）+我方目标单位(MY_UNIT_NUMBER)+敌方目标单位(ENEMY_UNIT_NUMBER) +坐标(MAP_SIZE *MAP_SIZE)
 QUEUED = 2
