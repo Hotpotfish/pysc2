@@ -56,6 +56,7 @@ class Bicnet():
         self.rewardStep = 0
 
         self.timeStep = 0
+        self.loss = 0
 
         self.restoreModelMark = True
 
@@ -94,12 +95,14 @@ class Bicnet():
 
     def perceive(self, state, action, reward, next_state, done, save_path):  # 感知存储信息
         self.rewardAdd += np.sum(reward)
+        # print(np.sum(reward))
         self.timeStep += 1
 
         # self.rewardStep += 1
         # print(np.sum(reward))
 
         if done:
+
             self.epsoide += 1
             # print(self.rewardAdd)
             self.saveLoss(save_path)
