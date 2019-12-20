@@ -18,9 +18,9 @@ class level_2():
         action = self.controllers[controller_number].test_action(obs)
         return action
 
-    def train_network(self, modelSavePath):
+    def train_network(self):
         for i in range(len(sa.controllers)):
-            self.controllers[i].controller.network.train_Q_network(modelSavePath)
+            self.controllers[i].controller.network.train_Q_network()
 
     def load_model(self, modelLoadPath):
         for i in range(len(sa.controllers)):

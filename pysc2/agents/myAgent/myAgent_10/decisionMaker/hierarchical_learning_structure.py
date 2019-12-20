@@ -27,9 +27,9 @@ class hierarchical_learning_structure():
         action = self.level_2.train_action(obs, 0, save_path)
         return action
 
-    def train_network(self, modelSavePath):
+    def train_network(self):
         # self.leve1_1.train_network(modelSavePath)
-        self.level_2.train_network(modelSavePath)
+        self.level_2.train_network()
 
     def test_action(self, obs):
         controller_number = self.leve1_1.test_action(obs)
@@ -64,7 +64,7 @@ class hierarchical_learning_structure():
                 # 模型保存
                 if self.episode % config.MODEL_SAVE_EPISODE == 0:
                     self.save_model(save_path)
-            self.train_network(save_path)
+            self.train_network()
             return self.train_action(obs, save_path)
 
         elif mark == 'TEST':
