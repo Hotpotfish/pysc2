@@ -47,13 +47,13 @@ def assembly_action(obs, action):
                 # parameter = parameter.flatten()
             elif a == Action.RAW_FUNCTIONS.Move_pt:
                 if enemy_or_dire == 0:
-                    parameter.append((my_raw_units[i].x + 5, my_raw_units[i].y + 5))
+                    parameter.append((my_raw_units[i].x + 1, my_raw_units[i].y + 1))
                 elif enemy_or_dire == 1:
-                    parameter.append((my_raw_units[i].x - 5, my_raw_units[i].y - 5))
+                    parameter.append((my_raw_units[i].x - 1, my_raw_units[i].y - 1))
                 elif enemy_or_dire == 2:
-                    parameter.append((my_raw_units[i].x + 5, my_raw_units[i].y - 5))
+                    parameter.append((my_raw_units[i].x + 1, my_raw_units[i].y - 1))
                 else:
-                    parameter.append((my_raw_units[i].x - 5, my_raw_units[i].y + 5))
+                    parameter.append((my_raw_units[i].x - 1, my_raw_units[i].y + 1))
 
             parameter = tuple(parameter)
             actions.append(a(*parameter))
