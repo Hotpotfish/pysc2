@@ -48,14 +48,14 @@ class Bicnet():
         self.session.graph.finalize()
 
         self.lossSaver = None
-        self.recordCount = 0
+        self.epsoide = 0
 
         self.rewardSaver = None
-        self.rewardCount = 0
-
         self.rewardAdd = 0
         self.rewardAvg = 0
         self.rewardStep = 0
+
+        self.timeStep = 0
 
         self.restoreModelMark = True
 
@@ -74,35 +74,38 @@ class Bicnet():
 
         print(self.name + ' ' + 'saved!')
 
-    def saveLoss(self, modelSavePath, loss):
+    def saveLoss(self, modelSavePath):
         # loss save
         if self.lossSaver is None:
             thisPath = modelSavePath
             self.lossSaver = tf.summary.FileWriter(thisPath, self.session.graph)
 
-        data_summary = tf.Summary(value=[tf.Summary.Value(tag=self.name + '_' + "loss", simple_value=loss)])
-        self.lossSaver.add_summary(summary=data_summary, global_step=self.recordCount)
-        self.recordCount += 1
+        data_summary = tf.Summary(value=[tf.Summary.Value(tag=self.name + '_' + "loss", simple_value=self.loss)])
+        self.lossSaver.add_summary(summary=data_summary, global_step=self.epsoide)
 
     def saveRewardAvg(self, modelSavePath):
         # loss save
-
         self.rewardSaver = open(modelSavePath + 'reward.txt', 'a+')
-        self.rewardSaver.write(str(self.recordCount) + ' ' + str(self.rewardAdd / self.rewardStep) + '\n')
+        self.rewardSaver.write(str(self.epsoide) + ' ' + str(self.rewardAdd / self.timeStep) + '\n')
+        self.rewardAdd = 0
+        self.timeStep = 0
         # print(self.rewardAdd / self.rewardStep)
         self.rewardSaver.close()
 
-    def perceive(self, state, action, reward, next_state, done):  # 感知存储信息
+    def perceive(self, state, action, reward, next_state, done, save_path):  # 感知存储信息
         self.rewardAdd += np.sum(reward)
-        self.rewardStep += 1
+        self.timeStep += 1
+
+        # self.rewardStep += 1
         # print(np.sum(reward))
 
         if done:
+            self.epsoide += 1
             # print(self.rewardAdd)
+            self.saveLoss(save_path)
+            self.saveRewardAvg(save_path)
 
             # print(self.rewardAvg)
-            self.rewardAdd = 0
-            self.rewardStep = 0
 
         self.replay_buffer.inQueue([state, action, reward, next_state, done])
 
@@ -116,9 +119,6 @@ class Bicnet():
             state_input_next = np.array([data[3][0] for data in minibatch])
             agents_local_observation_next = np.array([data[3][1] for data in minibatch])
 
-            # a_
-            # state_input_next = next_state_batch[:, 0]  # .reshape((config.BATCH_SIZE, config.MAP_SIZE, config.MAP_SIZE, 1))
-            # agents_local_observation_next = next_state_batch[:, 1]  # .reshape(config.BATCH_SIZE, config.COOP_AGENTS_NUMBER, config.COOP_AGENTS_OBDIM)
             a_ = self.session.run(self.actor_net.a_, {self.actor_net.state_input_next: state_input_next, self.actor_net.agents_local_observation_next: agents_local_observation_next})  # s_
             a_ = np.eye(self.action_dim)[np.argmax(a_, axis=2)].astype(np.float32)
             # q_
@@ -128,24 +128,20 @@ class Bicnet():
             # q尖
             q_cusp = reward_batch + config.GAMMA * q_
 
-            # state_input = state_batch[:, 0]
-            # agents_local_observation = state_batch[:, 1]
             action_batch = np.eye(self.action_dim)[action_batch]
             # critic update
-            _, loss, action_grad = self.session.run([self.critic_net.trian_op, self.critic_net.loss, self.critic_net.action_grad], {self.critic_net.state_input: state_input,
-                                                                                                                                    self.critic_net.agents_local_observation: agents_local_observation,
-                                                                                                                                    # s_
-                                                                                                                                    self.critic_net.action_input: action_batch,
-                                                                                                                                    self.critic_net.q_input: q_cusp  # a_
-                                                                                                                                    })
+            _, self.loss, action_grad = self.session.run([self.critic_net.trian_op, self.critic_net.loss, self.critic_net.action_grad], {self.critic_net.state_input: state_input,
+                                                                                                                                         self.critic_net.agents_local_observation: agents_local_observation,
+                                                                                                                                         # s_
+                                                                                                                                         self.critic_net.action_input: action_batch,
+                                                                                                                                         self.critic_net.q_input: q_cusp  # a_
+                                                                                                                                         })
             # actor_update
             __ = self.session.run(self.actor_net.train_op, {self.actor_net.state_input: state_input,
                                                             self.actor_net.agents_local_observation: agents_local_observation,  # s_
                                                             self.actor_net.action_gradient: action_grad  # a_
                                                             })
-            self.saveLoss(modelSavePath, loss)
-            self.saveRewardAvg(modelSavePath)
-        if self.recordCount % 300:
+
             self.session.run(self.actor_net.soft_replace)
             self.session.run(self.critic_net.soft_replace)
 
@@ -153,24 +149,10 @@ class Bicnet():
         actions = []
 
         for i in range(config.COOP_AGENTS_NUMBER):
-            random_action_and_parameter = np.array([])
             random_action = np.random.randint(0, self.action_dim)
             random_action_one_hot = handcraft_function.one_hot_encoding(random_action, self.action_dim)
-            random_action_and_parameter = np.append(random_action_and_parameter, random_action_one_hot)
 
-            random_queued = np.random.randint(0, config.QUEUED)
-            random_queued_one_hot = handcraft_function.one_hot_encoding(random_queued, config.QUEUED)
-            random_action_and_parameter = np.append(random_action_and_parameter, random_queued_one_hot)
-
-            random_enemy_unit = np.random.randint(0, config.ENEMY_UNIT_NUMBER)
-            random_enemy_unit_one_hot = handcraft_function.one_hot_encoding(random_enemy_unit, config.ENEMY_UNIT_NUMBER)
-            random_action_and_parameter = np.append(random_action_and_parameter, random_enemy_unit_one_hot)
-
-            random_target_point = np.random.randint(0, config.POINT_NUMBER)
-            random_target_point_one_hot = handcraft_function.one_hot_encoding(random_target_point, config.POINT_NUMBER)
-            random_action_and_parameter = np.append(random_action_and_parameter, random_target_point_one_hot)
-
-            actions.append(random_action_and_parameter)
+            actions.append(random_action_one_hot)
 
         return actions
 

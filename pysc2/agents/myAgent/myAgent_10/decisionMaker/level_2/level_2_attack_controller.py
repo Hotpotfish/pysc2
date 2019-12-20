@@ -16,7 +16,7 @@ class level_2_attack_controller:
                    config.ENEMY_UNIT_NUMBER, 'attack_controller'))
         self.index = handcraft_function.find_controller_index(sa.attack_controller)
 
-    def train_action(self, obs):
+    def train_action(self, obs, save_path):
         self.controller.current_state = [np.array(obs.observation['feature_minimap'][5][:, :, np.newaxis]), np.array(get_agents_local_observation(obs))]
 
         if self.controller.previous_action is not None:
@@ -25,7 +25,8 @@ class level_2_attack_controller:
                                              self.controller.previous_action,
                                              self.controller.previous_reward,
                                              self.controller.current_state,
-                                             obs.last())
+                                             obs.last(),
+                                             save_path)
         action = self.controller.network.egreedy_action(self.controller.current_state)
         action = handcraft_function.reflect(len(sa.attack_controller), action)
         self.controller.previous_state = self.controller.current_state
@@ -35,7 +36,6 @@ class level_2_attack_controller:
 
     def test_action(self, obs):
         self.controller.current_state = handcraft_function_for_level_2_attack_controller.get_raw_units_observation(obs)
-        # self.controller.current_state = handcraft_function.get_all_observation(obs)
         state = self.controller.current_state
         action_and_parameter = self.controller.network.action(state)
         macro_and_parameter = handcraft_function.reflect(len(sa.attack_controller), action_and_parameter)

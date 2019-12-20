@@ -18,13 +18,13 @@ class hierarchical_learning_structure():
 
     def get_model_savePath(self, topPath):
         time = str(self.begin_time)
-        modelSavePath = topPath + '/' + time + '/'
+        modelSavePath = topPath + time + '/'
         return modelSavePath
 
-    def train_action(self, obs):
+    def train_action(self, obs, save_path):
         # controller_number = int(self.leve1_1.train_action(obs)[0])
         # controller_number = self.leve1_1.test_action(obs)
-        action = self.level_2.train_action(obs, 0)
+        action = self.level_2.train_action(obs, 0, save_path)
         return action
 
     def train_network(self, modelSavePath):
@@ -55,18 +55,17 @@ class hierarchical_learning_structure():
                 if not self.load_mark:
                     self.load_mark = True
                     self.load_model(modelLoadPath)
+            save_path = self.get_model_savePath(modelSavePath)
 
             if obs[0] == StepType.LAST:
-                save_path = self.get_model_savePath(modelSavePath)
-                self.train_network(save_path)
-
                 self.episode += 1
                 print('episode:%d   score_cumulative: %f' % (self.episode, obs.observation['score_cumulative'][0]))
 
                 # 模型保存
                 if self.episode % config.MODEL_SAVE_EPISODE == 0:
                     self.save_model(save_path)
-            return self.train_action(obs)
+            self.train_network(save_path)
+            return self.train_action(obs, save_path)
 
         elif mark == 'TEST':
             if modelLoadPath is not None:
