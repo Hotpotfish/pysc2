@@ -162,45 +162,81 @@ def get_friend_and_enemy_health(unit, obs, k):
 
 def get_agents_local_observation(obs):
     # my_unit = [unit for unit in obs.observation.raw_units if unit.alliance == features.PlayerRelative.SELF]
-
+    # 设计失误
     agents_local_observation = []
-    output = np.zeros((config.COOP_AGENTS_NUMBER, config.COOP_AGENTS_OBDIM))
 
-    for unit in obs.observation.raw_units:
+    my_units = [unit for unit in obs.observation.raw_units if unit.alliance == features.PlayerRelative.SELF]
+    my_units_lenth = len(my_units)
+    if my_units_lenth == 0:
+        print()
 
-        if unit.alliance == features.PlayerRelative.SELF:
+    for i in range(config.COOP_AGENTS_NUMBER):
+        if i >= my_units_lenth:
             unit_local = soldier()
-            unit_local.unit_type = unit.unit_type
-            unit_local.health = unit.health
-            unit_local.energy = unit.energy
-            unit_local.x = unit.x
-            unit_local.y = unit.y
-            unit_local.order_length = unit.order_length
+            unit_local.unit_type = 0
+            unit_local.health = 0
+            unit_local.energy = 0
+            unit_local.x = 0
+            unit_local.y = 0
+            unit_local.order_length = 0
+            friend_k, enemy_k = get_friend_and_enemy_health(unit_local, obs, config.K)
+            unit_local.frend_health = friend_k
+            unit_local.enemy_health = enemy_k
+            agents_local_observation.append(unit_local.get_list())
+        else:
+            unit_local = soldier()
+            unit_local.unit_type = my_units[i].unit_type
+            unit_local.health = my_units[i].health
+            unit_local.energy = my_units[i].energy
+            unit_local.x = my_units[i].x
+            unit_local.y = my_units[i].y
+            unit_local.order_length = my_units[i].order_length
 
-            friend_k, enemy_k = get_friend_and_enemy_health(unit, obs, config.K)
+            friend_k, enemy_k = get_friend_and_enemy_health(my_units[i], obs, config.K)
 
             unit_local.frend_health = friend_k
             unit_local.enemy_health = enemy_k
             agents_local_observation.append(unit_local.get_list())
 
-    if len(agents_local_observation) >= config.COOP_AGENTS_NUMBER:
-        output = agents_local_observation[:config.COOP_AGENTS_NUMBER]
-    elif 1 <= len(agents_local_observation) < config.COOP_AGENTS_NUMBER:
-        output[:len(agents_local_observation)] = agents_local_observation
-    else:
-        unit_local = soldier()
-        unit_local.unit_type = 0
-        unit_local.health = 0
-        unit_local.energy = 0
-        unit_local.x = 0
-        unit_local.y = 0
-        unit_local.order_length = 0
+    return agents_local_observation
 
-        friend_k, enemy_k = get_friend_and_enemy_health(unit_local, obs, config.K)
+    # output = np.zeros((config.COOP_AGENTS_NUMBER, config.COOP_AGENTS_OBDIM))
 
-        unit_local.frend_health = friend_k
-        unit_local.enemy_health = enemy_k
-        output[0] = unit_local.get_list()
+    # for unit in obs.observation.raw_units:
+    #
+    #     if unit.alliance == features.PlayerRelative.SELF:
+    #         unit_local = soldier()
+    #         unit_local.unit_type = unit.unit_type
+    #         unit_local.health = unit.health
+    #         unit_local.energy = unit.energy
+    #         unit_local.x = unit.x
+    #         unit_local.y = unit.y
+    #         unit_local.order_length = unit.order_length
+    #
+    #         friend_k, enemy_k = get_friend_and_enemy_health(unit, obs, config.K)
+    #
+    #         unit_local.frend_health = friend_k
+    #         unit_local.enemy_health = enemy_k
+    #         agents_local_observation.append(unit_local.get_list())
+    #
+    # if len(agents_local_observation) >= config.COOP_AGENTS_NUMBER:
+    #     output = agents_local_observation[:config.COOP_AGENTS_NUMBER]
+    # elif 1 <= len(agents_local_observation) < config.COOP_AGENTS_NUMBER:
+    #     output[:len(agents_local_observation)] = agents_local_observation
+    # else:
+    #     unit_local = soldier()
+    #     unit_local.unit_type = 0
+    #     unit_local.health = 0
+    #     unit_local.energy = 0
+    #     unit_local.x = 0
+    #     unit_local.y = 0
+    #     unit_local.order_length = 0
+    #
+    #     friend_k, enemy_k = get_friend_and_enemy_health(unit_local, obs, config.K)
+    #
+    #     unit_local.frend_health = friend_k
+    #     unit_local.enemy_health = enemy_k
+    #     output[0] = unit_local.get_list()
 
     return output
 

@@ -5,16 +5,16 @@ RAW_UNITS_LENGTH = 46
 
 # Hyper Parameters for DQN
 GAMMA = 0.9  # discount factor for target Q
-INITIAL_EPSILON = 0.01  # starting value of epsilon
+INITIAL_EPSILON = 0.02  # starting value of epsilon
 FINAL_EPSILON = 0.01  # final value of epsilon
-REPLAY_SIZE = 2000  # experience replay buffer size
+REPLAY_SIZE = 100000  # experience replay buffer size
 EP_SIZE = 1
 BATCH_SIZE = 32  # size of minibatch
 
 # 神经网络初始化参数
 MU = 0
 SIGMA = 1
-LEARING_RATE = 1e-4
+LEARING_RATE = 1e-3
 # 模型保存轮次
 MODEL_SAVE_EPISODE = 1000
 
