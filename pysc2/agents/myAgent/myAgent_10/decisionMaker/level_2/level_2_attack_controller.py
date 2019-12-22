@@ -42,9 +42,9 @@ class level_2_attack_controller:
         return action
 
     def test_action(self, obs):
-        self.controller.current_state = handcraft_function_for_level_2_attack_controller.get_raw_units_observation(obs)
-        state = self.controller.current_state
-        action_and_parameter = self.controller.network.action(state)
-        macro_and_parameter = handcraft_function.reflect(len(sa.attack_controller), action_and_parameter)
-        action = handcraft_function.assembly_action(obs, self.index, macro_and_parameter)
+        self.controller.current_state = [np.array(obs.observation['feature_minimap'][5][:, :, np.newaxis]), np.array(get_agents_local_observation(obs))]
+
+        action= self.controller.network.action(self.controller.current_state)
+        action = handcraft_function.reflect(len(sa.attack_controller), action)
+        action = handcraft_function_for_level_2_attack_controller.assembly_action(obs, action)
         return action
