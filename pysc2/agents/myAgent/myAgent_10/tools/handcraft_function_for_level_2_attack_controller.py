@@ -36,10 +36,9 @@ def assembly_action(obs, action):
             action_number = int(aciton_bin[0:1], base=2)
             a = controller[action_number]
 
-            queued = int(aciton_bin[1:2], base=2)
-            parameter.append(queued)
+            parameter.append(0)
             parameter.append(my_raw_units[i].tag)
-            enemy_or_dire = int(aciton_bin[2:], base=2)
+            enemy_or_dire = int(aciton_bin[1:], base=2)
 
             if a == Action.RAW_FUNCTIONS.Attack_unit:
                 parameter.append(enemy_units[enemy_or_dire % enemy_units_lenth].tag)
@@ -72,13 +71,13 @@ def assembly_action(obs, action):
 
             a = controller[action_number]
 
-            queued = int(aciton_bin[1:2], base=2)
+            # queued = int(aciton_bin[1:2], base=2)
 
-            parameter.append(queued)
+            parameter.append(0)
 
             parameter.append(my_raw_units[i].tag)
 
-            enemy_or_dire = int(aciton_bin[2:], base=2)
+            enemy_or_dire = int(aciton_bin[1:], base=2)
 
             if a == Action.RAW_FUNCTIONS.Attack_unit:
                 if enemy_units_lenth == 0:

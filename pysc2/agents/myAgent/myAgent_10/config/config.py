@@ -5,16 +5,16 @@ RAW_UNITS_LENGTH = 46
 
 # Hyper Parameters for DQN
 GAMMA = 0.9  # discount factor for target Q
-INITIAL_EPSILON = 0.02  # starting value of epsilon
+INITIAL_EPSILON = 0.05  # starting value of epsilon
 FINAL_EPSILON = 0.01  # final value of epsilon
 REPLAY_SIZE = 100000  # experience replay buffer size
 EP_SIZE = 1
-BATCH_SIZE = 32  # size of minibatch
+BATCH_SIZE = 64  # size of minibatch
 
 # 神经网络初始化参数
 MU = 0
 SIGMA = 1
-LEARING_RATE = 1e-3
+LEARING_RATE = 1e-4
 # 模型保存轮次
 MODEL_SAVE_EPISODE = 1000
 
@@ -32,7 +32,7 @@ MY_UNIT_NUMBER = K
 ENEMY_UNIT_NUMBER = K  # 选择敌方智能体的空间
 POINT_NUMBER = MAP_SIZE * MAP_SIZE
 
-ATTACT_CONTROLLER_ACTIONDIM = QUEUED * ENEMY_UNIT_NUMBER + QUEUED * 4  # （4为上下左右）
+ATTACT_CONTROLLER_ACTIONDIM = ENEMY_UNIT_NUMBER + 4  # （4为上下左右）
 ATTACT_CONTROLLER_ACTIONDIM_BIN = len('{:b}'.format(ATTACT_CONTROLLER_ACTIONDIM))
 
 COOP_AGENTS_NUMBER = MY_UNIT_NUMBER
