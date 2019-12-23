@@ -94,7 +94,7 @@ class bicnet_actor():
         batch_size = tf.to_float(tf.shape(aout)[0])
         for i in range(self.agents_number):
             for j in range(self.agents_number):
-                grads.append(tf.gradients(aout[:, j], self.e_params, action_gradient[j][:, i]))
+                grads.append(tf.gradients(aout[:, j], self.e_params, -action_gradient[j][:, i]))
             # grads.append(tf.gradients(aout, self.e_params, -action_gradient[:, i]))
         grads = np.array(grads)
         unnormalized_actor_gradients = [tf.reduce_sum(list(grads[:, i]), axis=0) for i in range(len(self.e_params))]

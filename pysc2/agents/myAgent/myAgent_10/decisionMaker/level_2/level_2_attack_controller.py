@@ -24,7 +24,7 @@ class level_2_attack_controller:
             self.controller.previous_reward = None
             self.controller.current_state = None
 
-        self.controller.current_state = [np.array(obs.observation['feature_minimap'][5][:, :, np.newaxis]), np.array(get_agents_local_observation(obs))]
+        self.controller.current_state = [np.array(obs.observation['feature_screen'][5][:, :, np.newaxis]), np.array(get_agents_local_observation(obs))]
 
         if self.controller.previous_action is not None:
             self.controller.previous_reward = reward_compute_2(self.controller.previous_state, self.controller.current_state)
@@ -42,7 +42,7 @@ class level_2_attack_controller:
         return action
 
     def test_action(self, obs):
-        self.controller.current_state = [np.array(obs.observation['feature_minimap'][5][:, :, np.newaxis]), np.array(get_agents_local_observation(obs))]
+        self.controller.current_state = [np.array(obs.observation['feature_screen'][5][:, :, np.newaxis]), np.array(get_agents_local_observation(obs))]
 
         action= self.controller.network.action(self.controller.current_state)
         action = handcraft_function.reflect(len(sa.attack_controller), action)

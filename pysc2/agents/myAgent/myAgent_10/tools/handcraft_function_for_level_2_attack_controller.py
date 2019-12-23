@@ -46,13 +46,13 @@ def assembly_action(obs, action):
                 # parameter = parameter.flatten()
             elif a == Action.RAW_FUNCTIONS.Move_pt:
                 if enemy_or_dire == 0:
-                    parameter.append((my_raw_units[i].x + 1, my_raw_units[i].y + 1))
+                    parameter.append((my_raw_units[i].x + 5, my_raw_units[i].y + 5))
                 elif enemy_or_dire == 1:
-                    parameter.append((my_raw_units[i].x - 1, my_raw_units[i].y - 1))
+                    parameter.append((my_raw_units[i].x - 5, my_raw_units[i].y - 5))
                 elif enemy_or_dire == 2:
-                    parameter.append((my_raw_units[i].x + 1, my_raw_units[i].y - 1))
+                    parameter.append((my_raw_units[i].x + 5, my_raw_units[i].y - 5))
                 else:
-                    parameter.append((my_raw_units[i].x - 1, my_raw_units[i].y + 1))
+                    parameter.append((my_raw_units[i].x - 5, my_raw_units[i].y + 5))
 
             parameter = tuple(parameter)
             actions.append(a(*parameter))
@@ -93,19 +93,19 @@ def assembly_action(obs, action):
 
                 if enemy_or_dire == 0:
 
-                    parameter.append((my_raw_units[i].x + 1, my_raw_units[i].y + 1))
+                    parameter.append((my_raw_units[i].x + 5, my_raw_units[i].y + 5))
 
                 elif enemy_or_dire == 1:
 
-                    parameter.append((my_raw_units[i].x - 1, my_raw_units[i].y - 1))
+                    parameter.append((my_raw_units[i].x - 5, my_raw_units[i].y - 5))
 
                 elif enemy_or_dire == 2:
 
-                    parameter.append((my_raw_units[i].x + 1, my_raw_units[i].y - 1))
+                    parameter.append((my_raw_units[i].x + 5, my_raw_units[i].y - 5))
 
                 else:
 
-                    parameter.append((my_raw_units[i].x - 1, my_raw_units[i].y + 1))
+                    parameter.append((my_raw_units[i].x - 5, my_raw_units[i].y + 5))
 
             parameter = tuple(parameter)
 
@@ -237,7 +237,7 @@ def get_agents_local_observation(obs):
     #     unit_local.enemy_health = enemy_k
     #     output[0] = unit_local.get_list()
 
-    return output
+
 
 
 def get_raw_units_observation(obs):
@@ -288,5 +288,6 @@ def reward_compute_1(obs):
 
 def reward_compute_2(previous_state, current_state):
     rward_all = np.array(current_state[1][:, 6:]) - np.array(previous_state[1][:, 6:])
+    # my_health_change =  rward_all[:config.]
     rward_all = np.sum(rward_all[:, 0:config.K] - rward_all[:, config.K:config.K + config.K], axis=1)
     return rward_all
