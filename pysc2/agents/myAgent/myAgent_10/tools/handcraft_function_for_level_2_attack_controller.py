@@ -12,9 +12,22 @@ from pysc2.lib import features
 #     """returns the binary of integer n, using count number of digits"""
 #     return "".join([str((n >> y) & 1) for y in range(count-1, -1, -1)])
 
-# def computeDistance(unit,)
+def computeDistance(unit, enemy_unit):
+    x_difference = math.pow(unit.x - enemy_unit.x, 2)
+    y_difference = math.pow(unit.y - enemy_unit.y, 2)
 
-def reallyProb(unit, obs, action_porb):
+    distance = math.sqrt(x_difference + y_difference)
+
+    return distance
+
+
+def reallyProb(unit, enemy_units, action_porb):
+    mask = []
+
+    for i in range(config.STATIC_ACTION_DIM):
+        mask.append(1)
+    for i in range(len(enemy_units)):
+        distance = computeDistance(unit, enemy_units[i])
 
 
 
