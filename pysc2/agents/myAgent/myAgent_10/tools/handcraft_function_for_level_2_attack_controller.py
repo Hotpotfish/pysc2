@@ -122,8 +122,8 @@ def get_friend_and_enemy_health(unit, obs, k):
 
     for other_unit in obs.observation.raw_units:
 
-        if unit.x == other_unit.x and unit.y == other_unit.y:
-            continue
+        # if unit.x == other_unit.x and unit.y == other_unit.y:
+        #     continue
 
         x_difference = math.pow(unit.x - other_unit.x, 2)
         y_difference = math.pow(unit.y - other_unit.y, 2)
@@ -142,14 +142,14 @@ def get_friend_and_enemy_health(unit, obs, k):
 
     if len(friend) >= k:
         friend_k = friend[:k, 1]
-    elif len(friend) >= 1 and len(friend) < k:
+    elif 1 <= len(friend) < k:
         friend_k[:len(friend)] = friend[:, 1]
     else:
         friend_k = np.zeros(k)
 
     if len(enemy) >= k:
         enemy_k = enemy[:k, 1]
-    elif len(enemy) >= 1 and len(enemy) < k:
+    elif 1 <= len(enemy) < k:
         enemy_k[:len(enemy)] = enemy[:, 1]
     else:
         enemy_k = np.zeros(k)
@@ -160,8 +160,6 @@ def get_friend_and_enemy_health(unit, obs, k):
 
 
 def get_agents_local_observation(obs):
-    # my_unit = [unit for unit in obs.observation.raw_units if unit.alliance == features.PlayerRelative.SELF]
-    # 设计失误
     agents_local_observation = []
 
     my_units = [unit for unit in obs.observation.raw_units if unit.alliance == features.PlayerRelative.SELF]
@@ -198,46 +196,6 @@ def get_agents_local_observation(obs):
             agents_local_observation.append(unit_local.get_list())
 
     return agents_local_observation
-
-    # output = np.zeros((config.COOP_AGENTS_NUMBER, config.COOP_AGENTS_OBDIM))
-
-    # for unit in obs.observation.raw_units:
-    #
-    #     if unit.alliance == features.PlayerRelative.SELF:
-    #         unit_local = soldier()
-    #         unit_local.unit_type = unit.unit_type
-    #         unit_local.health = unit.health
-    #         unit_local.energy = unit.energy
-    #         unit_local.x = unit.x
-    #         unit_local.y = unit.y
-    #         unit_local.order_length = unit.order_length
-    #
-    #         friend_k, enemy_k = get_friend_and_enemy_health(unit, obs, config.K)
-    #
-    #         unit_local.frend_health = friend_k
-    #         unit_local.enemy_health = enemy_k
-    #         agents_local_observation.append(unit_local.get_list())
-    #
-    # if len(agents_local_observation) >= config.COOP_AGENTS_NUMBER:
-    #     output = agents_local_observation[:config.COOP_AGENTS_NUMBER]
-    # elif 1 <= len(agents_local_observation) < config.COOP_AGENTS_NUMBER:
-    #     output[:len(agents_local_observation)] = agents_local_observation
-    # else:
-    #     unit_local = soldier()
-    #     unit_local.unit_type = 0
-    #     unit_local.health = 0
-    #     unit_local.energy = 0
-    #     unit_local.x = 0
-    #     unit_local.y = 0
-    #     unit_local.order_length = 0
-    #
-    #     friend_k, enemy_k = get_friend_and_enemy_health(unit_local, obs, config.K)
-    #
-    #     unit_local.frend_health = friend_k
-    #     unit_local.enemy_health = enemy_k
-    #     output[0] = unit_local.get_list()
-
-
 
 
 def get_raw_units_observation(obs):
