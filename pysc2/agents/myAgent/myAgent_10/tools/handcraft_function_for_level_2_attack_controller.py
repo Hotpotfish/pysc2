@@ -12,105 +12,109 @@ from pysc2.lib import features
 #     """returns the binary of integer n, using count number of digits"""
 #     return "".join([str((n >> y) & 1) for y in range(count-1, -1, -1)])
 
-def assembly_action(obs, action):
+# def computeDistance(unit,)
+
+def reallyProb(unit, obs, action_porb):
+
+
+
+def assembly_action(obs, action_prob):
     head = '{:0' + str(config.ATTACT_CONTROLLER_ACTIONDIM_BIN) + 'b}'
     my_raw_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
     enemy_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
+    # handcraft_function.reflect
 
     my_raw_units_lenth = len(my_raw_units)
     enemy_units_lenth = len(enemy_units)
 
-    # action = sa.controllers[controller_number][int(action_and_parameter[0])]
-
-    # if macro_and_parameter[2] >= raw_units_lenth or macro_and_parameter[3] >= raw_units_lenth:
-    #     return actions.RAW_FUNCTIONS.no_op()
     actions = []
-    # 根据参数名字填内容
-    if my_raw_units_lenth > config.COOP_AGENTS_NUMBER:
-        for i in range(config.COOP_AGENTS_NUMBER):
-            controller = sa.attack_controller
-            parameter = []
 
-            aciton_bin = head.format(action[i])
-
-            action_number = int(aciton_bin[0:1], base=2)
-            a = controller[action_number]
-
-            parameter.append(0)
-            parameter.append(my_raw_units[i].tag)
-            enemy_or_dire = int(aciton_bin[1:], base=2)
-
-            if a == Action.RAW_FUNCTIONS.Attack_unit:
-                parameter.append(enemy_units[enemy_or_dire % enemy_units_lenth].tag)
-                # parameter.append([queued, my_raw_units[i].tag, enemy_units[enemy_or_dire % enemy_units_lenth]])
-                # parameter = parameter.flatten()
-            elif a == Action.RAW_FUNCTIONS.Move_pt:
-                if enemy_or_dire == 0:
-                    parameter.append((my_raw_units[i].x + 5, my_raw_units[i].y + 5))
-                elif enemy_or_dire == 1:
-                    parameter.append((my_raw_units[i].x - 5, my_raw_units[i].y - 5))
-                elif enemy_or_dire == 2:
-                    parameter.append((my_raw_units[i].x + 5, my_raw_units[i].y - 5))
-                else:
-                    parameter.append((my_raw_units[i].x - 5, my_raw_units[i].y + 5))
-
-            parameter = tuple(parameter)
-            actions.append(a(*parameter))
-
-    else:
-
-        for i in range(my_raw_units_lenth):
-
-            controller = sa.attack_controller
-
-            parameter = []
-
-            aciton_bin = head.format(action[i])
-
-            action_number = int(aciton_bin[0:1], base=2)
-
-            a = controller[action_number]
-
-            # queued = int(aciton_bin[1:2], base=2)
-
-            parameter.append(0)
-
-            parameter.append(my_raw_units[i].tag)
-
-            enemy_or_dire = int(aciton_bin[1:], base=2)
-
-            if a == Action.RAW_FUNCTIONS.Attack_unit:
-                if enemy_units_lenth == 0:
-                    return Action.RAW_FUNCTIONS.no_op()
-
-                parameter.append(enemy_units[enemy_or_dire % enemy_units_lenth].tag)
-
-                # parameter.append([queued, my_raw_units[i].tag, enemy_units[enemy_or_dire % enemy_units_lenth]])
-
-                # parameter = parameter.flatten()
-
-            elif a == Action.RAW_FUNCTIONS.Move_pt:
-
-                if enemy_or_dire == 0:
-
-                    parameter.append((my_raw_units[i].x + 5, my_raw_units[i].y + 5))
-
-                elif enemy_or_dire == 1:
-
-                    parameter.append((my_raw_units[i].x - 5, my_raw_units[i].y - 5))
-
-                elif enemy_or_dire == 2:
-
-                    parameter.append((my_raw_units[i].x + 5, my_raw_units[i].y - 5))
-
-                else:
-
-                    parameter.append((my_raw_units[i].x - 5, my_raw_units[i].y + 5))
-
-            parameter = tuple(parameter)
-
-            actions.append(a(*parameter))
-    return actions
+    # # 根据参数名字填内容
+    # if my_raw_units_lenth > config.COOP_AGENTS_NUMBER:
+    #     for i in range(config.COOP_AGENTS_NUMBER):
+    #         controller = sa.attack_controller
+    #         parameter = []
+    #
+    #         aciton_bin = head.format(action[i])
+    #
+    #         action_number = int(aciton_bin[0:1], base=2)
+    #         a = controller[action_number]
+    #
+    #         parameter.append(0)
+    #         parameter.append(my_raw_units[i].tag)
+    #         enemy_or_dire = int(aciton_bin[1:], base=2)
+    #
+    #         if a == Action.RAW_FUNCTIONS.Attack_unit:
+    #             parameter.append(enemy_units[enemy_or_dire % enemy_units_lenth].tag)
+    #             # parameter.append([queued, my_raw_units[i].tag, enemy_units[enemy_or_dire % enemy_units_lenth]])
+    #             # parameter = parameter.flatten()
+    #         elif a == Action.RAW_FUNCTIONS.Move_pt:
+    #             if enemy_or_dire == 0:
+    #                 parameter.append((my_raw_units[i].x + 5, my_raw_units[i].y + 5))
+    #             elif enemy_or_dire == 1:
+    #                 parameter.append((my_raw_units[i].x - 5, my_raw_units[i].y - 5))
+    #             elif enemy_or_dire == 2:
+    #                 parameter.append((my_raw_units[i].x + 5, my_raw_units[i].y - 5))
+    #             else:
+    #                 parameter.append((my_raw_units[i].x - 5, my_raw_units[i].y + 5))
+    #
+    #         parameter = tuple(parameter)
+    #         actions.append(a(*parameter))
+    #
+    # else:
+    #
+    #     for i in range(my_raw_units_lenth):
+    #
+    #         controller = sa.attack_controller
+    #
+    #         parameter = []
+    #
+    #         aciton_bin = head.format(action[i])
+    #
+    #         action_number = int(aciton_bin[0:1], base=2)
+    #
+    #         a = controller[action_number]
+    #
+    #         # queued = int(aciton_bin[1:2], base=2)
+    #
+    #         parameter.append(0)
+    #
+    #         parameter.append(my_raw_units[i].tag)
+    #
+    #         enemy_or_dire = int(aciton_bin[1:], base=2)
+    #
+    #         if a == Action.RAW_FUNCTIONS.Attack_unit:
+    #             if enemy_units_lenth == 0:
+    #                 return Action.RAW_FUNCTIONS.no_op()
+    #
+    #             parameter.append(enemy_units[enemy_or_dire % enemy_units_lenth].tag)
+    #
+    #             # parameter.append([queued, my_raw_units[i].tag, enemy_units[enemy_or_dire % enemy_units_lenth]])
+    #
+    #             # parameter = parameter.flatten()
+    #
+    #         elif a == Action.RAW_FUNCTIONS.Move_pt:
+    #
+    #             if enemy_or_dire == 0:
+    #
+    #                 parameter.append((my_raw_units[i].x + 5, my_raw_units[i].y + 5))
+    #
+    #             elif enemy_or_dire == 1:
+    #
+    #                 parameter.append((my_raw_units[i].x - 5, my_raw_units[i].y - 5))
+    #
+    #             elif enemy_or_dire == 2:
+    #
+    #                 parameter.append((my_raw_units[i].x + 5, my_raw_units[i].y - 5))
+    #
+    #             else:
+    #
+    #                 parameter.append((my_raw_units[i].x - 5, my_raw_units[i].y + 5))
+    #
+    #         parameter = tuple(parameter)
+    #
+    #         actions.append(a(*parameter))
+    # return actions
 
 
 def get_friend_and_enemy_health(unit, obs, k):
@@ -122,13 +126,15 @@ def get_friend_and_enemy_health(unit, obs, k):
 
     for other_unit in obs.observation.raw_units:
 
-        # if unit.x == other_unit.x and unit.y == other_unit.y:
-        #     continue
+        if unit.x == other_unit.x and unit.y == other_unit.y:
+            continue
 
         x_difference = math.pow(unit.x - other_unit.x, 2)
         y_difference = math.pow(unit.y - other_unit.y, 2)
 
         distance = math.sqrt(x_difference + y_difference)
+        # if distance <= config.OB_RANGE:
+        #     continue
 
         if other_unit.alliance == features.PlayerRelative.SELF:
             friend.append([distance, other_unit.health])
@@ -164,22 +170,23 @@ def get_agents_local_observation(obs):
 
     my_units = [unit for unit in obs.observation.raw_units if unit.alliance == features.PlayerRelative.SELF]
     my_units_lenth = len(my_units)
-    if my_units_lenth == 0:
-        print()
+    # if my_units_lenth == 0:
+    #     print()
 
     for i in range(config.COOP_AGENTS_NUMBER):
         if i >= my_units_lenth:
-            unit_local = soldier()
-            unit_local.unit_type = 0
-            unit_local.health = 0
-            unit_local.energy = 0
-            unit_local.x = 0
-            unit_local.y = 0
-            unit_local.order_length = 0
-            friend_k, enemy_k = get_friend_and_enemy_health(unit_local, obs, config.K)
-            unit_local.frend_health = friend_k
-            unit_local.enemy_health = enemy_k
-            agents_local_observation.append(unit_local.get_list())
+            # unit_local = soldier()
+            # unit_local.unit_type = 0
+            # unit_local.health = 0
+            # unit_local.energy = 0
+            # unit_local.x = 0
+            # unit_local.y = 0
+            # unit_local.order_length = 0
+            # friend_k, enemy_k = get_friend_and_enemy_health(unit_local, obs, config.K)
+            # unit_local.frend_health = friend_k
+            # unit_local.enemy_health = enemy_k
+            empty = np.zeros(6 + config.K * 2)
+            agents_local_observation.append(empty)
         else:
             unit_local = soldier()
             unit_local.unit_type = my_units[i].unit_type
@@ -245,7 +252,16 @@ def reward_compute_1(obs):
 
 
 def reward_compute_2(previous_state, current_state):
-    rward_all = np.array(current_state[1][:, 6:]) - np.array(previous_state[1][:, 6:])
-    # my_health_change =  rward_all[:config.]
-    rward_all = np.sum(rward_all[:, 0:config.K] - rward_all[:, config.K:config.K + config.K], axis=1)
-    return rward_all
+    rward_all = []
+    for i in range(config.COOP_AGENTS_NUMBER):
+        if current_state[1][i][0] == 0:
+            rward_all.append(0)
+        else:
+            temp = current_state[1][i][6:] - previous_state[1][i][6:]
+            temp = temp[0:config.K] - temp[config.K:config.K + config.K]
+            rward_all.append(temp)
+
+    # rward_all = np.array(current_state[1][:, 6:]) - np.array(previous_state[1][:, 6:])
+    # # my_health_change =  rward_all[:config.]
+    # rward_all = np.sum(rward_all[:, 0:config.K] - rward_all[:, config.K:config.K + config.K], axis=1)
+    return np.array(rward_all)

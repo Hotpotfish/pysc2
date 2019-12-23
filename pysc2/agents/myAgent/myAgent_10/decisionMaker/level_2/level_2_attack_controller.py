@@ -34,11 +34,12 @@ class level_2_attack_controller:
                                              self.controller.current_state,
                                              obs.last(),
                                              save_path)
-        action = self.controller.network.egreedy_action(self.controller.current_state)
+        action_prob = self.controller.network.egreedy_action(self.controller.current_state)
+        action = handcraft_function_for_level_2_attack_controller.assembly_action(obs, action_prob)
         action = handcraft_function.reflect(len(sa.attack_controller), action)
         self.controller.previous_state = self.controller.current_state
         self.controller.previous_action = action
-        action = handcraft_function_for_level_2_attack_controller.assembly_action(obs, action)
+
         return action
 
     def test_action(self, obs):
