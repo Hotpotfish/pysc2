@@ -144,8 +144,9 @@ class Bicnet():
         actions = []
 
         for i in range(config.MY_UNIT_NUMBER):
-            random_action = np.random.randint(0, self.action_dim)
-            random_action_one_hot = handcraft_function.one_hot_encoding(random_action, self.action_dim)
+            # random_action = np.random.randint(0, self.acption_dim)
+            # random_action_one_hot = handcraft_function.one_hot_encoding(random_action, self.action_dim)
+            random_action_one_hot = np.random.uniform(low=0, high=1, size=(self.action_dim))
 
             actions.append(random_action_one_hot)
 

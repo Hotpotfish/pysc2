@@ -167,7 +167,7 @@ def get_friend_and_enemy_health(unit, obs, my_unit_number, enemy_unit_number):
 
     for other_unit in obs.observation.raw_units:
 
-        if unit.x == other_unit.x and unit.y == other_unit.y:
+        if unit.tag == other_unit.tag:
             continue
 
         x_difference = math.pow(unit.x - other_unit.x, 2)
@@ -183,6 +183,8 @@ def get_friend_and_enemy_health(unit, obs, my_unit_number, enemy_unit_number):
 
         if other_unit.alliance == features.PlayerRelative.ENEMY:
             enemy.append((distance, other_unit.health))
+    if len(friend) == 1:
+        print()
 
     friend = np.array(sorted(friend, key=lambda f: f[0]))
     enemy = np.array(sorted(enemy, key=lambda e: e[0]))
