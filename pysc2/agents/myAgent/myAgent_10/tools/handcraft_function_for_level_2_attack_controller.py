@@ -82,25 +82,25 @@ def assembly_action(obs, action_probs):
             elif 0 < action_number <= 4:
                 a = controller[1]
 
-                dir = action_number - 4
+                dir = action_number - 1
 
                 parameter.append(0)
                 parameter.append(my_raw_units[i].tag)
                 if dir == 0:
-                    parameter.append((my_raw_units[i].x + 5, my_raw_units[i].y + 5))
+                    parameter.append((my_raw_units[i].x + 1, my_raw_units[i].y + 1))
                 elif dir == 1:
-                    parameter.append((my_raw_units[i].x - 5, my_raw_units[i].y - 5))
+                    parameter.append((my_raw_units[i].x - 1, my_raw_units[i].y - 1))
                 elif dir == 2:
-                    parameter.append((my_raw_units[i].x + 5, my_raw_units[i].y - 5))
+                    parameter.append((my_raw_units[i].x + 1, my_raw_units[i].y - 1))
                 else:
-                    parameter.append((my_raw_units[i].x - 5, my_raw_units[i].y + 5))
+                    parameter.append((my_raw_units[i].x - 1, my_raw_units[i].y + 1))
 
                 parameter = tuple(parameter)
                 actions.append(a(*parameter))
 
             elif 4 < action_number <= 4 + config.ENEMY_UNIT_NUMBER:
                 a = controller[2]
-                enemy = action_number - 4 - config.ENEMY_UNIT_NUMBER
+                enemy = action_number - 1 - 4
                 parameter.append(0)
                 parameter.append(my_raw_units[i].tag)
                 parameter.append(enemy_units[enemy].tag)
@@ -126,25 +126,25 @@ def assembly_action(obs, action_probs):
             elif 0 < action_number <= 4:
                 a = controller[1]
 
-                dir = action_number - 4
+                dir = action_number - 1
 
                 parameter.append(0)
                 parameter.append(my_raw_units[i].tag)
                 if dir == 0:
-                    parameter.append((my_raw_units[i].x + 5, my_raw_units[i].y + 5))
+                    parameter.append((my_raw_units[i].x + 1, my_raw_units[i].y + 1))
                 elif dir == 1:
-                    parameter.append((my_raw_units[i].x - 5, my_raw_units[i].y - 5))
+                    parameter.append((my_raw_units[i].x - 1, my_raw_units[i].y - 1))
                 elif dir == 2:
-                    parameter.append((my_raw_units[i].x + 5, my_raw_units[i].y - 5))
+                    parameter.append((my_raw_units[i].x + 1, my_raw_units[i].y - 1))
                 else:
-                    parameter.append((my_raw_units[i].x - 5, my_raw_units[i].y + 5))
+                    parameter.append((my_raw_units[i].x - 1, my_raw_units[i].y + 1))
 
                 parameter = tuple(parameter)
                 actions.append(a(*parameter))
 
             elif 4 < action_number <= 4 + config.ENEMY_UNIT_NUMBER:
                 a = controller[2]
-                enemy = action_number - 4 - config.ENEMY_UNIT_NUMBER
+                enemy = action_number - 1 - 4
                 parameter.append(0)
                 parameter.append(my_raw_units[i].tag)
                 parameter.append(enemy_units[enemy].tag)

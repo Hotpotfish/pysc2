@@ -36,6 +36,7 @@ class level_2_attack_controller:
                                              save_path)
         action_prob = self.controller.network.egreedy_action(self.controller.current_state)
         actions, action_numbers = handcraft_function_for_level_2_attack_controller.assembly_action(obs, action_prob)
+        print(action_numbers)
         self.controller.previous_state = self.controller.current_state
         self.controller.previous_action = action_numbers
 

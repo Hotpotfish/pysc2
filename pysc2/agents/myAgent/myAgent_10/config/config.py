@@ -5,7 +5,7 @@ RAW_UNITS_LENGTH = 46
 
 # Hyper Parameters for DQN
 GAMMA = 0.9  # discount factor for target Q
-INITIAL_EPSILON = 0.5  # starting value of epsilon
+INITIAL_EPSILON = 0.5 # starting value of epsilon
 FINAL_EPSILON = 0.01  # final value of epsilon
 REPLAY_SIZE = 100000  # experience replay buffer size
 BATCH_SIZE = 32  # size of minibatch
@@ -39,6 +39,6 @@ ATTACT_CONTROLLER_ACTIONDIM_BIN = len('{:b}'.format(ATTACT_CONTROLLER_ACTIONDIM)
 
 COOP_AGENTS_OBDIM = 6 + MY_UNIT_NUMBER + ENEMY_UNIT_NUMBER
 
-GAMMA_FOR_UPDATE = 0.99
+GAMMA_FOR_UPDATE = 0.9
 OB_RANGE = 6
 ATTACK_RANGE = 2
