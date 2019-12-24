@@ -153,7 +153,7 @@ class Bicnet():
     def egreedy_action(self, state):  # 输出带随机的动作
 
         # print(prob_value)
-        self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 10000
+        self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 1000000
         if np.random.uniform() <= self.epsilon:
             random_action_and_parameter = self.get_random_action_and_parameter_one_hot()
             return random_action_and_parameter
