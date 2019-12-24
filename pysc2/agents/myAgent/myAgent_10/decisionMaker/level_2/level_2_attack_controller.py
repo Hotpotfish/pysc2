@@ -17,13 +17,6 @@ class level_2_attack_controller:
         self.index = handcraft_function.find_controller_index(sa.attack_controller)
 
     def train_action(self, obs, save_path):
-
-        if obs.first():
-            self.controller.previous_state = None
-            self.controller.previous_action = None
-            self.controller.previous_reward = None
-            self.controller.current_state = None
-
         self.controller.current_state = [np.array(obs.observation['feature_screen'][5][:, :, np.newaxis]), np.array(get_agents_local_observation(obs))]
 
         if self.controller.previous_action is not None:
@@ -34,11 +27,17 @@ class level_2_attack_controller:
                                              self.controller.current_state,
                                              obs.last(),
                                              save_path)
+
         action_prob = self.controller.network.egreedy_action(self.controller.current_state)
         actions, action_numbers = handcraft_function_for_level_2_attack_controller.assembly_action(obs, action_prob)
         # print(action_numbers)
-        self.controller.previous_state = self.controller.current_state
-        self.controller.previous_action = action_numbers
+        if obs.last():
+            self.controller.previous_state = None
+            self.controller.previous_action = None
+            self.controller.previous_reward = None
+        else:
+            self.controller.previous_state = self.controller.current_state
+            self.controller.previous_action = action_numbers
 
         return actions
 
