@@ -62,7 +62,7 @@ class bicnet_critic():
     def _build_graph(self, state_input, agents_local_observation, action_input, scope_name, train):
         # 环境和智能体本地的共同观察
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
-            encoder_outputs = self._observation_encoder(state_input, agents_local_observation, action_input, config.COOP_AGENTS_NUMBER, '_observation_encoder', train)
+            encoder_outputs = self._observation_encoder(state_input, agents_local_observation, action_input, config.MY_UNIT_NUMBER, '_observation_encoder', train)
             bicnet_outputs = self._bicnet_build(encoder_outputs, '_bicnet_build', train)
             q_out = self._get_Q(bicnet_outputs, action_input, '_get_Q')
             return q_out

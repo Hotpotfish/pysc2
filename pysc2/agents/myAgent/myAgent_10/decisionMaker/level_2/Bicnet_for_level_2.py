@@ -95,21 +95,12 @@ class Bicnet():
 
     def perceive(self, state, action, reward, next_state, done, save_path):  # 感知存储信息
         self.rewardAdd += np.sum(reward)
-        # print(np.sum(reward))
         self.timeStep += 1
 
-        # self.rewardStep += 1
-        # print(np.sum(reward))
-
         if done:
-            # print("dsadsada   " + str(self.rewardAdd))
-            # print(self.rewardAdd)
             self.epsoide += 1
-            # print(self.rewardAdd)
             self.saveLoss(save_path)
             self.saveRewardAvg(save_path)
-
-            # print(self.rewardAvg)
 
         self.replay_buffer.inQueue([state, action, reward, next_state, done])
 
@@ -152,7 +143,7 @@ class Bicnet():
     def get_random_action_and_parameter_one_hot(self):
         actions = []
 
-        for i in range(config.COOP_AGENTS_NUMBER):
+        for i in range(config.MY_UNIT_NUMBER):
             random_action = np.random.randint(0, self.action_dim)
             random_action_one_hot = handcraft_function.one_hot_encoding(random_action, self.action_dim)
 

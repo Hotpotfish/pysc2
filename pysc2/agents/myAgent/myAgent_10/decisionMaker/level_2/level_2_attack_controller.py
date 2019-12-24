@@ -12,7 +12,7 @@ class level_2_attack_controller:
     def __init__(self):
         self.state_data_shape = (None, config.MAP_SIZE, config.MAP_SIZE, 1)
         self.controller = decision_maker(
-            Bicnet(config.MU, config.SIGMA, config.LEARING_RATE, config.ATTACT_CONTROLLER_ACTIONDIM, self.state_data_shape, config.COOP_AGENTS_NUMBER,
+            Bicnet(config.MU, config.SIGMA, config.LEARING_RATE, config.ATTACT_CONTROLLER_ACTIONDIM, self.state_data_shape, config.MY_UNIT_NUMBER,
                    config.ENEMY_UNIT_NUMBER, 'attack_controller'))
         self.index = handcraft_function.find_controller_index(sa.attack_controller)
 
@@ -35,17 +35,16 @@ class level_2_attack_controller:
                                              obs.last(),
                                              save_path)
         action_prob = self.controller.network.egreedy_action(self.controller.current_state)
-        action = handcraft_function_for_level_2_attack_controller.assembly_action(obs, action_prob)
-        action = handcraft_function.reflect(len(sa.attack_controller), action)
+        actions, action_numbers = handcraft_function_for_level_2_attack_controller.assembly_action(obs, action_prob)
         self.controller.previous_state = self.controller.current_state
-        self.controller.previous_action = action
+        self.controller.previous_action = action_numbers
 
-        return action
+        return actions
 
     def test_action(self, obs):
         self.controller.current_state = [np.array(obs.observation['feature_screen'][5][:, :, np.newaxis]), np.array(get_agents_local_observation(obs))]
 
-        action= self.controller.network.action(self.controller.current_state)
+        action = self.controller.network.action(self.controller.current_state)
         action = handcraft_function.reflect(len(sa.attack_controller), action)
         action = handcraft_function_for_level_2_attack_controller.assembly_action(obs, action)
         return action
