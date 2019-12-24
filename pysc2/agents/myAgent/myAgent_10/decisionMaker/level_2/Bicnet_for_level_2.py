@@ -140,13 +140,12 @@ class Bicnet():
             self.session.run(self.actor_net.soft_replace)
             self.session.run(self.critic_net.soft_replace)
 
-    def get_random_action_and_parameter_one_hot(self):
+    def get_execute_action(self, prob_value):
         actions = []
 
         for i in range(config.MY_UNIT_NUMBER):
-            random_action_one_hot = np.random.randn(self.action_dim)
-
-            actions.append(random_action_one_hot)
+            Nt = np.random.randn(self.action_dim)
+            actions.append(prob_value[i] + Nt)
 
         return actions
 
@@ -154,16 +153,17 @@ class Bicnet():
         state_input = state[0][np.newaxis, :, :]
         agents_local_observation = state[1][np.newaxis, :, :]
         prob_value = self.session.run(self.actor_net.a, {self.actor_net.state_input: state_input, self.actor_net.agents_local_observation: agents_local_observation})[0]
+        actions = self.get_execute_action(prob_value)
 
         # print(prob_value)
-        self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 1000000
-        if np.random.uniform() <= self.epsilon:
-            random_action_and_parameter = prob_value + self.get_random_action_and_parameter_one_hot()
-            return random_action_and_parameter
+        # self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 1000000
+        # if np.random.uniform() <= self.epsilon:
+        # random_action_and_parameter = prob_value + self.get_random_action_and_parameter_one_hot()
+        return actions
 
-        else:
-
-            return prob_value
+        # else:
+        #
+        #     return prob_value
 
     def action(self, state):
         state_input = state[0][np.newaxis, :, :]
