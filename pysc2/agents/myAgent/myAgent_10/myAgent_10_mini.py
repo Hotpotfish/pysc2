@@ -16,7 +16,6 @@ class myAgent(base_agent.BaseAgent):
         self.hierarchical_learning_structure = hierarchical_learning_structure()
         self.plt_function = plt_function()
 
-
     def add_or_plt(self, obs, steps):
         self.plt_function.add_summary(obs, steps)
         if obs[0] == StepType.LAST:
@@ -38,6 +37,7 @@ def main(unused_argv):
     try:
         with sc2_env.SC2Env(
                 map_name="DefeatUltralisk",
+                # game_steps_per_episode=200,
                 players=[sc2_env.Agent(sc2_env.Race.terran), ],
                 agent_interface_format=features.AgentInterfaceFormat(
                     feature_dimensions=features.Dimensions(screen=config.MAP_SIZE,
@@ -45,12 +45,10 @@ def main(unused_argv):
                     camera_width_world_units=config.MAP_SIZE * 1,
                     action_space=actions.ActionSpace.RAW,
                     use_raw_units=True,
-                    # use_feature_units= True,
                     raw_resolution=config.MAP_SIZE,
-                    # use_unit_counts=True
                 ),
                 score_index=0,
-                step_mul=8,
+                step_mul=4,
                 disable_fog=False,
                 visualize=False,
                 realtime=False
@@ -60,8 +58,6 @@ def main(unused_argv):
 
     except KeyboardInterrupt:
         pass
-
-
 
 
 if __name__ == "__main__":

@@ -151,17 +151,18 @@ class Bicnet():
         return actions
 
     def egreedy_action(self, state):  # 输出带随机的动作
+        state_input = state[0][np.newaxis, :, :]
+        agents_local_observation = state[1][np.newaxis, :, :]
+        prob_value = self.session.run(self.actor_net.a, {self.actor_net.state_input: state_input, self.actor_net.agents_local_observation: agents_local_observation})[0]
 
         # print(prob_value)
         self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 1000000
         if np.random.uniform() <= self.epsilon:
-            random_action_and_parameter = self.get_random_action_and_parameter_one_hot()
+            random_action_and_parameter = prob_value + self.get_random_action_and_parameter_one_hot()
             return random_action_and_parameter
 
         else:
-            state_input = state[0][np.newaxis, :, :]
-            agents_local_observation = state[1][np.newaxis, :, :]
-            prob_value = self.session.run(self.actor_net.a, {self.actor_net.state_input: state_input, self.actor_net.agents_local_observation: agents_local_observation})[0]
+
             return prob_value
 
     def action(self, state):

@@ -46,9 +46,9 @@ class hierarchical_learning_structure():
         self.level_2.save_model(modelSavePath, self.episode)
 
     def execute(self, obs, mark, modelSavePath, modelLoadPath):
-        if obs[0] == StepType.FIRST:
-            # 更新读取和保存路径
-            return actions.RAW_FUNCTIONS.raw_move_camera((config.MAP_SIZE / 2, config.MAP_SIZE / 2))
+        # if obs[0] == StepType.FIRST:
+        #     # 更新读取和保存路径
+        #     return actions.RAW_FUNCTIONS.raw_move_camera((config.MAP_SIZE / 2, config.MAP_SIZE / 2))
 
         if mark == 'TRAIN':
             if modelLoadPath is not None:
@@ -59,7 +59,7 @@ class hierarchical_learning_structure():
 
             if obs[0] == StepType.LAST:
                 self.episode += 1
-                print('episode:%d   score_cumulative: %f' % (self.episode, obs.observation['score_cumulative'][0]))
+                # print('episode:%d   score_cumulative: %f' % (self.episode, obs.observation['score_cumulative'][0]))
 
                 # 模型保存
                 if self.episode % config.MODEL_SAVE_EPISODE == 0:
