@@ -92,7 +92,7 @@ def assembly_action(obs, action_probs):
                     parameter.append((my_raw_units[i].x - 1, my_raw_units[i].y - 1))
                 elif dir == 2:
                     parameter.append((my_raw_units[i].x + 1, my_raw_units[i].y - 1))
-                else:
+                elif dir == 3:
                     parameter.append((my_raw_units[i].x - 1, my_raw_units[i].y + 1))
 
                 parameter = tuple(parameter)
@@ -136,7 +136,7 @@ def assembly_action(obs, action_probs):
                     parameter.append((my_raw_units[i].x - 1, my_raw_units[i].y - 1))
                 elif dir == 2:
                     parameter.append((my_raw_units[i].x + 1, my_raw_units[i].y - 1))
-                else:
+                elif dir == 3:
                     parameter.append((my_raw_units[i].x - 1, my_raw_units[i].y + 1))
 
                 parameter = tuple(parameter)
@@ -183,8 +183,6 @@ def get_friend_and_enemy_health(unit, obs, my_unit_number, enemy_unit_number):
 
         if other_unit.alliance == features.PlayerRelative.ENEMY:
             enemy.append((distance, other_unit.health))
-    if len(friend) == 1:
-        print()
 
     friend = np.array(sorted(friend, key=lambda f: f[0]))
     enemy = np.array(sorted(enemy, key=lambda e: e[0]))
