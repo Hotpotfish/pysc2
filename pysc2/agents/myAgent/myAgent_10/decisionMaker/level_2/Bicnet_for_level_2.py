@@ -5,10 +5,10 @@ import random
 import numpy as np
 import tensorflow as tf
 import pysc2.agents.myAgent.myAgent_10.config.config as config
-import pysc2.agents.myAgent.myAgent_10.tools.handcraft_function as handcraft_function
 from pysc2.agents.myAgent.myAgent_10.net.bicnet_for_level_2.bicnet_for_level_2_actor import bicnet_actor
 from pysc2.agents.myAgent.myAgent_10.net.bicnet_for_level_2.bicnet_for_level_2_cirtic import bicnet_critic
 from pysc2.agents.myAgent.myAgent_10.tools.SqQueue import SqQueue
+from pysc2.agents.myAgent.myAgent_10.tools.handcraft_function_for_level_2_attack_controller import normalization
 
 
 class Bicnet():
@@ -120,6 +120,7 @@ class Bicnet():
             q_ = self.session.run(self.critic_net.q_, {self.critic_net.state_input_next: state_input_next,
                                                        self.critic_net.agents_local_observation_next: agents_local_observation_next,
                                                        self.critic_net.action_input_next: a_})
+            reward_batch =normalization(reward_batch)
             # q尖
             q_cusp = reward_batch + config.GAMMA * q_
 

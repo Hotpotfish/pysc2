@@ -76,8 +76,8 @@ class bicnet_actor():
 
     def _bicnet_build(self, encoder_outputs, scope_name, train):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
-            lstm_fw_cell = tf.nn.rnn_cell.BasicLSTMCell(self.action_dim, forget_bias=1.0, name="lstm_fw_cell")
-            lstm_bw_cell = tf.nn.rnn_cell.BasicLSTMCell(self.action_dim, forget_bias=1.0, name="lstm_bw_cell")
+            lstm_fw_cell = tf.nn.rnn_cell.GRUCell(self.action_dim, name="lstm_fw_cell")
+            lstm_bw_cell = tf.nn.rnn_cell.GRUCell(self.action_dim, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             fc1 = slim.fully_connected(bicnet_outputs, self.action_dim, scope='full_connected1')
             bicnet_outputs = tf.nn.softmax(fc1, axis=2)

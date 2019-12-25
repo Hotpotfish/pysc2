@@ -44,7 +44,6 @@ class level_2_attack_controller:
     def test_action(self, obs):
         self.controller.current_state = [np.array(obs.observation['feature_screen'][5][:, :, np.newaxis]), np.array(get_agents_local_observation(obs))]
 
-        action = self.controller.network.action(self.controller.current_state)
-        action = handcraft_function.reflect(len(sa.attack_controller), action)
-        action = handcraft_function_for_level_2_attack_controller.assembly_action(obs, action)
-        return action
+        action_prob = self.controller.network.action(self.controller.current_state)
+        actions, action_numbers = handcraft_function_for_level_2_attack_controller.assembly_action(obs, action_prob)
+        return actions

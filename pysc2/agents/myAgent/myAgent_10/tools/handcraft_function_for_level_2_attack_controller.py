@@ -12,6 +12,12 @@ from pysc2.lib import features
 #     """returns the binary of integer n, using count number of digits"""
 #     return "".join([str((n >> y) & 1) for y in range(count-1, -1, -1)])
 
+
+def normalization(data):
+    _range = np.max(data) - np.min(data)
+    return (data - np.min(data)) / _range
+
+
 def computeDistance(unit, enemy_unit):
     x_difference = math.pow(unit.x - enemy_unit.x, 2)
     y_difference = math.pow(unit.y - enemy_unit.y, 2)
