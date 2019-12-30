@@ -24,9 +24,9 @@ class myAgent(base_agent.BaseAgent):
     def step(self, obs):
         # self.add_or_plt(obs, self.steps)
         super(myAgent, self).step(obs)
-        action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'd:/model/', None)
-        # action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'e:/model/', 'E:/model/20191204093055/episode_800')
-        # action = self.hierarchical_learning_structure.execute(obs, 'TEST', None, 'D:/model/20191224210238/episode_15000')
+        # action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'd:/model/', None)
+        action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'e:/model/', 'D:/model/20191230102832/episode_1000')
+        # action = self.hierarchical_learning_structure.execute(obs, 'TEST', None, 'D:/model/20191230102832/episode_1000')
         # print(action)
         return action
 
@@ -50,7 +50,7 @@ def main(unused_argv):
                 score_index=0,
                 step_mul=4,
                 disable_fog=False,
-                visualize=False,
+                visualize=True,
                 realtime=False
 
         ) as env:

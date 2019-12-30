@@ -71,22 +71,21 @@ class bicnet_critic():
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             encoder = []
             conv1 = slim.conv2d(state_input, 1, [5, 5], stride=1, padding="VALID", scope='layer_1_conv')
+            conv1 = tf.nn.relu(conv1)
             pool1 = slim.max_pool2d(conv1, [2, 2], stride=2, padding="VALID", scope='layer_1_pooling')
-            # bn1 = tf.layers.batch_normalization(pool1, training=train)
 
             conv2 = slim.conv2d(pool1, 1, [5, 5], stride=1, padding="VALID", scope='layer_2_conv')
+            conv2 = tf.nn.relu(conv2)
             pool2 = slim.max_pool2d(conv2, [2, 2], stride=2, padding="VALID", scope='layer_2_pooling')
-            # bn2 = tf.layers.batch_normalization(pool2, training=train)
 
             # 传给下一阶段
             state_input_flatten = slim.flatten(pool2, scope="flatten")
-            # state_input_flatten = tf.layers.flatten(state_input)
             for i in range(agents_number):
                 encoder.append(tf.concat([agents_local_observation[:, i, :], state_input_flatten, action_input[:, i]], axis=1))
             encoder = tf.transpose(encoder, [1, 0, 2])
             fc1 = slim.fully_connected(encoder, 60, scope='full_connected3')
-            bn3 = tf.layers.batch_normalization(fc1, training=train)
-            encoder = tf.unstack(bn3, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
+            fc1 = tf.nn.relu(fc1)
+            encoder = tf.unstack(fc1, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
             return encoder
 
     def _bicnet_build(self, encoder_outputs, scope_name, train):
@@ -95,8 +94,7 @@ class bicnet_critic():
             lstm_bw_cell = tf.nn.rnn_cell.GRUCell(self.action_dim, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             fc1 = slim.fully_connected(bicnet_outputs, self.action_dim, scope='full_connected1')
-            bn1 = tf.layers.batch_normalization(fc1, training=train)
-            bicnet_outputs = tf.nn.softmax(bn1, axis=2)
+            bicnet_outputs = tf.nn.softmax(fc1, axis=2)
 
             bicnet_outputs = tf.unstack(bicnet_outputs, self.agents_number)  # (agents_number, batch_size, action_dim)
             bicnet_outputs = tf.transpose(bicnet_outputs, [1, 0, 2])
@@ -104,7 +102,6 @@ class bicnet_critic():
 
     def _get_Q(self, bicnet_outputs, action_input, scope_name):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
-            # action_input = tf.one_hot(tf.to_int32(action_input), depth=self.action_dim, axis=2)
             q_out = tf.multiply(bicnet_outputs, action_input)  # (batch_size, agents_number,outputs_prob)
             q_out = tf.reduce_sum(q_out, axis=2)  # (batch_size, agents_number)
 
@@ -115,19 +112,16 @@ class bicnet_critic():
 
     def _compute_loss_graph(self, qin, qout, scope_name):
         with tf.name_scope(scope_name + "_compute_loss_graph"):
-            # m = tf.to_float(tf.shape(qout)[0])
-            loss = tf.squared_difference(qin , qout)
+            loss = tf.squared_difference(qin, qout)
             loss = tf.reduce_mean(loss)
             return loss
-            # tf.o
+
 
     def _create_train_op_graph(self):
         train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
         return train_op
 
     def _compute_action_grad(self, qout, action_input):
-        # action_input = tf.one_hot(tf.to_int32(action_input), depth=self.action_dim, axis=2)
         action_grads = [tf.gradients(qout[:, i], action_input) for i in range(self.agents_number)]  # (batch_size,agent_number,agent_number,action_dim)
-        # action_grads = tf.gradients(qout, action_input)
         action_grads = tf.reshape(action_grads, [self.agents_number, -1, self.agents_number, self.action_dim])
         return action_grads

@@ -60,17 +60,19 @@ class bicnet_actor():
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             encoder = []
             conv1 = slim.conv2d(state_input, 1, [5, 5], stride=4, padding="VALID", scope='layer_1_conv')
+            conv1 = tf.nn.relu(conv1)
             pool1 = slim.max_pool2d(conv1, [2, 2], stride=2, padding="VALID", scope='layer_1_pooling')
-            # bn1 = tf.layers.batch_normalization(pool1, training=train)
 
+            conv2 = slim.conv2d(pool1, 1, [5, 5], stride=1, padding="VALID", scope='layer_2_conv')
+            conv2 = tf.nn.relu(conv2)
+            pool2 = slim.max_pool2d(conv2, [2, 2], stride=2, padding="VALID", scope='layer_2_pooling')
             # 传给下一阶段
-            state_input_flatten = slim.flatten(pool1, scope="flatten")
+            state_input_flatten = slim.flatten(pool2, scope="flatten")
 
             for i in range(agents_number):
                 encoder.append(tf.concat([agents_local_observation[:, i, :], state_input_flatten], axis=1))
             encoder = tf.transpose(encoder, [1, 0, 2])
             fc1 = slim.fully_connected(encoder, 30, scope='full_connected1')
-            # bn3 = tf.layers.batch_normalization(fc1, training=train)
             encoder = tf.unstack(fc1, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
             return encoder
 
@@ -95,7 +97,6 @@ class bicnet_actor():
         for i in range(self.agents_number):
             for j in range(self.agents_number):
                 grads.append(tf.gradients(aout[:, j], self.e_params, -action_gradient[j][:, i]))
-            # grads.append(tf.gradients(aout, self.e_params, -action_gradient[:, i]))
         grads = np.array(grads)
         unnormalized_actor_gradients = [tf.reduce_sum(list(grads[:, i]), axis=0) for i in range(len(self.e_params))]
         actor_gradients = list(map(lambda x: tf.div(x, batch_size), unnormalized_actor_gradients))
