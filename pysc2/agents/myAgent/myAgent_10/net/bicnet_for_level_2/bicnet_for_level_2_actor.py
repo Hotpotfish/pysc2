@@ -43,7 +43,7 @@ class bicnet_actor():
         self.state_input = tf.placeholder("float", shape=self.statedim, name='state_input')  # 全局状态
         self.agents_local_observation = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation')
 
-        self.q_input = tf.placeholder(tf.float32, [None, self.agents_number, self.action_dim], name="q_input")
+        self.q_input = tf.placeholder(tf.float32, [None, self.agents_number], name="q_input")
 
         self.state_input_next = tf.placeholder("float", shape=self.statedim, name='state_input_next')  # 全局状态
         self.agents_local_observation_next = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation_next')
@@ -91,7 +91,7 @@ class bicnet_actor():
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e) for t, e in zip(self.t_params, self.e_params)]
 
     def _create_train_op_graph(self):
-        loss = -tf.reduce_mean(tf.multiply(self.a, self.q_input))
+        loss = -tf.reduce_mean(tf.multiply(tf.reduce_max(self.a, axis=2), self.q_input))
         train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(loss, var_list=self.e_params)
 
         return train_op
