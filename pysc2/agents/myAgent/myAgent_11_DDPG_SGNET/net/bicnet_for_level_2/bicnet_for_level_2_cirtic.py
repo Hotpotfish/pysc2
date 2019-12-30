@@ -115,9 +115,11 @@ class bicnet_critic():
 
     def _compute_loss_graph(self, qin, qout, scope_name):
         with tf.name_scope(scope_name + "_compute_loss_graph"):
-            # m = tf.to_float(tf.shape(qout)[0])
-            loss = tf.squared_difference(qin , qout)
-            loss = tf.reduce_mean(loss)
+            m = tf.to_float(tf.shape(qout)[0])
+            loss = tf.square((qin - qout), axis=1)
+            loss = tf.sqrt(loss, axis=1)
+            loss = tf.reduce_sum(loss) / m
+            # loss = tf.reduce_sum(tf.sqrt(tf.square((qin - qout), axis=1)), axis=1) / m
             return loss
             # tf.o
 
