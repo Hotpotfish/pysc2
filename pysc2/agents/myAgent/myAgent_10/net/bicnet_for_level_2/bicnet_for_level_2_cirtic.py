@@ -37,7 +37,7 @@ class bicnet_critic():
 
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e) for t, e in zip(self.t_params, self.e_params)]
 
-        self.td_error, self.loss = self._compute_loss_graph(self.q_input, self.q, 'Critic')
+        self.loss = self._compute_loss_graph(self.q_input, self.q, 'Critic')
         self.trian_op = self._create_train_op_graph()
         # self.action_grad = self._compute_action_grad(self.q, self.action_input)
 
@@ -112,13 +112,12 @@ class bicnet_critic():
 
     def _compute_loss_graph(self, qin, qout, scope_name):
         with tf.name_scope(scope_name + "_compute_loss_graph"):
-            td_error = qin - qout
-            loss = tf.reduce_mean(tf.square(td_error))
+            # td_error = qin - qout
+            # loss = tf.reduce_mean(tf.square(td_error))
 
-
-            # loss = tf.squared_difference(qin, qout)
-            # loss = tf.reduce_mean(loss)
-            return td_error, loss
+            loss = tf.squared_difference(qin, qout)
+            loss = tf.reduce_mean(loss)
+            return loss
 
     def _create_train_op_graph(self):
         train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss, var_list=self.e_params)

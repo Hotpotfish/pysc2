@@ -81,7 +81,7 @@ class Bicnet():
             thisPath = modelSavePath
             self.lossSaver = tf.summary.FileWriter(thisPath, self.session.graph)
 
-        data_summary = tf.Summary(value=[tf.Summary.Value(tag=self.name + '_' + "loss", simple_value=self.loss)])
+        data_summary = tf.Summary(value=[tf.Summary.Value(tag=self.name + '_' + "c_loss", simple_value=self.c_loss)])
         self.lossSaver.add_summary(summary=data_summary, global_step=self.epsoide)
 
     def saveRewardAvg(self, modelSavePath):
@@ -126,16 +126,23 @@ class Bicnet():
 
             action_batch = np.eye(self.action_dim)[action_batch]
             # critic update
-            _, self.loss, td_error = self.session.run([self.critic_net.trian_op, self.critic_net.loss, self.critic_net.td_error], {self.critic_net.state_input: state_input,
-                                                                                                                                   self.critic_net.agents_local_observation: agents_local_observation,
-                                                                                                                                   self.critic_net.action_input: action_batch,
-                                                                                                                                   self.critic_net.q_input: q_cusp
-                                                                                                                                   })
+            _, self.c_loss = self.session.run([self.critic_net.trian_op, self.critic_net.loss], {self.critic_net.state_input: state_input,
+                                                                                                 self.critic_net.agents_local_observation: agents_local_observation,
+                                                                                                 self.critic_net.action_input: action_batch,
+                                                                                                 self.critic_net.q_input: q_cusp
+                                                                                                 })
+            # 目前的actor
+            a = self.session.run(self.actor_net.a, {self.actor_net.state_input: state_input, self.actor_net.agents_local_observation: agents_local_observation})
+            a = np.eye(self.action_dim)[np.argmax(a, axis=2)].astype(np.float32)
+            q = self.session.run(self.critic_net.q, {self.critic_net.state_input: state_input,
+                                                     self.critic_net.agents_local_observation: agents_local_observation,
+                                                     self.critic_net.action_input: a})
+
             # actor_update
             __ = self.session.run(self.actor_net.train_op, {self.actor_net.state_input: state_input,
                                                             self.actor_net.agents_local_observation: agents_local_observation,  # s_
-                                                            self.actor_net.td_error: td_error,
-                                                            self.actor_net.action_input: action_batch
+                                                            self.actor_net.q_input: q,
+
                                                             })
 
             self.session.run(self.actor_net.soft_replace)
