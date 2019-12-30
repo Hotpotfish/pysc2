@@ -120,22 +120,22 @@ class Bicnet():
             q_ = self.session.run(self.critic_net.q_, {self.critic_net.state_input_next: state_input_next,
                                                        self.critic_net.agents_local_observation_next: agents_local_observation_next,
                                                        self.critic_net.action_input_next: a_})
-            reward_batch =normalization(reward_batch)
+            reward_batch = normalization(reward_batch)
             # q尖
             q_cusp = reward_batch + config.GAMMA * q_
 
             action_batch = np.eye(self.action_dim)[action_batch]
             # critic update
-            _, self.loss, action_grad = self.session.run([self.critic_net.trian_op, self.critic_net.loss, self.critic_net.action_grad], {self.critic_net.state_input: state_input,
-                                                                                                                                         self.critic_net.agents_local_observation: agents_local_observation,
-                                                                                                                                         # s_
-                                                                                                                                         self.critic_net.action_input: action_batch,
-                                                                                                                                         self.critic_net.q_input: q_cusp  # a_
-                                                                                                                                         })
+            _, self.loss, td_error = self.session.run([self.critic_net.trian_op, self.critic_net.loss, self.critic_net.td_error], {self.critic_net.state_input: state_input,
+                                                                                                                                   self.critic_net.agents_local_observation: agents_local_observation,
+                                                                                                                                   self.critic_net.action_input: action_batch,
+                                                                                                                                   self.critic_net.q_input: q_cusp
+                                                                                                                                   })
             # actor_update
             __ = self.session.run(self.actor_net.train_op, {self.actor_net.state_input: state_input,
                                                             self.actor_net.agents_local_observation: agents_local_observation,  # s_
-                                                            self.actor_net.action_gradient: action_grad  # a_
+                                                            self.actor_net.td_error: td_error,
+                                                            self.actor_net.action_input: action_batch
                                                             })
 
             self.session.run(self.actor_net.soft_replace)

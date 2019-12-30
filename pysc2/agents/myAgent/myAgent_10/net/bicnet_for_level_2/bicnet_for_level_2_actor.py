@@ -8,7 +8,6 @@ import numpy as np
 class bicnet_actor():
 
     def __init__(self, mu, sigma, learning_rate, action_dim, statedim, agents_number, enemy_number, name):
-
         self.mu = mu
         self.sigma = sigma
         self.learning_rate = learning_rate
@@ -37,14 +36,17 @@ class bicnet_actor():
 
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e) for t, e in zip(self.t_params, self.e_params)]
 
-        self.train_op = self._optimizer(self.a, self.action_gradient)
+        self.train_op = self._create_train_op_graph()
 
     def _setup_placeholders_graph(self):
         # s
         self.state_input = tf.placeholder("float", shape=self.statedim, name='state_input')  # 全局状态
         self.agents_local_observation = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation')
 
-        self.action_gradient = tf.placeholder(tf.float32, [self.agents_number, None, self.agents_number, self.action_dim], name="action_gradient")
+        self.td_error = tf.placeholder(tf.float32, [None, self.agents_number], name="td_error")
+        self.action_input = tf.placeholder(tf.float32, [None, self.agents_number, self.action_dim], name="action_input")
+
+        # self.action_gradient = tf.placeholder(tf.float32, [self.agents_number, None, self.agents_number, self.action_dim], name="action_gradient")
 
         self.state_input_next = tf.placeholder("float", shape=self.statedim, name='state_input_next')  # 全局状态
         self.agents_local_observation_next = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation_next')
@@ -91,17 +93,23 @@ class bicnet_actor():
     def _soft_replace(self):
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e) for t, e in zip(self.t_params, self.e_params)]
 
-    def _optimizer(self, aout, action_gradient):
-        grads = []
-        batch_size = tf.to_float(tf.shape(aout)[0])
-        for i in range(self.agents_number):
-            for j in range(self.agents_number):
-                grads.append(tf.gradients(aout[:, j], self.e_params, -action_gradient[j][:, i]))
-        grads = np.array(grads)
-        unnormalized_actor_gradients = [tf.reduce_sum(list(grads[:, i]), axis=0) for i in range(len(self.e_params))]
-        actor_gradients = list(map(lambda x: tf.div(x, batch_size), unnormalized_actor_gradients))
-
-        optimizer = tf.train.AdamOptimizer(self.learning_rate)
-        train_op = optimizer.apply_gradients(list(zip(actor_gradients, self.e_params)))
-
+    # def _optimizer(self, aout, action_gradient):
+    #     grads = []
+    #     batch_size = tf.to_float(tf.shape(aout)[0])
+    #     for i in range(self.agents_number):
+    #         for j in range(self.agents_number):
+    #             grads.append(tf.gradients(aout[:, j], self.e_params, action_gradient[j][:, i]))
+    #     grads = np.array(grads)
+    #     unnormalized_actor_gradients = [tf.reduce_sum(list(grads[:, i]), axis=0) for i in range(len(self.e_params))]
+    #     actor_gradients = list(map(lambda x: tf.div(x, batch_size), unnormalized_actor_gradients))
+    #
+    #     optimizer = tf.train.AdamOptimizer(self.learning_rate)
+    #     train_op = optimizer.apply_gradients(list(zip(actor_gradients, self.e_params)))
+    #
+    #     return train_op
+    def _create_train_op_graph(self):
+        reall_action_prob = tf.multiply(self.action_input, self.a)
+        reall_action_prob = -tf.log(tf.reduce_sum(reall_action_prob, axis=2))
+        loss = tf.reduce_mean(tf.multiply(reall_action_prob, self.td_error))
+        train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(loss, var_list=self.e_params)
         return train_op

@@ -37,9 +37,9 @@ class bicnet_critic():
 
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e) for t, e in zip(self.t_params, self.e_params)]
 
-        self.loss = self._compute_loss_graph(self.q_input, self.q, 'Critic')
+        self.td_error, self.loss = self._compute_loss_graph(self.q_input, self.q, 'Critic')
         self.trian_op = self._create_train_op_graph()
-        self.action_grad = self._compute_action_grad(self.q, self.action_input)
+        # self.action_grad = self._compute_action_grad(self.q, self.action_input)
 
     def _setup_placeholders_graph(self):
         # s
@@ -112,16 +112,19 @@ class bicnet_critic():
 
     def _compute_loss_graph(self, qin, qout, scope_name):
         with tf.name_scope(scope_name + "_compute_loss_graph"):
-            loss = tf.squared_difference(qin, qout)
-            loss = tf.reduce_mean(loss)
-            return loss
+            td_error = qin - qout
+            loss = tf.reduce_mean(tf.square(td_error))
 
+
+            # loss = tf.squared_difference(qin, qout)
+            # loss = tf.reduce_mean(loss)
+            return td_error, loss
 
     def _create_train_op_graph(self):
-        train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
+        train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss, var_list=self.e_params)
         return train_op
 
-    def _compute_action_grad(self, qout, action_input):
-        action_grads = [tf.gradients(qout[:, i], action_input) for i in range(self.agents_number)]  # (batch_size,agent_number,agent_number,action_dim)
-        action_grads = tf.reshape(action_grads, [self.agents_number, -1, self.agents_number, self.action_dim])
-        return action_grads
+    # def _compute_action_grad(self, qout, action_input):
+    #     action_grads = [tf.gradients(qout[:, i], action_input) for i in range(self.agents_number)]  # (batch_size,agent_number,agent_number,action_dim)
+    #     action_grads = tf.reshape(action_grads, [self.agents_number   , -1, self.agents_number, self.action_dim])
+    #     return action_grads
