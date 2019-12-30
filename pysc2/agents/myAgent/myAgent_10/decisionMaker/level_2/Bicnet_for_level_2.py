@@ -81,7 +81,7 @@ class Bicnet():
             thisPath = modelSavePath
             self.lossSaver = tf.summary.FileWriter(thisPath, self.session.graph)
 
-        data_summary = tf.Summary(value=[tf.Summary.Value(tag=self.name + '_' + "c_loss", simple_value=self.c_loss)])
+        data_summary = tf.Summary(value=[tf.Summary.Value(tag=self.name + '_' + "loss", simple_value=self.loss)])
         self.lossSaver.add_summary(summary=data_summary, global_step=self.epsoide)
 
     def saveRewardAvg(self, modelSavePath):
@@ -126,7 +126,7 @@ class Bicnet():
 
             action_batch = np.eye(self.action_dim)[action_batch]
             # critic update
-            _, self.c_loss = self.session.run([self.critic_net.trian_op, self.critic_net.loss], {self.critic_net.state_input: state_input,
+            _, self.loss = self.session.run([self.critic_net.trian_op, self.critic_net.loss], {self.critic_net.state_input: state_input,
                                                                                                  self.critic_net.agents_local_observation: agents_local_observation,
                                                                                                  self.critic_net.action_input: action_batch,
                                                                                                  self.critic_net.q_input: q_cusp
