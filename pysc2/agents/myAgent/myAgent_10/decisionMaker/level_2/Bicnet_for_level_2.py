@@ -127,10 +127,10 @@ class Bicnet():
             action_batch = np.eye(self.action_dim)[action_batch]
             # critic update
             _, self.loss = self.session.run([self.critic_net.trian_op, self.critic_net.loss], {self.critic_net.state_input: state_input,
-                                                                                                 self.critic_net.agents_local_observation: agents_local_observation,
-                                                                                                 self.critic_net.action_input: action_batch,
-                                                                                                 self.critic_net.q_input: q_cusp
-                                                                                                 })
+                                                                                               self.critic_net.agents_local_observation: agents_local_observation,
+                                                                                               self.critic_net.action_input: action_batch,
+                                                                                               self.critic_net.q_input: q_cusp
+                                                                                               })
             # 目前的actor
             a = self.session.run(self.actor_net.a, {self.actor_net.state_input: state_input, self.actor_net.agents_local_observation: agents_local_observation})
             a = np.eye(self.action_dim)[np.argmax(a, axis=2)].astype(np.float32)

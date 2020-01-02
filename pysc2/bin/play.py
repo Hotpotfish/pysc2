@@ -40,7 +40,8 @@ flags.DEFINE_bool("render", True, "Whether to render with pygame.")
 flags.DEFINE_bool("realtime", False, "Whether to run in realtime mode.")
 flags.DEFINE_bool("full_screen", False, "Whether to run full screen.")
 
-flags.DEFINE_float("fps", 22.4, "Frames per second to run the game.")
+# flags.DEFINE_float("fps", 22.4, "Frames per second to run the game.")
+# flags.DEFINE_float("fps", 60, "Frames per second to run the game.")
 flags.DEFINE_integer("step_mul", 1, "Game steps per observation.")
 flags.DEFINE_bool("render_sync", False, "Turn on sync rendering.")
 point_flag.DEFINE_point("feature_screen_size", "84",

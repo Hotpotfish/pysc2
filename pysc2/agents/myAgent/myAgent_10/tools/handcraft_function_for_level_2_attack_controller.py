@@ -15,7 +15,7 @@ from pysc2.lib import features
 
 def normalization(data):
     # _range = np.max(data) - np.min(data)
-    return (data - np.min(data)) / 100
+    return data / 1000
 
 
 def computeDistance(unit, enemy_unit):

@@ -114,6 +114,7 @@ _DelayedAction = collections.namedtuple(
     "DelayedAction", ["game_loop", "action"])
 
 REALTIME_GAME_LOOP_SECONDS = 1 / 22.4
+# REALTIME_GAME_LOOP_SECONDS = 1 / 100
 MAX_STEP_COUNT = 524000  # The game fails above 2^19=524288 steps.
 NUM_ACTION_DELAY_BUCKETS = 10
 
