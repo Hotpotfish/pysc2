@@ -1,12 +1,12 @@
 import numpy as np
-import pysc2.agents.myAgent.myAgent_10.config.config as config
-import pysc2.agents.myAgent.myAgent_10.smart_actions as sa
+import pysc2.agents.myAgent.myAgent_11.config.config as config
+import pysc2.agents.myAgent.myAgent_11.smart_actions as sa
 
-from pysc2.agents.myAgent.myAgent_10.decisionMaker.level_2.level_2_attack_controller import level_2_attack_controller
-from pysc2.agents.myAgent.myAgent_10.decisionMaker.level_2.level_2_build_controller import level_2_build_controller
-from pysc2.agents.myAgent.myAgent_10.decisionMaker.level_2.level_2_harvest_controller import level_2_harvest_controller
-from pysc2.agents.myAgent.myAgent_10.decisionMaker.level_2.level_2_research_controller import level_2_research_controller
-from pysc2.agents.myAgent.myAgent_10.decisionMaker.level_2.level_2_train_controller import level_2_train_controller
+from pysc2.agents.myAgent.myAgent_11.decisionMaker.level_2.level_2_attack_controller import level_2_attack_controller
+from pysc2.agents.myAgent.myAgent_11.decisionMaker.level_2.level_2_build_controller import level_2_build_controller
+from pysc2.agents.myAgent.myAgent_11.decisionMaker.level_2.level_2_harvest_controller import level_2_harvest_controller
+from pysc2.agents.myAgent.myAgent_11.decisionMaker.level_2.level_2_research_controller import level_2_research_controller
+from pysc2.agents.myAgent.myAgent_11.decisionMaker.level_2.level_2_train_controller import level_2_train_controller
 
 # 平铺嵌套数组
 from pysc2.env.environment import StepType
@@ -64,95 +64,6 @@ def reflect(actiondim, action):
 
     return action_number
 
-
-# 动作组装
-# 将动作组装成可执行的结果
-def assembly_action(obs, controller_number, action):
-    my_raw_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
-    enemy_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
-
-    my_raw_units_lenth = len(my_raw_units)
-    enemy_units_lenth = len(enemy_units)
-
-    # action = sa.controllers[controller_number][int(action_and_parameter[0])]
-
-    # if macro_and_parameter[2] >= raw_units_lenth or macro_and_parameter[3] >= raw_units_lenth:
-    #     return actions.RAW_FUNCTIONS.no_op()
-    actions = []
-    # 根据参数名字填内容
-    if my_raw_units_lenth > config.COOP_AGENTS_NUMBER:
-        for i in range(config.COOP_AGENTS_NUMBER):
-            controller = sa.controllers[controller_number]
-            action_number = action[i] % len(controller)
-            a = controller[action_number]
-            parameter = []
-            for j in range(len(a[5])):
-                if a[5][j].name == 'queued':
-                    parameter.append(action[i] % config.QUEUED)
-                    continue
-                if a[5][j].name == 'unit_tags':
-                    parameter.append(my_raw_units[i].tag)
-                    continue
-                # if a[5][j].name == 'target_unit_tag':
-                #     parameter.append(enemy_units[int(a[j][3]) % enemy_units_lenth].tag)
-                #     continue
-                if a[5][j].name == 'world':
-                    # x = a[j][4]
-                    # y = a[j][5]
-                    point = action[i] % config.POINT_NUMBER
-                    y = int(point / config.MAP_SIZE)
-                    x = int(point % config.MAP_SIZE)
-                    parameter.append((x, y))
-                    continue
-            parameter = tuple(parameter)
-            actions.append(a(*parameter))
-
-    else:
-        for i in range(my_raw_units_lenth):
-            action = sa.controllers[controller_number][int(action[i][0])]
-            parameter = []
-            for j in range(len(action[5])):
-                if action[5][j].name == 'queued':
-                    parameter.append(int(action[j][1]))
-                    continue
-                if action[5][j].name == 'unit_tags':
-                    parameter.append(my_raw_units[i].tag)
-                    continue
-                if action[5][j].name == 'target_unit_tag':
-                    parameter.append(enemy_units[int(action[j][3]) % enemy_units_lenth].tag)
-                    continue
-                if action[5][j].name == 'world':
-                    x = action[j][4]
-                    y = action[j][5]
-                    parameter.append((x, y))
-                    continue
-            parameter = tuple(parameter)
-            actions.append(action(*parameter))
-    return actions
-
-    # for j in range(my_raw_units_lenth):
-    #     action = sa.controllers[controller_number][int(action_and_parameter[j][0])]
-    #     parameter = []
-    #     for i in range(len(action[5])):
-    #         if action[5][i].name == 'queued':
-    #             parameter.append(int(action_and_parameter[j][1]))
-    #             continue
-    #         if action[5][i].name == 'unit_tags':
-    #             parameter.append(my_raw_units[int(action_and_parameter[2]) % raw_units_lenth].tag)
-    #             continue
-    #         if action[5][i].name == 'target_unit_tag':
-    #             parameter.append(raw_units[int(action_and_parameter[3]) % raw_units_lenth].tag)
-    #             continue
-    #         if action[5][i].name == 'world':
-    #             number = action_and_parameter[4]
-    #             y = int(number / config.MAP_SIZE)
-    #             x = int(number % config.MAP_SIZE)
-    #             parameter.append((x, y))
-    #             continue
-    #
-    # parameter = tuple(parameter)
-
-    return action(*parameter)
 
 
 # 获得全局的观察
