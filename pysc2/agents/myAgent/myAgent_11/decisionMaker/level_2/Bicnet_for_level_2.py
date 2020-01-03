@@ -56,7 +56,7 @@ class Bicnet():
         self.rewardStep = 0
 
         self.timeStep = 0
-        self.loss = 0
+        self.td_error = 0
 
         self.restoreModelMark = True
 
@@ -113,6 +113,8 @@ class Bicnet():
             reward_batch = np.array([data[2] for data in minibatch])
             state_input_next = np.array([data[3][0] for data in minibatch])
             agents_local_observation_next = np.array([data[3][1] for data in minibatch])
+
+            action_batch = np.eye(self.action_dim)[action_batch]
 
             _ = self.session.run(self.net.atrain, {self.net.state_input: state_input,
                                                    self.net.agents_local_observation: agents_local_observation})

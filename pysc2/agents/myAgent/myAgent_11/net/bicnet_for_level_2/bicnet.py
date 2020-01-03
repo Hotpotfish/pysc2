@@ -55,7 +55,7 @@ class bicnet(object):
         self.state_input_next = tf.placeholder("float", shape=self.statedim, name='state_input_next')  # 全局状态
         self.agents_local_observation_next = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation_next')
 
-        self.reward = tf.placeholder("float", shape=[None, self.agents_number], name='state_input_next')
+        self.reward = tf.placeholder("float", shape=[None, self.agents_number], name='reward')
 
     #################################### actor_net  ####################################
 
