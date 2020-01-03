@@ -1,6 +1,6 @@
-from pysc2.agents.myAgent.myAgent_10.config import config
-import pysc2.agents.myAgent.myAgent_10.smart_actions as sa
-from pysc2.agents.myAgent.myAgent_10.tools import handcraft_function
+from pysc2.agents.myAgent.myAgent_11.config import config
+import pysc2.agents.myAgent.myAgent_11.smart_actions as sa
+from pysc2.agents.myAgent.myAgent_11.tools import handcraft_function
 
 
 class level_2():

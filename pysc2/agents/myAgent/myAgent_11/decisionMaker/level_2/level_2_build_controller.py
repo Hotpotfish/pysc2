@@ -1,5 +1,5 @@
-from pysc2.agents.myAgent.myAgent_8.config import config
-from pysc2.agents.myAgent.myAgent_8.decisionMaker.level_1.DQN_for_level_1 import DQN
+from pysc2.agents.myAgent.myAgent_11.config import config
+from pysc2.agents.myAgent.myAgent_11.decisionMaker.level_1.DQN_for_level_1 import DQN
 from pysc2.agents.myAgent.myAgent_8.decisionMaker.decision_maker import decision_maker
 import pysc2.agents.myAgent.myAgent_8.smart_actions as sa
 from pysc2.agents.myAgent.myAgent_8.tools import handcraft_function

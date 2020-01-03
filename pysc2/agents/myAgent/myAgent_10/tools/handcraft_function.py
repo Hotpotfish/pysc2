@@ -10,7 +10,6 @@ from pysc2.agents.myAgent.myAgent_11.decisionMaker.level_2.level_2_train_control
 
 # 平铺嵌套数组
 from pysc2.env.environment import StepType
-from pysc2.lib import features
 
 
 def my_flatten(input_list):
@@ -63,7 +62,6 @@ def reflect(actiondim, action):
     action_number = np.argmax(action, axis=1)
 
     return action_number
-
 
 
 # 获得全局的观察

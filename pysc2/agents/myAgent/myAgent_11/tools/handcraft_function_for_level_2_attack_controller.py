@@ -1,10 +1,10 @@
 import math
 from pysc2.lib import actions as Action
 import numpy as np
-import pysc2.agents.myAgent.myAgent_10.smart_actions as sa
+import pysc2.agents.myAgent.myAgent_11.smart_actions as sa
 # 获得全局的观察
-from pysc2.agents.myAgent.myAgent_10.tools.local_unit import soldier
-from pysc2.agents.myAgent.myAgent_10.config import config
+from pysc2.agents.myAgent.myAgent_11.tools.local_unit import soldier
+from pysc2.agents.myAgent.myAgent_11.config import config
 from pysc2.lib import features
 
 

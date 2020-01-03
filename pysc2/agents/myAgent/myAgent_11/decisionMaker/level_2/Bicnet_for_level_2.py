@@ -4,8 +4,8 @@ import random
 
 import numpy as np
 import tensorflow as tf
-import pysc2.agents.myAgent.myAgent_10.config.config as config
-from pysc2.agents.myAgent.myAgent_10.tools.SqQueue import SqQueue
+import pysc2.agents.myAgent.myAgent_11.config.config as config
+from pysc2.agents.myAgent.myAgent_11.tools.SqQueue import SqQueue
 from pysc2.agents.myAgent.myAgent_11.net.bicnet_for_level_2.bicnet import bicnet
 
 
@@ -102,7 +102,7 @@ class Bicnet():
             self.saveLoss(save_path)
             self.saveRewardAvg(save_path)
 
-        self.replay_buffer.inQueue([state, action, reward, next_state, done])
+        self.replay_buffer.inQueue([state, action, reward / 1000, next_state, done])
 
     def train_Q_network(self):  # 训练网络
         if self.replay_buffer.real_size > config.BATCH_SIZE:
