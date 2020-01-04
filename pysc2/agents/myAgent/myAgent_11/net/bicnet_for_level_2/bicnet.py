@@ -55,7 +55,7 @@ class bicnet(object):
         self.state_input_next = tf.placeholder("float", shape=self.statedim, name='state_input_next')  # 全局状态
         self.agents_local_observation_next = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation_next')
 
-        self.reward = tf.placeholder("float", shape=[None, self.agents_number], name='reward')
+        self.reward = tf.placeholder("float", shape=[None, self.agents_number, 1], name='reward')
 
     #################################### actor_net  ####################################
 
@@ -66,11 +66,11 @@ class bicnet(object):
                                 trainable=train,
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.01),
                                 weights_regularizer=slim.l2_regularizer(0.0001)):
-                encoder_outputs = self._observation_encoder_a(state_input, agents_local_observation, config.MY_UNIT_NUMBER, '_observation_encoder', train)
-                bicnet_outputs = self._bicnet_build_a(encoder_outputs, '_bicnet_build', train)
+                encoder_outputs = self._observation_encoder_a(state_input, agents_local_observation, config.MY_UNIT_NUMBER, '_observation_encoder')
+                bicnet_outputs = self._bicnet_build_a(encoder_outputs, '_bicnet_build')
                 return bicnet_outputs
 
-    def _observation_encoder_a(self, state_input, agents_local_observation, agents_number, scope_name, train):
+    def _observation_encoder_a(self, state_input, agents_local_observation, agents_number, scope_name):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             encoder = []
             conv1 = slim.conv2d(state_input, 1, [5, 5], stride=4, padding="VALID", scope='layer_1_conv')
@@ -90,7 +90,7 @@ class bicnet(object):
             encoder = tf.unstack(fc1, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
             return encoder
 
-    def _bicnet_build_a(self, encoder_outputs, scope_name, train):
+    def _bicnet_build_a(self, encoder_outputs, scope_name):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             lstm_fw_cell = tf.nn.rnn_cell.GRUCell(self.action_dim, name="lstm_fw_cell")
             lstm_bw_cell = tf.nn.rnn_cell.GRUCell(self.action_dim, name="lstm_bw_cell")
@@ -111,12 +111,11 @@ class bicnet(object):
                                 trainable=train,
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.01),
                                 weights_regularizer=slim.l2_regularizer(0.0001)):
-                encoder_outputs = self._observation_encoder_c(state_input, agents_local_observation, action_input, config.MY_UNIT_NUMBER, '_observation_encoder', train)
-                bicnet_outputs = self._bicnet_build_c(encoder_outputs, '_bicnet_build', train)
-                q_out = self._get_Q_c(bicnet_outputs, action_input, '_get_Q')
-                return q_out
+                encoder_outputs = self._observation_encoder_c(state_input, agents_local_observation, action_input, config.MY_UNIT_NUMBER, '_observation_encoder')
+                bicnet_outputs = self._bicnet_build_c(encoder_outputs, '_bicnet_build')
+                return bicnet_outputs
 
-    def _observation_encoder_c(self, state_input, agents_local_observation, action_input, agents_number, scope_name, train):
+    def _observation_encoder_c(self, state_input, agents_local_observation, action_input, agents_number, scope_name):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             encoder = []
             conv1 = slim.conv2d(state_input, 1, [5, 5], stride=1, padding="VALID", scope='layer_1_conv')
@@ -137,21 +136,21 @@ class bicnet(object):
             encoder = tf.unstack(fc1, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
             return encoder
 
-    def _bicnet_build_c(self, encoder_outputs, scope_name, train):
+    def _bicnet_build_c(self, encoder_outputs, scope_name):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             lstm_fw_cell = tf.nn.rnn_cell.GRUCell(self.action_dim, name="lstm_fw_cell")
             lstm_bw_cell = tf.nn.rnn_cell.GRUCell(self.action_dim, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
-            fc1 = slim.fully_connected(bicnet_outputs, self.action_dim, scope='full_connected1')
-            bicnet_outputs = tf.nn.softmax(fc1, axis=2)
+            fc1 = slim.fully_connected(bicnet_outputs, 1, scope='full_connected1')
+            bicnet_outputs = tf.nn.relu(fc1)
 
             bicnet_outputs = tf.unstack(bicnet_outputs, self.agents_number)  # (agents_number, batch_size, action_dim)
             bicnet_outputs = tf.transpose(bicnet_outputs, [1, 0, 2])
             return bicnet_outputs  # (batch_size,agents_number,action_dim)
 
-    def _get_Q_c(self, bicnet_outputs, action_input, scope_name):
-        with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
-            q_out = tf.multiply(bicnet_outputs, action_input)  # (batch_size, agents_number,outputs_prob)
-            q_out = tf.reduce_sum(q_out, axis=2)  # (batch_size, agents_number)
-
-            return q_out
+    # def _get_Q_c(self, bicnet_outputs, action_input, scope_name):
+    #     with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
+    #         q_out = tf.multiply(bicnet_outputs, action_input)  # (batch_size, agents_number,outputs_prob)
+    #         q_out = tf.reduce_sum(q_out, axis=2)  # (batch_size, agents_number)
+    #
+    #         return q_out

@@ -34,7 +34,7 @@ def actionSelect(unit, enemy_units, action_porb, mark):
     for i in range(config.STATIC_ACTION_DIM):
         mask.append(1)
 
-    if enemy_units_length >= config.ENEMY_UNIT_NUMBER:
+    if enemy_units_length > config.ENEMY_UNIT_NUMBER:
         for i in range(config.ENEMY_UNIT_NUMBER):
             distance = computeDistance(unit, enemy_units[i])
             if distance <= config.ATTACK_RANGE:
@@ -51,12 +51,18 @@ def actionSelect(unit, enemy_units, action_porb, mark):
         for i in range(config.ENEMY_UNIT_NUMBER - enemy_units_length):
             mask.append(0)
     action_porb_real = np.multiply(np.array(mask), np.array(action_porb))
-    action_porb_real = np.exp(action_porb_real) / sum(np.exp(action_porb_real))
+    # action_porb_real = np.exp(action_porb_real) / sum(np.exp(action_porb_real))
+    action_porb_real = action_porb_real / np.sum(action_porb_real)
 
     if mark == 'test':
         return np.argmax(action_porb_real)
     if mark == 'train':
-        return np.random.choice(range(len(action_porb_real)), p=action_porb_real.ravel())
+        action_number = np.random.choice(range(len(action_porb_real)), p=action_porb_real.ravel())
+
+        # if action_number - 5 >= enemy_units_length:
+        #     print()
+
+        return action_number
 
 
 def assembly_action(obs, action_probs, mark):
@@ -262,8 +268,8 @@ def reward_compute_2(previous_state, current_state):
             rward_all.append(0)
         else:
             temp = current_state[1][i][6:] - previous_state[1][i][6:]
-            temp = temp[0:config.MY_UNIT_NUMBER] - temp[config.MY_UNIT_NUMBER:config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER]
-            rward_all.append(np.sum(temp))
+            temp = np.sum(temp[0:config.MY_UNIT_NUMBER]) - np.sum(temp[config.MY_UNIT_NUMBER:config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER])
+            rward_all.append(temp)
 
     # rward_all = np.array(current_state[1][:, 6:]) - np.array(previous_state[1][:, 6:])
     # # my_health_change =  rward_all[:config.]
