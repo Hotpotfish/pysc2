@@ -27,4 +27,4 @@ def read_and_plot(path):
 
 
 if __name__ == "__main__":
-    read_and_plot('d:/model/20191231171022/reward.txt')
+    read_and_plot('d:/model/20200103201421/reward.txt')

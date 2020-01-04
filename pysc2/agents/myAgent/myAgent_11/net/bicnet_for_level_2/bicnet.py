@@ -27,7 +27,7 @@ class bicnet(object):
 
         with tf.variable_scope('Critic'):
             q = self._build_graph_c(self.state_input, self.agents_local_observation, self.a, 'eval', train=True)
-            q_ = self._build_graph_c(self.state_input_next, self.agents_local_observation_next, a_, 'eval', train=True)
+            q_ = self._build_graph_c(self.state_input_next, self.agents_local_observation_next, a_, 'target', train=False)
 
         # networks parameters
         self.ae_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/eval')

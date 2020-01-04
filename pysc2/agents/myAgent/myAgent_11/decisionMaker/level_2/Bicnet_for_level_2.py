@@ -116,6 +116,7 @@ class Bicnet():
 
             action_batch = np.eye(self.action_dim)[action_batch]
 
+            self.session.run(self.net.soft_replace)
             _ = self.session.run(self.net.atrain, {self.net.state_input: state_input,
                                                    self.net.agents_local_observation: agents_local_observation})
             __, self.td_error = self.session.run([self.net.ctrain, self.net.td_error], {self.net.state_input: state_input,
@@ -126,25 +127,25 @@ class Bicnet():
                                                                                         self.net.agents_local_observation_next: agents_local_observation_next
                                                                                         })
 
-    def get_execute_action(self, prob_value):
-        actions = []
+    # def get_execute_action(self, prob_value):
+    #     actions = []
+    #
+    #     for i in range(config.MY_UNIT_NUMBER):
+    #         Nt = np.random.randn(self.action_dim)
+    #         actions.append(prob_value[i] + Nt)
+    #
+    #     return actions
 
-        for i in range(config.MY_UNIT_NUMBER):
-            Nt = np.random.randn(self.action_dim)
-            actions.append(prob_value[i] + Nt)
-
-        return actions
-
-    def egreedy_action(self, state):  # 输出带随机的动作
-
-        state_input = state[0][np.newaxis, :, :]
-        agents_local_observation = state[1][np.newaxis, :, :]
-        prob_value = self.session.run(self.net.a, {self.net.state_input: state_input, self.net.agents_local_observation: agents_local_observation})[0]
-        actions = self.get_execute_action(prob_value)
-        return actions
+    # def egreedy_action(self, state):  # 输出带随机的动作
+    #
+    #     state_input = state[0][np.newaxis, :, :]
+    #     agents_local_observation = state[1][np.newaxis, :, :]
+    #     prob_value = self.session.run(self.net.a, {self.net.state_input: state_input, self.net.agents_local_observation: agents_local_observation})[0]
+    #     actions = self.get_execute_action(prob_value)
+    #     return actions
 
     def action(self, state):
         state_input = state[0][np.newaxis, :, :]
         agents_local_observation = state[1][np.newaxis, :, :]
-        prob_value = self.session.run(self.net.a, {self.net.state_input_next: state_input, self.net.agents_local_observation_next: agents_local_observation})[0]
+        prob_value = self.session.run(self.net.a, {self.net.state_input: state_input, self.net.agents_local_observation: agents_local_observation})[0]
         return prob_value

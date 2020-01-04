@@ -28,8 +28,8 @@ class level_2_attack_controller:
                                              obs.last(),
                                              save_path)
 
-        action_prob = self.controller.network.egreedy_action(self.controller.current_state)
-        actions, action_numbers = handcraft_function_for_level_2_attack_controller.assembly_action(obs, action_prob)
+        action_prob = self.controller.network.action(self.controller.current_state)
+        actions, action_numbers = handcraft_function_for_level_2_attack_controller.assembly_action(obs, action_prob,'train')
         # print(action_numbers)
         if obs.last():
             self.controller.previous_state = None
@@ -45,5 +45,5 @@ class level_2_attack_controller:
         self.controller.current_state = [np.array(obs.observation['feature_screen'][5][:, :, np.newaxis]), np.array(get_agents_local_observation(obs))]
 
         action_prob = self.controller.network.action(self.controller.current_state)
-        actions, action_numbers = handcraft_function_for_level_2_attack_controller.assembly_action(obs, action_prob)
+        actions, action_numbers = handcraft_function_for_level_2_attack_controller.assembly_action(obs, action_prob,'test')
         return actions
