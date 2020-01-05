@@ -33,9 +33,6 @@ class Bicnet():
         # 网络结构初始化
         self.name = name
 
-        # self.actor_net = bicnet_actor(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number, self.enemy_number, self.name + '_actor')
-        # self.critic_net = bicnet_critic(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number, self.enemy_number, self.name + '_critic')
-
         self.net = bicnet(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number, self.enemy_number, self.name + '_bicnet')
 
         # Init session
@@ -102,7 +99,7 @@ class Bicnet():
             self.saveLoss(save_path)
             self.saveRewardAvg(save_path)
 
-        self.replay_buffer.inQueue([state, action, reward / 1000, next_state, done])
+        self.replay_buffer.inQueue([state, action, reward / 100, next_state, done])
 
     def train_Q_network(self):  # 训练网络
         if self.replay_buffer.real_size > config.BATCH_SIZE:
@@ -115,7 +112,7 @@ class Bicnet():
             agents_local_observation_next = np.array([data[3][1] for data in minibatch])
 
             action_batch = np.eye(self.action_dim)[action_batch]
-            reward_batch = reward_batch[:, :,np.newaxis]
+            # reward_batch = reward_batch[:, :, np.newaxis]
 
             self.session.run(self.net.soft_replace)
             _ = self.session.run(self.net.atrain, {self.net.state_input: state_input,
