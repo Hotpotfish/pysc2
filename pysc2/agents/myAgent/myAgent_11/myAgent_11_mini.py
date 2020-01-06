@@ -36,7 +36,7 @@ def main(unused_argv):
 
     try:
         with sc2_env.SC2Env(
-                map_name="DefeatUltralisk",
+                map_name="DefeatUltralisk1",
 
                 players=[sc2_env.Agent(sc2_env.Race.terran), ],
                 agent_interface_format=features.AgentInterfaceFormat(

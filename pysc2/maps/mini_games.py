@@ -38,7 +38,7 @@ mini_games = [
     "FindAndDefeatZerglings",  # 180s
     "MoveToBeacon",  # 120s
     'DefeatUltralisk',
-    '2m_vs_1z',
+    'DefeatUltralisk1',
     '3m'
 
 ]

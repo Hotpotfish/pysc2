@@ -99,7 +99,7 @@ class Bicnet():
             self.saveLoss(save_path)
             self.saveRewardAvg(save_path)
 
-        self.replay_buffer.inQueue([state, action, reward, next_state, done])
+        self.replay_buffer.inQueue([state, action, reward / 10, next_state, done])
 
     def train_Q_network(self):  # 训练网络
         if self.replay_buffer.real_size > config.BATCH_SIZE:
@@ -117,13 +117,13 @@ class Bicnet():
             self.session.run(self.net.soft_replace)
             _ = self.session.run(self.net.atrain, {self.net.state_input: state_input,
                                                    self.net.agents_local_observation: agents_local_observation})
-            __, self.td_error = self.session.run([self.net.ctrain, self.net.td_error], {self.net.state_input: state_input,
-                                                                                        self.net.agents_local_observation: agents_local_observation,
-                                                                                        self.net.a: action_batch,
-                                                                                        self.net.reward: reward_batch,
-                                                                                        self.net.state_input_next: state_input_next,
-                                                                                        self.net.agents_local_observation_next: agents_local_observation_next
-                                                                                        })
+            __, ___, self.td_error = self.session.run([self.net.ctrain, self.net.soft_replace, self.net.td_error], {self.net.state_input: state_input,
+                                                                                                                    self.net.agents_local_observation: agents_local_observation,
+                                                                                                                    self.net.a: action_batch,
+                                                                                                                    self.net.reward: reward_batch,
+                                                                                                                    self.net.state_input_next: state_input_next,
+                                                                                                                    self.net.agents_local_observation_next: agents_local_observation_next
+                                                                                                                    })
 
     def get_execute_action(self, prob_value):
         actions = []
