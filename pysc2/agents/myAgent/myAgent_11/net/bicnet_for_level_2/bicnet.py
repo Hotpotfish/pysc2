@@ -55,7 +55,7 @@ class bicnet(object):
         self.state_input_next = tf.placeholder("float", shape=self.statedim, name='state_input_next')  # 全局状态
         self.agents_local_observation_next = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation_next')
 
-        self.reward = tf.placeholder("float", shape=[None, ], name='reward')
+        self.reward = tf.placeholder("float", shape=[None], name='reward')
 
     #################################### actor_net  ####################################
 
@@ -142,8 +142,8 @@ class bicnet(object):
             lstm_bw_cell = tf.nn.rnn_cell.GRUCell(self.action_dim, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             fc1 = slim.fully_connected(bicnet_outputs, 1, scope='full_connected1')
-            bicnet_outputs = tf.nn.relu(fc1)
+            # bicnet_outputs = tf.nn.relu(fc1)
 
-            bicnet_outputs = tf.unstack(bicnet_outputs, self.agents_number)  # (agents_number, batch_size, action_dim)
+            bicnet_outputs = tf.unstack(fc1, self.agents_number)  # (agents_number, batch_size, action_dim)
             bicnet_outputs = tf.transpose(bicnet_outputs, [1, 0, 2])
             return bicnet_outputs  # (batch_size,agents_number,action_dim)

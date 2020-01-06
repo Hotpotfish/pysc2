@@ -27,9 +27,10 @@ def computeDistance(unit, enemy_unit):
     return distance
 
 
-def actionSelect(unit, enemy_units, action_porb, mark):
+def actionSelect(unit, enemy_units, action_porb):
     mask = []
     enemy_units_length = len(enemy_units)
+    action_porb = np.exp(action_porb) / sum(np.exp(action_porb))
 
     for i in range(config.STATIC_ACTION_DIM):
         mask.append(1)
@@ -52,20 +53,23 @@ def actionSelect(unit, enemy_units, action_porb, mark):
             mask.append(0)
     action_porb_real = np.multiply(np.array(mask), np.array(action_porb))
     # action_porb_real = np.exp(action_porb_real) / sum(np.exp(action_porb_real))
-    action_porb_real = action_porb_real / np.sum(action_porb_real)
+    # action_porb_real = action_porb_real / np.sum(action_porb_real)
 
-    if mark == 'test':
-        return np.argmax(action_porb_real)
-    if mark == 'train':
-        action_number = np.random.choice(range(len(action_porb_real)), p=action_porb_real.ravel())
+    # if mark == 'test':
+    # if np.argmax(action_porb_real) - 5 >= enemy_units_length:
+    #     print()
 
-        # if action_number - 5 >= enemy_units_length:
-        #     print()
+    return np.argmax(action_porb_real)
+    # if mark == 'train':
+    #     action_number = np.random.choice(range(len(action_porb_real)), p=action_porb_real.ravel())
+    #
+    #     # if action_number - 5 >= enemy_units_length:
+    #     #     print()
+    #
+    #     return action_number
 
-        return action_number
 
-
-def assembly_action(obs, action_probs, mark):
+def assembly_action(obs, action_probs):
     # head = '{:0' + str(config.ATTACT_CONTROLLER_ACTIONDIM_BIN) + 'b}'
     my_raw_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
     enemy_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
@@ -81,7 +85,7 @@ def assembly_action(obs, action_probs, mark):
     # 根据参数名字填内容
     if my_raw_units_lenth > config.MY_UNIT_NUMBER:
         for i in range(config.MY_UNIT_NUMBER):
-            action_number = actionSelect(my_raw_units[i], enemy_units, action_probs[i], mark)
+            action_number = actionSelect(my_raw_units[i], enemy_units, action_probs[i])
 
             action_numbers.append(action_number)
 
@@ -119,6 +123,7 @@ def assembly_action(obs, action_probs, mark):
                 enemy = action_number - 1 - 4
                 parameter.append(0)
                 parameter.append(my_raw_units[i].tag)
+                # print(str(len(enemy_units))+':'+enemy)
                 parameter.append(enemy_units[enemy].tag)
 
                 parameter = tuple(parameter)
@@ -129,7 +134,7 @@ def assembly_action(obs, action_probs, mark):
     else:
 
         for i in range(my_raw_units_lenth):
-            action_number = actionSelect(my_raw_units[i], enemy_units, action_probs[i], mark)
+            action_number = actionSelect(my_raw_units[i], enemy_units, action_probs[i])
 
             action_numbers.append(action_number)
 
@@ -163,6 +168,8 @@ def assembly_action(obs, action_probs, mark):
                 enemy = action_number - 1 - 4
                 parameter.append(0)
                 parameter.append(my_raw_units[i].tag)
+                if len(enemy_units) == enemy:
+                    print(str(len(enemy_units)) + ':' + str(enemy))
                 parameter.append(enemy_units[enemy].tag)
 
                 parameter = tuple(parameter)
@@ -261,14 +268,14 @@ def get_raw_units_observation(obs):
     return np.array(fin_list.reshape((-1, 200, 29, 1)))
 
 
-def reward_compute_2(previous_state, current_state):
+def reward_compute_2(previous_state, current_state, obs):
     rward_all = []
     for i in range(config.MY_UNIT_NUMBER):
         if current_state[1][i][0] == 0:
             rward_all.append(0)
         else:
             temp = current_state[1][i][6:] - previous_state[1][i][6:]
-            temp = np.sum(temp[0:config.MY_UNIT_NUMBER]) - np.sum(temp[config.MY_UNIT_NUMBER:config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER])
+            temp = np.sum(temp[0:config.MY_UNIT_NUMBER]) - np.sum(temp[config.MY_UNIT_NUMBER:config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER]) + obs.reward
             rward_all.append(temp)
 
     # rward_all = np.array(current_state[1][:, 6:]) - np.array(previous_state[1][:, 6:])
