@@ -229,6 +229,18 @@ def get_friend_and_enemy_health(unit, obs, my_unit_number, enemy_unit_number):
     #     enemy_K = enemy[:K, 1]
 
 
+def get_agents_state(obs):
+    state = []
+    my_units = [unit for unit in obs.observation.raw_units if unit.alliance == features.PlayerRelative.SELF]
+    my_units_lenth = len(my_units)
+    for i in range(config.MY_UNIT_NUMBER):
+        if i >= my_units_lenth:
+            state.append(np.zeros(config.MAP_SIZE * config.MAP_SIZE))
+        else:
+            state.append(np.array(obs.observation['feature_screen'][5].flatten()))
+    return state
+
+
 def get_agents_local_observation(obs):
     agents_local_observation = []
 

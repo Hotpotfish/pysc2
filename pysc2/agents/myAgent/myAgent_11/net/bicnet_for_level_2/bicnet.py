@@ -73,18 +73,18 @@ class bicnet(object):
     def _observation_encoder_a(self, state_input, agents_local_observation, agents_number, scope_name):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             encoder = []
-            conv1 = slim.conv2d(state_input, 1, [5, 5], stride=4, padding="VALID", scope='layer_1_conv')
-            conv1 = tf.nn.relu(conv1)
-            pool1 = slim.max_pool2d(conv1, [2, 2], stride=2, padding="VALID", scope='layer_1_pooling')
-
-            conv2 = slim.conv2d(pool1, 1, [5, 5], stride=1, padding="VALID", scope='layer_2_conv')
-            conv2 = tf.nn.relu(conv2)
-            pool2 = slim.max_pool2d(conv2, [2, 2], stride=2, padding="VALID", scope='layer_2_pooling')
-            # 传给下一阶段
-            state_input_flatten = slim.flatten(pool2, scope="flatten")
-
             for i in range(agents_number):
-                encoder.append(tf.concat([agents_local_observation[:, i, :], state_input_flatten], axis=1))
+                conv1 = slim.conv2d(state_input[:, i], 1, [5, 5], stride=4, padding="VALID", scope='layer_1_conv')
+                conv1 = tf.nn.relu(conv1)
+                pool1 = slim.max_pool2d(conv1, [2, 2], stride=2, padding="VALID", scope='layer_1_pooling')
+
+                conv2 = slim.conv2d(pool1, 1, [5, 5], stride=1, padding="VALID", scope='layer_2_conv')
+                conv2 = tf.nn.relu(conv2)
+                pool2 = slim.max_pool2d(conv2, [2, 2], stride=2, padding="VALID", scope='layer_2_pooling')
+                # 传给下一阶段
+                state_input_flatten = slim.flatten(pool2, scope="flatten")
+
+                encoder.append(tf.concat([agents_local_observation[:, i, :], state_input_flatten]))
             encoder = tf.transpose(encoder, [1, 0, 2])
             fc1 = slim.fully_connected(encoder, 30, scope='full_connected1')
             encoder = tf.unstack(fc1, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
@@ -118,18 +118,18 @@ class bicnet(object):
     def _observation_encoder_c(self, state_input, agents_local_observation, action_input, agents_number, scope_name):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             encoder = []
-            conv1 = slim.conv2d(state_input, 1, [5, 5], stride=1, padding="VALID", scope='layer_1_conv')
-            conv1 = tf.nn.relu(conv1)
-            pool1 = slim.max_pool2d(conv1, [2, 2], stride=2, padding="VALID", scope='layer_1_pooling')
-
-            conv2 = slim.conv2d(pool1, 1, [5, 5], stride=1, padding="VALID", scope='layer_2_conv')
-            conv2 = tf.nn.relu(conv2)
-            pool2 = slim.max_pool2d(conv2, [2, 2], stride=2, padding="VALID", scope='layer_2_pooling')
-
-            # 传给下一阶段
-            state_input_flatten = slim.flatten(pool2, scope="flatten")
             for i in range(agents_number):
-                encoder.append(tf.concat([agents_local_observation[:, i, :], state_input_flatten, action_input[:, i]], axis=1))
+                conv1 = slim.conv2d(state_input[:, i], 1, [5, 5], stride=1, padding="VALID", scope='layer_1_conv')
+                conv1 = tf.nn.relu(conv1)
+                pool1 = slim.max_pool2d(conv1, [2, 2], stride=2, padding="VALID", scope='layer_1_pooling')
+
+                conv2 = slim.conv2d(pool1, 1, [5, 5], stride=1, padding="VALID", scope='layer_2_conv')
+                conv2 = tf.nn.relu(conv2)
+                pool2 = slim.max_pool2d(conv2, [2, 2], stride=2, padding="VALID", scope='layer_2_pooling')
+
+                # 传给下一阶段
+                state_input_flatten = slim.flatten(pool2, scope="flatten")
+                encoder.append(tf.concat([agents_local_observation[:, i, :], state_input_flatten, action_input[:, i]]))
             encoder = tf.transpose(encoder, [1, 0, 2])
             fc1 = slim.fully_connected(encoder, 60, scope='full_connected3')
             fc1 = tf.nn.relu(fc1)
