@@ -27,7 +27,7 @@ def computeDistance(unit, enemy_unit):
     return distance
 
 
-def actionSelect(unit, enemy_units, action_porb):
+def actionSelect(unit, enemy_units, action_porb, mark):
     mask = []
     enemy_units_length = len(enemy_units)
     action_porb = np.exp(action_porb) / sum(np.exp(action_porb))
@@ -53,23 +53,16 @@ def actionSelect(unit, enemy_units, action_porb):
             mask.append(0)
     action_porb_real = np.multiply(np.array(mask), np.array(action_porb))
     # action_porb_real = np.exp(action_porb_real) / sum(np.exp(action_porb_real))
-    # action_porb_real = action_porb_real / np.sum(action_porb_real)
+    action_porb_real = action_porb_real / np.sum(action_porb_real)
 
-    # if mark == 'test':
-    # if np.argmax(action_porb_real) - 5 >= enemy_units_length:
-    #     print()
-
-    return np.argmax(action_porb_real)
-    # if mark == 'train':
-    #     action_number = np.random.choice(range(len(action_porb_real)), p=action_porb_real.ravel())
-    #
-    #     # if action_number - 5 >= enemy_units_length:
-    #     #     print()
-    #
-    #     return action_number
+    if mark == 'test':
+        return np.argmax(action_porb_real)
+    if mark == 'train':
+        action_number = np.random.choice(range(len(action_porb_real)), p=action_porb_real.ravel())
+        return action_number
 
 
-def assembly_action(obs, action_probs):
+def assembly_action(obs, action_probs, mark):
     # head = '{:0' + str(config.ATTACT_CONTROLLER_ACTIONDIM_BIN) + 'b}'
     my_raw_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
     enemy_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
@@ -85,15 +78,11 @@ def assembly_action(obs, action_probs):
     # 根据参数名字填内容
     if my_raw_units_lenth > config.MY_UNIT_NUMBER:
         for i in range(config.MY_UNIT_NUMBER):
-            action_number = actionSelect(my_raw_units[i], enemy_units, action_probs[i])
+            action_number = actionSelect(my_raw_units[i], enemy_units, action_probs[i], mark)
 
             action_numbers.append(action_number)
 
             parameter = []
-
-            # aciton_bin = head.format(action_number)
-            #
-            # action_type = int(aciton_bin[0:2], base=2)
 
             if action_number == 0:
                 actions.append(Action.RAW_FUNCTIONS.no_op())
@@ -134,7 +123,7 @@ def assembly_action(obs, action_probs):
     else:
 
         for i in range(my_raw_units_lenth):
-            action_number = actionSelect(my_raw_units[i], enemy_units, action_probs[i])
+            action_number = actionSelect(my_raw_units[i], enemy_units, action_probs[i],mark)
 
             action_numbers.append(action_number)
 
