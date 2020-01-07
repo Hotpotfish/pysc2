@@ -235,9 +235,9 @@ def get_agents_state(obs):
     my_units_lenth = len(my_units)
     for i in range(config.MY_UNIT_NUMBER):
         if i >= my_units_lenth:
-            state.append(np.zeros(config.MAP_SIZE * config.MAP_SIZE))
+            state.append(np.zeros((config.MAP_SIZE, config.MAP_SIZE, 1)))
         else:
-            state.append(np.array(obs.observation['feature_screen'][5].flatten()))
+            state.append(np.array(obs.observation['feature_screen'][5][:, :, np.newaxis]))
     return state
 
 
