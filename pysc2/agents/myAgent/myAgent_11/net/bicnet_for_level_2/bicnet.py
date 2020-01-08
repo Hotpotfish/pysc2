@@ -64,43 +64,38 @@ class bicnet(object):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             with slim.arg_scope([slim.conv2d, slim.fully_connected],
                                 trainable=train,
+                                activation_fn=tf.nn.relu,
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.01),
                                 weights_regularizer=slim.l2_regularizer(0.0001)):
-                encoder_outputs = self._observation_encoder_a(state_input, agents_local_observation, config.MY_UNIT_NUMBER, '_observation_encoder')
-                bicnet_outputs = self._bicnet_build_a(encoder_outputs, '_bicnet_build')
+                encoder_outputs = self._observation_encoder_a(state_input, agents_local_observation, self.agents_number, '_observation_encoder')
+                bicnet_outputs = self._bicnet_build_a(encoder_outputs, self.agents_number, '_bicnet_build')
                 return bicnet_outputs
 
     def _observation_encoder_a(self, state_input, agents_local_observation, agents_number, scope_name):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             encoder = []
             for i in range(agents_number):
-                conv1 = slim.conv2d(state_input[:, i], 1, [5, 5], stride=4, padding="VALID", scope='layer_1_conv')
-                conv1 = tf.nn.relu(conv1)
-                pool1 = slim.max_pool2d(conv1, [2, 2], stride=2, padding="VALID", scope='layer_1_pooling')
-
-                # conv2 = slim.conv2d(pool1, 1, [5, 5], stride=1, padding="VALID", scope='layer_2_conv')
-                # conv2 = tf.nn.relu(conv2)
-                # pool2 = slim.max_pool2d(conv2, [2, 2], stride=2, padding="VALID", scope='layer_2_pooling')
-                # 传给下一阶段
-                state_input_flatten = slim.flatten(pool1, scope="flatten")
-
-                encoder.append(tf.concat([agents_local_observation[:, i, :], state_input_flatten], axis=1))
+                state_input_flatten = slim.flatten(state_input[:, i], scope="flatten_1" + "_" + str(i))
+                data = tf.concat([agents_local_observation[:, i, :], state_input_flatten], axis=1)
+                fc1 = slim.fully_connected(data, 100, scope='full_connected1' + "_" + str(i))
+                encoder.append(fc1)
             encoder = tf.transpose(encoder, [1, 0, 2])
-            fc1 = slim.fully_connected(encoder, 30, scope='full_connected1')
-            encoder = tf.unstack(fc1, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
+            encoder = tf.unstack(encoder, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
             return encoder
 
-    def _bicnet_build_a(self, encoder_outputs, scope_name):
+    def _bicnet_build_a(self, encoder_outputs, agents_number, scope_name):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
+            outputs = []
             lstm_fw_cell = tf.nn.rnn_cell.GRUCell(self.action_dim, name="lstm_fw_cell")
             lstm_bw_cell = tf.nn.rnn_cell.GRUCell(self.action_dim, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
-            fc1 = slim.fully_connected(bicnet_outputs, self.action_dim, scope='full_connected1')
-            bicnet_outputs = tf.nn.softmax(fc1, axis=2)
+            for i in range(agents_number):
+                fc1 = slim.fully_connected(bicnet_outputs[i], self.action_dim, scope='full_connected1' + "_" + str(i))
+                outputs.append(tf.nn.softmax(fc1))
 
-            bicnet_outputs = tf.unstack(bicnet_outputs, self.agents_number)  # (agents_number, batch_size, action_dim)
-            bicnet_outputs = tf.transpose(bicnet_outputs, [1, 0, 2])
-            return bicnet_outputs  # (batch_size,agents_number,action_dim)
+            outputs = tf.unstack(outputs, self.agents_number)  # (agents_number, batch_size, action_dim)
+            outputs = tf.transpose(outputs, [1, 0, 2])
+            return outputs  # (batch_size,agents_number,action_dim)
 
     #################################### critic_net  ####################################
 
@@ -111,39 +106,34 @@ class bicnet(object):
                                 trainable=train,
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.01),
                                 weights_regularizer=slim.l2_regularizer(0.0001)):
-                encoder_outputs = self._observation_encoder_c(state_input, agents_local_observation, action_input, config.MY_UNIT_NUMBER, '_observation_encoder')
-                bicnet_outputs = self._bicnet_build_c(encoder_outputs, '_bicnet_build')
+                encoder_outputs = self._observation_encoder_c(state_input, action_input, self.agents_number, '_observation_encoder')
+                bicnet_outputs = self._bicnet_build_c(encoder_outputs, self.agents_number, '_bicnet_build')
                 return bicnet_outputs
 
-    def _observation_encoder_c(self, state_input, agents_local_observation, action_input, agents_number, scope_name):
+    def _observation_encoder_c(self, state_input, action_input, agents_number, scope_name):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             encoder = []
             for i in range(agents_number):
-                conv1 = slim.conv2d(state_input[:, i], 1, [5, 5], stride=4, padding="VALID", scope='layer_1_conv')
-                conv1 = tf.nn.relu(conv1)
-                pool1 = slim.max_pool2d(conv1, [2, 2], stride=2, padding="VALID", scope='layer_1_pooling')
-
-                conv2 = slim.conv2d(pool1, 1, [5, 5], stride=1, padding="VALID", scope='layer_2_conv')
-                conv2 = tf.nn.relu(conv2)
-                pool2 = slim.max_pool2d(conv2, [2, 2], stride=2, padding="VALID", scope='layer_2_pooling')
-
-                # 传给下一阶段
-                state_input_flatten = slim.flatten(pool2, scope="flatten")
-                encoder.append(tf.concat([agents_local_observation[:, i, :], state_input_flatten, action_input[:, i]], axis=1))
+                state_input_flatten = slim.flatten(state_input[:, i], scope="flatten_1" + "_" + str(i))
+                data = tf.concat([action_input[:, i, :], state_input_flatten], axis=1)
+                fc1 = slim.fully_connected(data, 100, scope='full_connected1' + "_" + str(i))
+                encoder.append(fc1)
             encoder = tf.transpose(encoder, [1, 0, 2])
-            fc1 = slim.fully_connected(encoder, 60, scope='full_connected3')
-            fc1 = tf.nn.relu(fc1)
-            encoder = tf.unstack(fc1, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
+            encoder = tf.unstack(encoder, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
             return encoder
 
-    def _bicnet_build_c(self, encoder_outputs, scope_name):
+    def _bicnet_build_c(self, encoder_outputs, agents_number, scope_name):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
+            outputs = []
             lstm_fw_cell = tf.nn.rnn_cell.GRUCell(self.action_dim, name="lstm_fw_cell")
             lstm_bw_cell = tf.nn.rnn_cell.GRUCell(self.action_dim, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
-            fc1 = slim.fully_connected(bicnet_outputs, 1, scope='full_connected1')
-            # bicnet_outputs = tf.nn.relu(fc1)
+            for i in range(agents_number):
+                fc1 = slim.fully_connected(bicnet_outputs[i], 1, activation_fn=None, scope='full_connected1' + "_" + str(i))
+                outputs.append(fc1)
+            outputs = tf.unstack(outputs, self.agents_number)  # (agents_number, batch_size,1)
+            outputs = tf.transpose(outputs, [1, 0, 2])  # (batch_size,agents_number,1)
+            outputs = slim.flatten(outputs)
+            fc2 = slim.fully_connected(outputs, 1, activation_fn=None, scope='full_connected2')
 
-            bicnet_outputs = tf.unstack(fc1, self.agents_number)  # (agents_number, batch_size, action_dim)
-            bicnet_outputs = tf.transpose(bicnet_outputs, [1, 0, 2])
-            return bicnet_outputs  # (batch_size,agents_number,action_dim)
+            return fc2
