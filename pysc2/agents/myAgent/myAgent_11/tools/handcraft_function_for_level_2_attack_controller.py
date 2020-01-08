@@ -79,9 +79,7 @@ def assembly_action(obs, action_probs, mark):
     if my_raw_units_lenth > config.MY_UNIT_NUMBER:
         for i in range(config.MY_UNIT_NUMBER):
             action_number = actionSelect(my_raw_units[i], enemy_units, action_probs[i], mark)
-
             action_numbers.append(action_number)
-
             parameter = []
 
             if action_number == 0:
@@ -114,30 +112,21 @@ def assembly_action(obs, action_probs, mark):
                 parameter.append(my_raw_units[i].tag)
                 # print(str(len(enemy_units))+':'+enemy)
                 parameter.append(enemy_units[enemy].tag)
-
                 parameter = tuple(parameter)
                 actions.append(a(*parameter))
-
-
 
     else:
 
         for i in range(my_raw_units_lenth):
             action_number = actionSelect(my_raw_units[i], enemy_units, action_probs[i],mark)
-
             action_numbers.append(action_number)
-
             parameter = []
-
             if action_number == 0:
                 actions.append(Action.RAW_FUNCTIONS.no_op())
                 continue
-
             elif 0 < action_number <= 4:
                 a = controller[1]
-
                 dir = action_number - 1
-
                 parameter.append(0)
                 parameter.append(my_raw_units[i].tag)
                 if dir == 0:
@@ -148,7 +137,6 @@ def assembly_action(obs, action_probs, mark):
                     parameter.append((my_raw_units[i].x + 1, my_raw_units[i].y - 1))
                 elif dir == 3:
                     parameter.append((my_raw_units[i].x - 1, my_raw_units[i].y + 1))
-
                 parameter = tuple(parameter)
                 actions.append(a(*parameter))
 
@@ -160,7 +148,6 @@ def assembly_action(obs, action_probs, mark):
                 if len(enemy_units) == enemy:
                     print(str(len(enemy_units)) + ':' + str(enemy))
                 parameter.append(enemy_units[enemy].tag)
-
                 parameter = tuple(parameter)
                 actions.append(a(*parameter))
 
@@ -235,8 +222,6 @@ def get_agents_local_observation(obs):
 
     my_units = [unit for unit in obs.observation.raw_units if unit.alliance == features.PlayerRelative.SELF]
     my_units_lenth = len(my_units)
-    # if my_units_lenth == 0:
-    #     print()
 
     for i in range(config.MY_UNIT_NUMBER):
         if i >= my_units_lenth:

@@ -26,8 +26,8 @@ class bicnet(object):
             a_ = self._build_graph_a(self.state_input_next, self.agents_local_observation_next, 'target', train=False)
 
         with tf.variable_scope('Critic'):
-            q = self._build_graph_c(self.state_input, self.agents_local_observation, self.a, 'eval', train=True)
-            q_ = self._build_graph_c(self.state_input_next, self.agents_local_observation_next, a_, 'target', train=False)
+            q = self._build_graph_c(self.state_input,  self.a, 'eval', train=True)
+            q_ = self._build_graph_c(self.state_input_next, a_, 'target', train=False)
 
         # networks parameters
         self.ae_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/eval')
@@ -99,7 +99,7 @@ class bicnet(object):
 
     #################################### critic_net  ####################################
 
-    def _build_graph_c(self, state_input, agents_local_observation, action_input, scope_name, train):
+    def _build_graph_c(self, state_input, action_input, scope_name, train):
         # 环境和智能体本地的共同观察
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             with slim.arg_scope([slim.conv2d, slim.fully_connected],

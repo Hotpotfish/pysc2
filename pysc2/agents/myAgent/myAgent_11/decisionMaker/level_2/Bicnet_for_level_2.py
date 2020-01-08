@@ -99,7 +99,7 @@ class Bicnet():
             self.saveLoss(save_path)
             self.saveRewardAvg(save_path)
 
-        self.replay_buffer.inQueue([state, action, reward / 10, next_state, done])
+        self.replay_buffer.inQueue([state, action, reward , next_state, done])
 
     def train_Q_network(self):  # 训练网络
         if self.replay_buffer.real_size > config.BATCH_SIZE:
