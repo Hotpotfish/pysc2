@@ -1,5 +1,3 @@
-from queue import Queue
-
 from absl import app
 from pysc2.agents import base_agent
 from pysc2.agents.myAgent.myAgent_11.decisionMaker.hierarchical_learning_structure import hierarchical_learning_structure
