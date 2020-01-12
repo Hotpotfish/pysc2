@@ -118,7 +118,7 @@ def assembly_action(obs, action_probs, mark):
     else:
 
         for i in range(my_raw_units_lenth):
-            action_number = actionSelect(my_raw_units[i], enemy_units, action_probs[i],mark)
+            action_number = actionSelect(my_raw_units[i], enemy_units, action_probs[i], mark)
             action_numbers.append(action_number)
             parameter = []
             if action_number == 0:
@@ -217,54 +217,44 @@ def get_agents_state(obs):
     return state
 
 
-def get_agents_local_observation(obs):
-    agents_local_observation = []
+def get_agents_obs(obs):
+    agents_obs = []
 
-    my_units = [unit for unit in obs.observation.raw_units if unit.alliance == features.PlayerRelative.SELF]
-    my_units_lenth = len(my_units)
+    my_raw_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
+    enemy_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
+
+    my_raw_units_lenth = len(my_raw_units)
+    enemy_units_lenth = len(enemy_units)
 
     for i in range(config.MY_UNIT_NUMBER):
-        if i >= my_units_lenth:
-            empty = np.zeros(6 + config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)
-            agents_local_observation.append(empty)
-        else:
-            unit_local = soldier()
-            unit_local.unit_type = my_units[i].unit_type
-            unit_local.health = my_units[i].health
-            unit_local.energy = my_units[i].energy
-            unit_local.x = my_units[i].x
-            unit_local.y = my_units[i].y
-            unit_local.order_length = my_units[i].order_length
+        agent_obs = np.array([])
 
-            friend_k, enemy_k = get_friend_and_enemy_health(my_units[i], obs, config.MY_UNIT_NUMBER, config.ENEMY_UNIT_NUMBER)
+        if i >= my_raw_units_lenth:
+            agent_obs = np.zeros((config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER) * 5)
+            agents_obs.append(agent_obs)
+            continue
 
-            unit_local.frend_health = friend_k
-            unit_local.enemy_health = enemy_k
-            agents_local_observation.append(unit_local.get_list())
+        for j in range(config.MY_UNIT_NUMBER):
 
-    return agents_local_observation
+            if j >= my_raw_units_lenth or computeDistance(my_raw_units[i], my_raw_units[j]) >= config.OB_RANGE:
+                agent_obs = np.append(agent_obs, np.zeros(5))
+            else:
+                agent_obs = np.append(agent_obs, computeDistance(my_raw_units[i], my_raw_units[j]))
+                agent_obs = np.append(agent_obs, my_raw_units[j].x)
+                agent_obs = np.append(agent_obs, my_raw_units[j].y)
+                agent_obs = np.append(agent_obs, my_raw_units[j].health)
+                agent_obs = np.append(agent_obs, my_raw_units[j].shield)
 
+        for j in range(config.ENEMY_UNIT_NUMBER):
+            if j >= enemy_units_lenth or computeDistance(my_raw_units[i], enemy_units[j]) >= config.OB_RANGE:
+                agent_obs = np.append(agent_obs, np.zeros(5))
+            else:
+                agent_obs = np.append(agent_obs, computeDistance(my_raw_units[i], enemy_units[j]))
+                agent_obs = np.append(agent_obs, enemy_units[j].x)
+                agent_obs = np.append(agent_obs, enemy_units[j].y)
+                agent_obs = np.append(agent_obs, enemy_units[j].health)
+                agent_obs = np.append(agent_obs, enemy_units[j].shield)
 
-def get_raw_units_observation(obs):
-    fin_list = np.zeros((200, 29))
-    raw_units = obs.observation['raw_units'][:, :29]
+        agents_obs.append(agent_obs)
 
-    fin_list[0:len(raw_units)] = np.array(raw_units[:])
-
-    return np.array(fin_list.reshape((-1, 200, 29, 1)))
-
-
-def reward_compute_2(previous_state, current_state, obs):
-    rward_all = []
-    for i in range(config.MY_UNIT_NUMBER):
-        if current_state[1][i][0] == 0:
-            rward_all.append(0)
-        else:
-            temp = current_state[1][i][6:] - previous_state[1][i][6:]
-            temp = np.sum(temp[0:config.MY_UNIT_NUMBER]) - np.sum(temp[config.MY_UNIT_NUMBER:config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER]) + obs.reward
-            rward_all.append(temp)
-
-    # rward_all = np.array(current_state[1][:, 6:]) - np.array(previous_state[1][:, 6:])
-    # # my_health_change =  rward_all[:config.]
-    # rward_all = np.sum(rward_all[:, 0:config.K] - rward_all[:, config.K:config.K + config.K], axis=1)
-    return np.array(rward_all)
+    return agents_obs

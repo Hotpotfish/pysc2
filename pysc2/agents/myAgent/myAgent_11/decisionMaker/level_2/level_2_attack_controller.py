@@ -5,7 +5,7 @@ import pysc2.agents.myAgent.myAgent_11.smart_actions as sa
 from pysc2.agents.myAgent.myAgent_11.decisionMaker.level_2.Bicnet_for_level_2 import Bicnet
 from pysc2.agents.myAgent.myAgent_11.tools import handcraft_function, handcraft_function_for_level_2_attack_controller
 
-from pysc2.agents.myAgent.myAgent_11.tools.handcraft_function_for_level_2_attack_controller import get_agents_local_observation, reward_compute_2, get_agents_state
+from pysc2.agents.myAgent.myAgent_11.tools.handcraft_function_for_level_2_attack_controller import get_agents_state, get_agents_obs
 
 
 class level_2_attack_controller:
@@ -17,7 +17,7 @@ class level_2_attack_controller:
         self.index = handcraft_function.find_controller_index(sa.attack_controller)
 
     def train_action(self, obs, save_path):
-        self.controller.current_state = [np.array(get_agents_state(obs)), np.array(get_agents_local_observation(obs))]
+        self.controller.current_state = [np.array(get_agents_state(obs)), np.array(get_agents_obs(obs))]
 
         if self.controller.previous_action is not None:
             self.controller.previous_reward = obs.reward  # reward_compute_2(self.controller.previous_state, self.controller.current_state, obs)
@@ -41,7 +41,7 @@ class level_2_attack_controller:
         return actions
 
     def test_action(self, obs):
-        self.controller.current_state = [np.array(obs.observation['feature_screen'][5][:, :, np.newaxis]), np.array(get_agents_local_observation(obs))]
+        self.controller.current_state = [np.array(obs.observation['feature_screen'][5][:, :, np.newaxis]), np.array(get_agents_obs(obs))]
 
         action_prob = self.controller.network.action(self.controller.current_state)
         actions, action_numbers = handcraft_function_for_level_2_attack_controller.assembly_action(obs, action_prob, 'test')
