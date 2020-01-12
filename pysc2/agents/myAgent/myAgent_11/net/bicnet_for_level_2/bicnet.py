@@ -109,15 +109,12 @@ class bicnet(object):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             encoder = []
             for i in range(agents_number):
-                conv1 = slim.conv2d(state_input[:, i], 2, [5, 5], stride=2, padding="VALID", scope='conv1' + "_" + str(i))
-                pool1 = slim.max_pool2d(conv1, [2, 2], stride=2, padding="VALID", scope='pooling1' + "_" + str(i))
-                flatten = slim.flatten(pool1, scope="flatten")
-                fc1 = slim.fully_connected(flatten, 120, activation_fn=tf.nn.relu, scope='full_connected_s1' + "_" + str(i))
-                state_flatten = slim.flatten(fc1)
+                fc1_s = slim.fully_connected(state_input[:, i], 50, scope='full_connected_s1' + "_" + str(i))
+                fc2_s = slim.fully_connected(fc1_s, 30, scope='full_connected_s2' + "_" + str(i))
 
                 fc1_a = slim.fully_connected(action_input[:, i], 30, scope='full_connected_a1' + "_" + str(i))
 
-                data = tf.concat([state_flatten, fc1_a], axis=1)
+                data = tf.concat([fc2_s, fc1_a], axis=1)
                 fc1 = slim.fully_connected(data, 100, scope='full_connected1' + "_" + str(i))
                 encoder.append(fc1)
             encoder = tf.transpose(encoder, [1, 0, 2])

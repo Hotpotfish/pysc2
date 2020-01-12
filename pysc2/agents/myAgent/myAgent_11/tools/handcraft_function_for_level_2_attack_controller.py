@@ -1,4 +1,6 @@
 import math
+import random
+
 from pysc2.lib import actions as Action
 import numpy as np
 import pysc2.agents.myAgent.myAgent_11.smart_actions as sa
@@ -27,7 +29,16 @@ def computeDistance(unit, enemy_unit):
     return distance
 
 
-def actionSelect(unit, enemy_units, action_porb, mark):
+def computeDistance_center(unit):
+    x_difference = math.pow(unit.x - config.MAP_SIZE / 2, 2)
+    y_difference = math.pow(unit.y - config.MAP_SIZE / 2, 2)
+
+    distance = math.sqrt(x_difference + y_difference)
+
+    return distance
+
+
+def actionSelect(unit, enemy_units, action_porb, mark, ep):
     mask = []
     enemy_units_length = len(enemy_units)
     action_porb = np.exp(action_porb) / sum(np.exp(action_porb))
@@ -52,14 +63,24 @@ def actionSelect(unit, enemy_units, action_porb, mark):
         for i in range(config.ENEMY_UNIT_NUMBER - enemy_units_length):
             mask.append(0)
     action_porb_real = np.multiply(np.array(mask), np.array(action_porb))
-    # action_porb_real = np.exp(action_porb_real) / sum(np.exp(action_porb_real))
+
     action_porb_real = action_porb_real / np.sum(action_porb_real)
 
     if mark == 'test':
         return np.argmax(action_porb_real)
     if mark == 'train':
-        action_number = np.random.choice(range(len(action_porb_real)), p=action_porb_real.ravel())
-        return action_number
+
+        if random.random() >= ep:
+            return np.argmax(action_porb_real)
+        else:
+            avail_actions_ind = np.nonzero(action_porb_real)[0]
+            action = np.random.choice(avail_actions_ind)
+            return action
+
+
+############################################
+global epsilon
+epsilon = config.INITIAL_EPSILON
 
 
 def assembly_action(obs, action_probs, mark):
@@ -75,10 +96,15 @@ def assembly_action(obs, action_probs, mark):
 
     controller = sa.attack_controller
 
+    global epsilon
+    epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 100000
+    if epsilon <= config.FINAL_EPSILON:
+        epsilon = config.FINAL_EPSILON
+
     # 根据参数名字填内容
     if my_raw_units_lenth > config.MY_UNIT_NUMBER:
         for i in range(config.MY_UNIT_NUMBER):
-            action_number = actionSelect(my_raw_units[i], enemy_units, action_probs[i], mark)
+            action_number = actionSelect(my_raw_units[i], enemy_units, action_probs[i], mark, epsilon)
             action_numbers.append(action_number)
             parameter = []
 
@@ -118,7 +144,7 @@ def assembly_action(obs, action_probs, mark):
     else:
 
         for i in range(my_raw_units_lenth):
-            action_number = actionSelect(my_raw_units[i], enemy_units, action_probs[i], mark)
+            action_number = actionSelect(my_raw_units[i], enemy_units, action_probs[i], mark, epsilon)
             action_numbers.append(action_number)
             parameter = []
             if action_number == 0:
@@ -205,15 +231,36 @@ def get_friend_and_enemy_health(unit, obs, my_unit_number, enemy_unit_number):
     #     enemy_K = enemy[:K, 1]
 
 
+def get_agent_state(obs):
+    states = np.array([])
+    units = obs.observation['raw_units']
+    units_len = len(units)
+
+    for i in range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER):
+        if i >= units_len:
+            states = np.append(states, np.zeros(7))
+
+        else:
+            states = np.append(states, computeDistance_center(units[i]) / 90.5)
+            states = np.append(states, units[i].alliance / 4)
+            states = np.append(states, units[i].unit_type / 1000)
+            states = np.append(states, units[i].x / config.MAP_SIZE)
+            states = np.append(states, units[i].y / config.MAP_SIZE)
+            states = np.append(states, units[i].health / 1000)
+            states = np.append(states, units[i].shield / 1000)
+    return states
+
+
 def get_agents_state(obs):
     state = []
     my_units = [unit for unit in obs.observation.raw_units if unit.alliance == features.PlayerRelative.SELF]
     my_units_lenth = len(my_units)
+
     for i in range(config.MY_UNIT_NUMBER):
         if i >= my_units_lenth:
-            state.append(np.zeros((config.MAP_SIZE, config.MAP_SIZE, 1)))
+            state.append(np.zeros(config.COOP_AGENTS_OBDIM))
         else:
-            state.append(np.array(obs.observation['feature_screen'][5][:, :, np.newaxis]))
+            state.append(get_agent_state(obs))
     return state
 
 
@@ -230,30 +277,34 @@ def get_agents_obs(obs):
         agent_obs = np.array([])
 
         if i >= my_raw_units_lenth:
-            agent_obs = np.zeros((config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER) * 5)
+            agent_obs = np.zeros((config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER) * 7)
             agents_obs.append(agent_obs)
             continue
 
         for j in range(config.MY_UNIT_NUMBER):
 
             if j >= my_raw_units_lenth or computeDistance(my_raw_units[i], my_raw_units[j]) >= config.OB_RANGE:
-                agent_obs = np.append(agent_obs, np.zeros(5))
+                agent_obs = np.append(agent_obs, np.zeros(7))
             else:
-                agent_obs = np.append(agent_obs, computeDistance(my_raw_units[i], my_raw_units[j]))
-                agent_obs = np.append(agent_obs, my_raw_units[j].x)
-                agent_obs = np.append(agent_obs, my_raw_units[j].y)
-                agent_obs = np.append(agent_obs, my_raw_units[j].health)
-                agent_obs = np.append(agent_obs, my_raw_units[j].shield)
+                agent_obs = np.append(agent_obs, computeDistance(my_raw_units[i], my_raw_units[j]) / 90.5)
+                agent_obs = np.append(agent_obs, my_raw_units[j].alliance / 4)
+                agent_obs = np.append(agent_obs, my_raw_units[j].unit_type / 1000)
+                agent_obs = np.append(agent_obs, my_raw_units[j].x / config.MAP_SIZE)
+                agent_obs = np.append(agent_obs, my_raw_units[j].y / config.MAP_SIZE)
+                agent_obs = np.append(agent_obs, my_raw_units[j].health / 1000)
+                agent_obs = np.append(agent_obs, my_raw_units[j].shield / 1000)
 
         for j in range(config.ENEMY_UNIT_NUMBER):
             if j >= enemy_units_lenth or computeDistance(my_raw_units[i], enemy_units[j]) >= config.OB_RANGE:
-                agent_obs = np.append(agent_obs, np.zeros(5))
+                agent_obs = np.append(agent_obs, np.zeros(7))
             else:
-                agent_obs = np.append(agent_obs, computeDistance(my_raw_units[i], enemy_units[j]))
-                agent_obs = np.append(agent_obs, enemy_units[j].x)
-                agent_obs = np.append(agent_obs, enemy_units[j].y)
-                agent_obs = np.append(agent_obs, enemy_units[j].health)
-                agent_obs = np.append(agent_obs, enemy_units[j].shield)
+                agent_obs = np.append(agent_obs, computeDistance(my_raw_units[i], enemy_units[j]) / 90.5)
+                agent_obs = np.append(agent_obs, enemy_units[j].alliance / 4)
+                agent_obs = np.append(agent_obs, enemy_units[j].unit_type / 1000)
+                agent_obs = np.append(agent_obs, enemy_units[j].x / config.MAP_SIZE)
+                agent_obs = np.append(agent_obs, enemy_units[j].y / config.MAP_SIZE)
+                agent_obs = np.append(agent_obs, enemy_units[j].health / 1000)
+                agent_obs = np.append(agent_obs, enemy_units[j].shield / 1000)
 
         agents_obs.append(agent_obs)
 

@@ -10,7 +10,7 @@ from pysc2.agents.myAgent.myAgent_11.tools.handcraft_function_for_level_2_attack
 
 class level_2_attack_controller:
     def __init__(self):
-        self.state_data_shape = (None, config.MY_UNIT_NUMBER, config.MAP_SIZE, config.MAP_SIZE, 1)
+        self.state_data_shape = (None, config.MY_UNIT_NUMBER, config.COOP_AGENTS_OBDIM)
         self.controller = decision_maker(
             Bicnet(config.MU, config.SIGMA, config.LEARING_RATE, config.ATTACT_CONTROLLER_ACTIONDIM, self.state_data_shape, config.MY_UNIT_NUMBER,
                    config.ENEMY_UNIT_NUMBER, 'attack_controller'))
