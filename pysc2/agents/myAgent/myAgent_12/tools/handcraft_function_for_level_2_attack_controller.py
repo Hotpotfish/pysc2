@@ -62,6 +62,13 @@ def attackZone(obs, x, y):
         return action
 
 
+def assembly_action(obs, action_prob, controller):
+    action_number = np.random.choice(range(config_for_level_2_attack_controller.ACTION_DIM), p=action_prob)
+    order = controller[action_number]
+    action = attackZone(obs, order[0], order[1])
+    return action, action_number
+
+
 ####################################### 观察集合
 def get_my_units_by_type(obs, unit_type):
     return [unit for unit in obs.observation.raw_units
