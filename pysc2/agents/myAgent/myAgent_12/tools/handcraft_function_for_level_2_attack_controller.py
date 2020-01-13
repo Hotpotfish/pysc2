@@ -58,7 +58,7 @@ def attackZone(obs, x, y):
         return action
     else:
         for i in range(len(my_match_unit)):
-            action.append(actions.RAW_FUNCTIONS.Move_pt("now", my_match_unit[i].tag, target_zone_random_point))
+            action.append(actions.RAW_FUNCTIONS.Attack_pt("now", my_match_unit[i].tag, target_zone_random_point))
         return action
 
 
@@ -90,8 +90,8 @@ def get_state(obs):
     for building_type in building:
         state.append(len(get_my_units_by_type(obs, building_type)) / 20)  # 28
 
-    state.append(obs.observation.Player.minerals)  # 1
-    state.append(obs.observation.Player.vespene)  # 1
+    state.append(obs.observation.player.minerals)  # 1
+    state.append(obs.observation.player.vespene)  # 1
     state.append(len(get_my_units_by_type(obs, 45)) / 200)  # 1
     state.append(((len(get_enemy_units_by_type(obs, 18))) +  # 敌方指挥中心数量 1
                   len(get_enemy_units_by_type(obs, 36)) +
@@ -101,15 +101,15 @@ def get_state(obs):
                  )
     state.append(len(get_enemy_units_by_type(obs, 45)) / 200)  # 1
 
-    return state
+    return np.array(state)
 
 
 def get_reward(pre_obs, obs):
     # reward = np.sum(pre_obs.observation['ScoreByCategory'][1]) + np.sum(pre_obs.observation['ScoreByCategory'][2]) - \
     #          np.sum(pre_obs.observation['ScoreByCategory'][3]) + np.sum(pre_obs.observation['ScoreByCategory'][4])
-    kill_reward = np.sum(obs.observation['ScoreByCategory'][1]) + np.sum(obs.observation['ScoreByCategory'][2]) - \
-                  np.sum(pre_obs.observation['ScoreByCategory'][1]) - np.sum(pre_obs.observation['ScoreByCategory'][2])
-    loss_reward = np.sum(obs.observation['ScoreByCategory'][3]) + np.sum(obs.observation['ScoreByCategory'][4]) - \
-                  np.sum(pre_obs.observation['ScoreByCategory'][3]) - np.sum(pre_obs.observation['ScoreByCategory'][4])
+    kill_reward = np.sum(obs.observation['score_by_category'][1]) + np.sum(obs.observation['score_by_category'][2]) - \
+                  np.sum(pre_obs.observation['score_by_category'][1]) - np.sum(pre_obs.observation['score_by_category'][2])
+    loss_reward = np.sum(obs.observation['score_by_category'][3]) + np.sum(obs.observation['score_by_category'][4]) - \
+                  np.sum(pre_obs.observation['score_by_category'][3]) - np.sum(pre_obs.observation['score_by_category'][4])
     reward = (kill_reward - loss_reward) / 1000
     return reward

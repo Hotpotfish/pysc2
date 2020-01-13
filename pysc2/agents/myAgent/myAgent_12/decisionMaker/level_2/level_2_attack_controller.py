@@ -17,12 +17,16 @@ class level_2_attack_controller:
             DDPG(config.MU, config.SIGMA, config.LEARING_RATE, ACTION_DIM, self.state_data_shape, 'attack_controller'))
         self.index = handcraft_function.find_controller_index(sa.attack_controller)
 
+        self.current_obs = None
+        self.previous_obs = None
+
     def train_action(self, obs, save_path):
         self.controller.current_state = get_state(obs)
+        self.current_obs = obs
 
         if self.controller.previous_action is not None:
-            self.controller.previous_reward = get_reward(self.controller.previous_state,
-                                                         self.controller.current_state)  # reward_compute_2(self.controller.previous_state, self.controller.current_state, obs)
+            self.controller.previous_reward = get_reward(self.previous_obs ,
+                                                         self.current_obs ) # reward_compute_2(self.controller.previous_state, self.controller.current_state, obs)
             self.controller.network.perceive(self.controller.previous_state,
                                              self.controller.previous_action,
                                              self.controller.previous_reward,
@@ -36,8 +40,14 @@ class level_2_attack_controller:
             self.controller.previous_state = None
             self.controller.previous_action = None
             self.controller.previous_reward = None
+
+            self.previous_obs = None
+
+
+
         else:
             self.controller.previous_state = self.controller.current_state
+            self.previous_obs = self.current_obs
             self.controller.previous_action = action_number
 
         return action

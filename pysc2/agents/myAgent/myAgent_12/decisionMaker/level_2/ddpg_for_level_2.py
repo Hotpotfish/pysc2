@@ -80,7 +80,7 @@ class DDPG():
 
     def saveRewardAvg(self, modelSavePath):
         # loss save
-        self.rewardSaver = open(modelSavePath + 'reward.txt', 'a+')
+        self.rewardSaver = open(modelSavePath + self.name+'_reward.txt', 'a+')
         self.rewardSaver.write(str(self.epsoide) + ' ' + str(self.rewardAdd) + '\n')
         self.rewardAdd = 0
         self.timeStep = 0
