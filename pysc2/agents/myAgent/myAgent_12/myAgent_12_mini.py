@@ -1,8 +1,8 @@
-import pysc2.agents.myAgent.myAgent_11.config.config as config
+import pysc2.agents.myAgent.myAgent_12.config.config as config
 from absl import app
 from pysc2.agents import base_agent
-from pysc2.agents.myAgent.myAgent_11.decisionMaker.hierarchical_learning_structure import hierarchical_learning_structure
-from pysc2.agents.myAgent.myAgent_11.tools.plt_function import plt_function
+from pysc2.agents.myAgent.myAgent_12.decisionMaker.hierarchical_learning_structure import hierarchical_learning_structure
+from pysc2.agents.myAgent.myAgent_12.tools.plt_function import plt_function
 from pysc2.env.environment import StepType
 
 from pysc2.lib import actions, features
@@ -48,7 +48,7 @@ def main(unused_argv):
                     raw_resolution=config.MAP_SIZE,
                 ),
                 score_index=0,
-                step_mul=16,
+                step_mul=8,
                 disable_fog=False,
                 visualize=False,
                 realtime=False,
