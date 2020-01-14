@@ -1,32 +1,11 @@
 from pysc2.agents.myAgent.myAgent_12.config.config_for_level_2_attack_controller import MAP_ZONE
+from pysc2.agents.myAgent.myAgent_12.tools.handcraft_function_for_level_2_build_controller import build_supply_depot, build_barracks, do_nothing
 from pysc2.lib import actions as action
 
 build_controller = [
-    action.RAW_FUNCTIONS.Build_SupplyDepot_pt,
-    action.RAW_FUNCTIONS.Build_Barracks_pt,
-    action.RAW_FUNCTIONS.Build_Refinery_pt,
-    action.RAW_FUNCTIONS.Build_Armory_pt,
-    action.RAW_FUNCTIONS.Build_Bunker_pt,
-    action.RAW_FUNCTIONS.Build_CommandCenter_pt,
-    action.RAW_FUNCTIONS.Build_EngineeringBay_pt,
-    action.RAW_FUNCTIONS.Build_Factory_pt,
-    action.RAW_FUNCTIONS.Build_FusionCore_pt,
-    action.RAW_FUNCTIONS.Build_GhostAcademy_pt,
-    action.RAW_FUNCTIONS.Build_MissileTurret_pt,
-    action.RAW_FUNCTIONS.Build_Nuke_quick,
-    action.RAW_FUNCTIONS.Build_Reactor_pt,
-    action.RAW_FUNCTIONS.Build_Reactor_quick,
-    action.RAW_FUNCTIONS.Build_Reactor_Barracks_pt,
-    action.RAW_FUNCTIONS.Build_Reactor_Barracks_quick,
-    action.RAW_FUNCTIONS.Build_Reactor_Factory_pt,
-    action.RAW_FUNCTIONS.Build_Reactor_Factory_quick,
-    action.RAW_FUNCTIONS.Build_Reactor_Starport_pt,
-    action.RAW_FUNCTIONS.Build_Reactor_Starport_quick,
-    action.RAW_FUNCTIONS.Build_SensorTower_pt,
-    action.RAW_FUNCTIONS.Build_Starport_pt,
-    action.RAW_FUNCTIONS.Build_TechLab_pt,
-    action.RAW_FUNCTIONS.Build_TechLab_quick,
-    action.RAW_FUNCTIONS.Build_TechLab_Barracks_pt,
+    build_supply_depot,
+    build_barracks,
+    do_nothing,
 ]
 
 train_controller = [
@@ -65,7 +44,7 @@ research_controller = [
 ]
 
 controllers = [
-    # build_controller,
+    build_controller,
     # train_controller,
     # harvest_controller,
     # research_controller,

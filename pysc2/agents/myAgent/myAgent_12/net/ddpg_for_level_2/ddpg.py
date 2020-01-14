@@ -18,19 +18,19 @@ class ddpg(object):
         self.name = name
 
         self._setup_placeholders_graph()
-        with tf.variable_scope('Actor'):
+        with tf.variable_scope(self.name+'_Actor'):
             self.a = self._build_graph_a(self.state_input, 'eval', train=True)
             a_ = self._build_graph_a(self.state_input_next, 'target', train=False)
 
-        with tf.variable_scope('Critic'):
+        with tf.variable_scope(self.name+'_Critic'):
             q = self._build_graph_c(self.state_input, self.action_input, 'eval', train=True)
             q_ = self._build_graph_c(self.state_input_next, a_, 'target', train=False)
 
         # networks parameters
-        self.ae_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/eval')
-        self.at_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/target')
-        self.ce_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/eval')
-        self.ct_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/target')
+        self.ae_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name+'_Actor/eval')
+        self.at_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name+'_Actor/target')
+        self.ce_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name+'_Critic/eval')
+        self.ct_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name+'_Critic/target')
 
         # target net replacement
         self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e)
@@ -40,7 +40,7 @@ class ddpg(object):
 
         self.td_error = tf.losses.mean_squared_error(labels=q_target, predictions=q)
         self.ctrain = tf.train.AdamOptimizer(self.learning_rate).minimize(self.td_error, var_list=self.ce_params)
-        q_temp = self._build_graph_c(self.state_input, self.a, 'Critic/eval', train=False)
+        q_temp = self._build_graph_c(self.state_input, self.a, self.name+'_Critic/eval', train=False)
         self.a_loss = - tf.reduce_mean(q_temp)  # maximize the q
         self.atrain = tf.train.AdamOptimizer(self.learning_rate).minimize(self.a_loss, var_list=self.ae_params)
 

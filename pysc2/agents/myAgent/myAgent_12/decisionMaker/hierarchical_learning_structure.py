@@ -22,9 +22,9 @@ class hierarchical_learning_structure():
         return modelSavePath
 
     def train_action(self, obs, save_path):
-        # controller_number = int(self.leve1_1.train_action(obs)[0])
+        controller_number = int(self.leve1_1.train_action(obs)[0])
         # controller_number = self.leve1_1.test_action(obs)
-        action = self.level_2.train_action(obs, 0, save_path)
+        action = self.level_2.train_action(obs, controller_number, save_path)
         return action
 
     def train_network(self):

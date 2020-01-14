@@ -1,0 +1,5 @@
+# 地图划分
+
+
+ACTION_DIM = 3
+STATE_DIM = 52

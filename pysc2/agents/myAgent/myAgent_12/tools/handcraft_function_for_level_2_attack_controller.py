@@ -1,5 +1,4 @@
-import math
-import random
+
 
 from pysc2.agents.myAgent.myAgent_12.tools.unit_list import combat_unit, building
 from pysc2.lib import features, actions
@@ -62,8 +61,11 @@ def attackZone(obs, x, y):
         return action
 
 
-def assembly_action(obs, action_prob, controller):
-    action_number = np.random.choice(range(config_for_level_2_attack_controller.ACTION_DIM), p=action_prob)
+def assembly_action(obs, action_prob, controller, mark):
+    if mark == 'train':
+        action_number = np.random.choice(range(config_for_level_2_attack_controller.ACTION_DIM), p=action_prob)
+    else:
+        action_number = np.argmax(action_prob)
     order = controller[action_number]
     action = attackZone(obs, order[0], order[1])
     return action, action_number

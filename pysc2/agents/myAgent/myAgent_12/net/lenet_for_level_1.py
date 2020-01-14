@@ -6,13 +6,12 @@ import tensorflow.contrib.slim as slim
 
 class Lenet():
 
-    def __init__(self, mu, sigma, learning_rate, action_dim, parameterdim, statedim, name):
+    def __init__(self, mu, sigma, learning_rate, action_dim, statedim, name):
         self.mu = mu
         self.sigma = sigma
         self.learning_rate = learning_rate
 
         self.action_dim = action_dim
-        self.parameterdim = parameterdim
         self.statedim = statedim
 
         self.name = name
@@ -33,8 +32,8 @@ class Lenet():
 
 
     def _setup_placeholders_graph(self):
-        self.action_input = tf.placeholder("float", shape=[None, self.action_dim + self.parameterdim], name=self.name + '_' + 'action_input')
-        self.y_input = tf.placeholder("float", shape=[None, 1 + self.parameterdim], name=self.name + '_' + 'y_input')
+        self.action_input = tf.placeholder("float", shape=[None, self.action_dim ], name=self.name + '_' + 'action_input')
+        self.y_input = tf.placeholder("float", shape=[None, 1 ], name=self.name + '_' + 'y_input')
         self.state_input = tf.placeholder("float", shape=self.statedim, name=self.name + '_' + 'state_input')
 
     def _action_network_graph(self, scope_name):
@@ -56,70 +55,11 @@ class Lenet():
 
                 self.Q_value = slim.fully_connected(fc2, self.action_dim, activation_fn=tf.nn.softmax, scope='Q_value')
 
-    # def _queued_network_graph(self, scope_name):
-    #     with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
-    #         with slim.arg_scope([slim.conv2d, slim.fully_connected],
-    #                             activation_fn=None,
-    #                             weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),  # mu，sigma
-    #                             weights_regularizer=slim.l2_regularizer(0.1)):
-    #             self.queued_flatten = tf.concat([self.action_flatten, self.action], axis=1)
-    #
-    #             fc1 = slim.fully_connected(self.queued_flatten, 120, scope='full_connected1')
-    #             fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
-    #             self.queued = slim.fully_connected(fc2, config.QUEUED, activation_fn=tf.nn.softmax, scope='queued')
-    #
-    # def _my_unit_network_graph(self, scope_name):
-    #     with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
-    #         with slim.arg_scope([slim.conv2d, slim.fully_connected],
-    #                             activation_fn=None,
-    #                             weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),  # mu，sigma
-    #                             weights_regularizer=slim.l2_regularizer(0.1)):
-    #             self.my_unit_flatten = tf.concat([self.queued_flatten, self.queued], axis=1)
-    #
-    #             fc1 = slim.fully_connected(self.my_unit_flatten, 120, scope='full_connected1')
-    #             fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
-    #
-    #             self.my_unit = slim.fully_connected(fc2, config.MY_UNIT_NUMBER, activation_fn=tf.nn.softmax, scope='my_unit')
-    #
-    # def _enemy_unit_network_graph(self, scope_name):
-    #     with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
-    #         with slim.arg_scope([slim.conv2d, slim.fully_connected],
-    #                             activation_fn=None,
-    #                             weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),  # mu，sigma
-    #                             weights_regularizer=slim.l2_regularizer(0.1)):
-    #             self.enemy_unit_flatten = tf.concat([self.my_unit_flatten, self.my_unit], axis=1)
-    #
-    #             fc1 = slim.fully_connected(self.enemy_unit_flatten, 120, scope='full_connected1')
-    #             fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
-    #
-    #             self.enemy_unit = slim.fully_connected(fc2, config.ENEMY_UNIT_NUMBER, activation_fn=tf.nn.softmax, scope='enemy_unit')
-    #
-    # def _target_point_network_graph(self, scope_name):
-    #     with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
-    #         with slim.arg_scope([slim.conv2d, slim.fully_connected],
-    #                             activation_fn=None,
-    #                             weights_initializer=tf.truncated_normal_initializer(self.mu, self.sigma),  # mu，sigma
-    #                             weights_regularizer=slim.l2_regularizer(0.1)):
-    #             self.target_point_flatten = tf.concat([self.enemy_unit_flatten, self.enemy_unit], axis=1)
-    #
-    #             fc1 = slim.fully_connected(self.target_point_flatten, 120, scope='full_connected1')
-    #             fc2 = slim.fully_connected(fc1, 84, scope='full_connected2')
-    #
-    #             self.target_point = slim.fully_connected(fc2, config.POINT_NUMBER, activation_fn=tf.nn.softmax, scope='target_point')
-    #             self.Q_value = tf.concat([self.action, self.queued, self.my_unit, self.enemy_unit, self.target_point], axis=1)
-
     def _compute_loss_graph(self):
         with tf.name_scope(self.name + "_loss_function"):
             self.Q_action = tf.reduce_sum(tf.multiply(self.Q_value, self.action_input))
             self.loss = tf.reduce_mean(tf.square(self.y_input - self.Q_action))
-        # tf.summary.scalar(self.name + "_loss_function", self.loss)
 
-    def _compute_acc_graph(self):
-        with tf.name_scope(self.name + "_acc_function"):
-            self.accuracy = \
-                tf.metrics.accuracy(labels=tf.argmax(self.y, axis=1), predictions=tf.argmax(self.y_predicted, axis=1))[
-                    1]
-            tf.summary.scalar("accuracy", self.accuracy)
 
     def _create_train_op_graph(self):
         self.train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)

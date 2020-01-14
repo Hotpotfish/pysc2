@@ -39,7 +39,7 @@ class DDPG():
         # tf.get_default_graph().finalize()
 
         self.modelSaver = tf.train.Saver()
-        self.session.graph.finalize()
+
 
         self.lossSaver = None
         self.epsoide = 0

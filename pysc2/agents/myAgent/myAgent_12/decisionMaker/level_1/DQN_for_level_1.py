@@ -1,4 +1,3 @@
-
 import os
 import random
 
@@ -12,7 +11,7 @@ from pysc2.agents.myAgent.myAgent_12.tools.SqQueue import SqQueue
 
 class DQN():
 
-    def __init__(self, mu, sigma, learning_rate, actiondim, parameterdim, statedim, name):  # 初始化
+    def __init__(self, mu, sigma, learning_rate, actiondim, statedim, name):  # 初始化
         # 初始化回放缓冲区，用REPLAY_SIZE定义其最大长度
         self.replay_buffer = SqQueue(config.REPLAY_SIZE)
 
@@ -26,12 +25,12 @@ class DQN():
 
         # 动作维度数，动作参数维度数（默认为6）,状态维度数
         self.action_dim = actiondim
-        self.parameterdim = parameterdim
+
         self.state_dim = statedim
 
         # 网络结构初始化
         self.name = name
-        self.net = Lenet(self.mu, self.sigma, self.learning_rate, self.action_dim, self.parameterdim, self.state_dim, self.name)
+        self.net = Lenet(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.name + '_dqn')
 
         # Init session
         self.session = tf.InteractiveSession()
@@ -57,24 +56,34 @@ class DQN():
         self.modelSaver.save(self.session, thisPath + self.name + '.ckpt', )
         print(self.name + ' ' + 'saved!')
 
-    def saveRecord(self, modelSavePath, data):
-        if self.recordSaver is None:
+    def saveLoss(self, modelSavePath):
+        # loss save
+        if self.lossSaver is None:
             thisPath = modelSavePath
-            self.recordSaver = tf.summary.FileWriter(thisPath, self.session.graph)
+            self.lossSaver = tf.summary.FileWriter(thisPath, self.session.graph)
 
-        data_summary = tf.Summary(value=[tf.Summary.Value(tag=self.name + '_' + "loss", simple_value=data)])
-        self.recordSaver.add_summary(summary=data_summary, global_step=self.recordCount)
-        self.recordCount += 1
+        data_summary = tf.Summary(value=[tf.Summary.Value(tag=self.name + '_' + "TD_ERROR", simple_value=self.td_error)])
+        self.lossSaver.add_summary(summary=data_summary, global_step=self.epsoide)
 
-    def perceive(self, state, action, reward, next_state, done):  # 感知存储信息
-        one_hot_action = np.zeros(self.action_dim + self.parameterdim, dtype=np.float32)
-        one_hot_action[int(action[0])] = 1
-        if self.parameterdim != 0:
-            one_hot_action[self.action_dim:] = action[1:]
-        # state = np.squeeze(state)
-        # next_state = np.squeeze(next_state)
+    def saveRewardAvg(self, modelSavePath):
+        # loss save
+        self.rewardSaver = open(modelSavePath + self.name + '_reward.txt', 'a+')
+        self.rewardSaver.write(str(self.epsoide) + ' ' + str(self.rewardAdd) + '\n')
+        self.rewardAdd = 0
+        self.timeStep = 0
+        # print(self.rewardAdd / self.rewardStep)
+        self.rewardSaver.close()
 
-        self.replay_buffer.inQueue([state[0], one_hot_action, reward, next_state[0], done])
+    def perceive(self, state, action, reward, next_state, done, save_path):  # 感知存储信息
+        self.rewardAdd += np.sum(reward)
+        self.timeStep += 1
+
+        if done:
+            self.epsoide += 1
+            self.saveLoss(save_path)
+            self.saveRewardAvg(save_path)
+
+        self.replay_buffer.inQueue([state, action, reward, next_state, done])
 
     def train_Q_network(self, modelSavePath):  # 训练网络
         if self.replay_buffer.real_size > config.BATCH_SIZE:

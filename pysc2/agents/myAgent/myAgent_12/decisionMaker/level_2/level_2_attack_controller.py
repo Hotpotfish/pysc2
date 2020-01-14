@@ -5,7 +5,7 @@ from pysc2.agents.myAgent.myAgent_12.config.config_for_level_2_attack_controller
 from pysc2.agents.myAgent.myAgent_12.decisionMaker.decision_maker import decision_maker
 import pysc2.agents.myAgent.myAgent_12.smart_actions as sa
 from pysc2.agents.myAgent.myAgent_12.decisionMaker.level_2.ddpg_for_level_2 import DDPG
-from pysc2.agents.myAgent.myAgent_12.tools import handcraft_function, handcraft_function_for_level_2_attack_controller
+from pysc2.agents.myAgent.myAgent_12.tools import handcraft_function
 
 from pysc2.agents.myAgent.myAgent_12.tools.handcraft_function_for_level_2_attack_controller import get_state, get_reward, assembly_action
 
@@ -25,8 +25,8 @@ class level_2_attack_controller:
         self.current_obs = obs
 
         if self.controller.previous_action is not None:
-            self.controller.previous_reward = get_reward(self.previous_obs ,
-                                                         self.current_obs ) # reward_compute_2(self.controller.previous_state, self.controller.current_state, obs)
+            self.controller.previous_reward = get_reward(self.previous_obs,
+                                                         self.current_obs)  # reward_compute_2(self.controller.previous_state, self.controller.current_state, obs)
             self.controller.network.perceive(self.controller.previous_state,
                                              self.controller.previous_action,
                                              self.controller.previous_reward,
@@ -35,15 +35,13 @@ class level_2_attack_controller:
                                              save_path)
 
         action_prob = self.controller.network.action(self.controller.current_state)
-        action, action_number = assembly_action(obs, action_prob, sa.controllers[self.index])
+        action, action_number = assembly_action(obs, action_prob, sa.controllers[self.index], 'train')
         if obs.last():
             self.controller.previous_state = None
             self.controller.previous_action = None
             self.controller.previous_reward = None
 
             self.previous_obs = None
-
-
 
         else:
             self.controller.previous_state = self.controller.current_state
@@ -53,8 +51,8 @@ class level_2_attack_controller:
         return action
 
     def test_action(self, obs):
-        self.controller.current_state = [np.array(obs.observation['feature_screen'][5][:, :, np.newaxis]), np.array(get_agents_obs(obs))]
+        self.controller.current_state = get_state(obs)
 
         action_prob = self.controller.network.action(self.controller.current_state)
-        actions, action_numbers = handcraft_function_for_level_2_attack_controller.assembly_action(obs, action_prob, 'test')
-        return actions
+        action, action_number = assembly_action(obs, action_prob, sa.controllers[self.index], 'test')
+        return action

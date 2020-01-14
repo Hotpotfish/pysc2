@@ -1,4 +1,5 @@
 # 地图划分
+import pysc2.agents.myAgent.myAgent_12.smart_actions as smart_actions
 from pysc2.agents.myAgent.myAgent_12.config import config
 
 
@@ -9,5 +10,5 @@ COLUMN_DISTANCE = config.MAP_SIZE / COLUMN
 MAP_ZONE = ROW * COLUMN
 
 
-ACTION_DIM = MAP_ZONE * MAP_ZONE
+ACTION_DIM = 81
 STATE_DIM = 52

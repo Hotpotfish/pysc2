@@ -5,7 +5,6 @@ from pysc2.agents.myAgent.myAgent_12.tools import handcraft_function
 
 class level_2():
     def __init__(self):
-        self.DataShape = (None, config.MAP_SIZE, config.MAP_SIZE, 39)
         self.controllers = handcraft_function.append_controllers()
 
     # 重训练模式 无需读取外部模型
