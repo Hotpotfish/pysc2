@@ -4,14 +4,7 @@ from pysc2.lib import features
 from pysc2.lib import units
 import numpy as np
 
-
-
 mapSzie = 128
-
-
-# def plt_soldiers(soldiers, color):
-#     for i in range(len(soldiers)):
-#         plt.scatter(soldiers[i].x, soldiers[i].y, c=color, cmap='coolwarm')
 
 
 def automatic_formation(obs):
