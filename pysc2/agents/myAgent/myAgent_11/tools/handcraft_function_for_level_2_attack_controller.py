@@ -231,81 +231,109 @@ def get_friend_and_enemy_health(unit, obs, my_unit_number, enemy_unit_number):
     #     enemy_K = enemy[:K, 1]
 
 
-def get_agent_state(obs):
+def find_unit_by_tag(obs, tag):
+    for unit in obs.observation['raw_units']:
+        if unit.tag == tag:
+            return unit
+    return None
+
+
+def get_agent_state(unit):
     states = np.array([])
-    units = obs.observation['raw_units']
-    units_len = len(units)
 
-    for i in range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER):
-        if i >= units_len:
-            states = np.append(states, np.zeros(7))
-
-        else:
-            states = np.append(states, computeDistance_center(units[i]) / 90.5)
-            states = np.append(states, units[i].alliance / 4)
-            states = np.append(states, units[i].unit_type / 1000)
-            states = np.append(states, units[i].x / config.MAP_SIZE)
-            states = np.append(states, units[i].y / config.MAP_SIZE)
-            states = np.append(states, units[i].health / 1000)
-            states = np.append(states, units[i].shield / 1000)
+    states = np.append(states, computeDistance_center(unit) / (config.MAP_SIZE * 1.41))
+    states = np.append(states, unit.alliance / 4)
+    states = np.append(states, unit.unit_type / 1000)
+    states = np.append(states, unit.x / config.MAP_SIZE)
+    states = np.append(states, unit.y / config.MAP_SIZE)
+    states = np.append(states, unit.health / 1000)
+    states = np.append(states, unit.shield / 1000)
     return states
 
 
-def get_agents_state(obs):
-    state = []
-    my_units = [unit for unit in obs.observation.raw_units if unit.alliance == features.PlayerRelative.SELF]
-    my_units_lenth = len(my_units)
+def get_state(init_obs, obs):
+    state = np.array([])
+    init_my_units_tag = [unit.tag for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
+    init_enemy_units_tag = [unit.tag for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
 
     for i in range(config.MY_UNIT_NUMBER):
-        if i >= my_units_lenth:
-            state.append(np.zeros(config.COOP_AGENTS_OBDIM))
+        my_unit = find_unit_by_tag(obs, init_my_units_tag[i])
+        if my_unit is not None:
+            my_unit_state = get_agent_state(my_unit)
+            state = np.append(state, my_unit_state)
         else:
-            state.append(get_agent_state(obs))
+            state = np.append(state, np.zeros(7))
+
+    for i in range(config.ENEMY_UNIT_NUMBER):
+        enemy_unit = find_unit_by_tag(obs, init_enemy_units_tag[i])
+        if enemy_unit is not None:
+            my_unit_state = get_agent_state(enemy_unit)
+            state = np.append(state, my_unit_state)
+        else:
+            state = np.append(state, np.zeros(7))
     return state
 
 
-def get_agents_obs(obs):
-    agents_obs = []
+def get_agents_state(init_obs, obs):
+    states = []
 
-    my_raw_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
-    enemy_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
+    init_my_units_tag = [unit.tag for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
 
-    my_raw_units_lenth = len(my_raw_units)
-    enemy_units_lenth = len(enemy_units)
+    state_copy = get_state(init_obs, obs)
 
     for i in range(config.MY_UNIT_NUMBER):
-        agent_obs = np.array([])
+        my_unit = find_unit_by_tag(obs, init_my_units_tag[i])
+        if my_unit is None:
+            states.append(np.zeros(config.COOP_AGENTS_OBDIM))
+        else:
+            states.append(state_copy)
 
-        if i >= my_raw_units_lenth:
-            agent_obs = np.zeros((config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER) * 7)
+    return states
+
+
+def get_agents_obs(init_obs, obs):
+    agents_obs = []
+
+    init_my_units_tag = [unit.tag for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
+    init_enemy_units_tag = [unit.tag for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
+
+    for i in range(config.MY_UNIT_NUMBER):
+        # 一次查找己方单位的信息
+        agent_obs = np.array([])
+        my_unit = find_unit_by_tag(obs, init_my_units_tag[i])
+
+        if my_unit is None:
+            # 此时己方单位已死亡，所以观察值全为0
+            agent_obs = np.zeros(config.COOP_AGENTS_OBDIM)
             agents_obs.append(agent_obs)
             continue
 
         for j in range(config.MY_UNIT_NUMBER):
-
-            if j >= my_raw_units_lenth or computeDistance(my_raw_units[i], my_raw_units[j]) >= config.OB_RANGE:
+            my_target_unit = find_unit_by_tag(obs, init_my_units_tag[j])
+            # 按顺序遍历每个己方单位的信息
+            if my_target_unit is None or computeDistance(my_unit, my_target_unit[j]) >= config.OB_RANGE:
                 agent_obs = np.append(agent_obs, np.zeros(7))
             else:
-                agent_obs = np.append(agent_obs, computeDistance(my_raw_units[i], my_raw_units[j]) / 90.5)
-                agent_obs = np.append(agent_obs, my_raw_units[j].alliance / 4)
-                agent_obs = np.append(agent_obs, my_raw_units[j].unit_type / 1000)
-                agent_obs = np.append(agent_obs, my_raw_units[j].x / config.MAP_SIZE)
-                agent_obs = np.append(agent_obs, my_raw_units[j].y / config.MAP_SIZE)
-                agent_obs = np.append(agent_obs, my_raw_units[j].health / 1000)
-                agent_obs = np.append(agent_obs, my_raw_units[j].shield / 1000)
-
+                agent_obs = np.append(agent_obs, computeDistance(my_unit[i], my_target_unit[j]) / (config.MAP_SIZE * 1.41))
+                agent_obs = np.append(agent_obs, my_target_unit[j].alliance / 4)
+                agent_obs = np.append(agent_obs, my_target_unit[j].unit_type / 1000)
+                agent_obs = np.append(agent_obs, my_target_unit[j].x / config.MAP_SIZE)
+                agent_obs = np.append(agent_obs, my_target_unit[j].y / config.MAP_SIZE)
+                agent_obs = np.append(agent_obs, my_target_unit[j].health / 1000)
+                agent_obs = np.append(agent_obs, my_target_unit[j].shield / 1000)
         for j in range(config.ENEMY_UNIT_NUMBER):
-            if j >= enemy_units_lenth or computeDistance(my_raw_units[i], enemy_units[j]) >= config.OB_RANGE:
+            enemy_target_unit = find_unit_by_tag(obs, init_enemy_units_tag[j])
+            # 按顺序遍历每个己方单位的信息
+            if enemy_target_unit is None or computeDistance(my_unit, enemy_target_unit[j]) >= config.OB_RANGE:
                 agent_obs = np.append(agent_obs, np.zeros(7))
             else:
-                agent_obs = np.append(agent_obs, computeDistance(my_raw_units[i], enemy_units[j]) / 90.5)
-                agent_obs = np.append(agent_obs, enemy_units[j].alliance / 4)
-                agent_obs = np.append(agent_obs, enemy_units[j].unit_type / 1000)
-                agent_obs = np.append(agent_obs, enemy_units[j].x / config.MAP_SIZE)
-                agent_obs = np.append(agent_obs, enemy_units[j].y / config.MAP_SIZE)
-                agent_obs = np.append(agent_obs, enemy_units[j].health / 1000)
-                agent_obs = np.append(agent_obs, enemy_units[j].shield / 1000)
+                agent_obs = np.append(agent_obs, computeDistance(my_unit[i], enemy_target_unit[j]) / (config.MAP_SIZE * 1.41))
+                agent_obs = np.append(agent_obs, enemy_target_unit[j].alliance / 4)
+                agent_obs = np.append(agent_obs, enemy_target_unit[j].unit_type / 1000)
+                agent_obs = np.append(agent_obs, enemy_target_unit[j].x / config.MAP_SIZE)
+                agent_obs = np.append(agent_obs, enemy_target_unit[j].y / config.MAP_SIZE)
+                agent_obs = np.append(agent_obs, enemy_target_unit[j].health / 1000)
+                agent_obs = np.append(agent_obs, enemy_target_unit[j].shield / 1000)
 
         agents_obs.append(agent_obs)
-
     return agents_obs

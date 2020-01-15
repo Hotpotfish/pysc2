@@ -15,8 +15,12 @@ class level_2_attack_controller:
             Bicnet(config.MU, config.SIGMA, config.LEARING_RATE, config.ATTACT_CONTROLLER_ACTIONDIM, self.state_data_shape, config.MY_UNIT_NUMBER,
                    config.ENEMY_UNIT_NUMBER, 'attack_controller'))
         self.index = handcraft_function.find_controller_index(sa.attack_controller)
+        self.init_obs = None
 
     def train_action(self, obs, save_path):
+        if obs.first():
+            self.init_obs = obs
+
         self.controller.current_state = [np.array(get_agents_state(obs)), np.array(get_agents_obs(obs))]
 
         if self.controller.previous_action is not None:
@@ -34,6 +38,7 @@ class level_2_attack_controller:
             self.controller.previous_state = None
             self.controller.previous_action = None
             self.controller.previous_reward = None
+            self.init_obs = None
         else:
             self.controller.previous_state = self.controller.current_state
             self.controller.previous_action = action_numbers
