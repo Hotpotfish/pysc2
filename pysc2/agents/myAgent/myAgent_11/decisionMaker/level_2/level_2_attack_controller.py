@@ -21,7 +21,7 @@ class level_2_attack_controller:
         if obs.first():
             self.init_obs = obs
 
-        self.controller.current_state = [np.array(get_agents_state(obs)), np.array(get_agents_obs(obs))]
+        self.controller.current_state = [np.array(get_agents_state(self.init_obs, obs)), np.array(get_agents_obs(self.init_obs, obs))]
 
         if self.controller.previous_action is not None:
             self.controller.previous_reward = obs.reward  # reward_compute_2(self.controller.previous_state, self.controller.current_state, obs)

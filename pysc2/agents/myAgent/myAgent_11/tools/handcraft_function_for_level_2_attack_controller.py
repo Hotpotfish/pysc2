@@ -311,29 +311,29 @@ def get_agents_obs(init_obs, obs):
         for j in range(config.MY_UNIT_NUMBER):
             my_target_unit = find_unit_by_tag(obs, init_my_units_tag[j])
             # 按顺序遍历每个己方单位的信息
-            if my_target_unit is None or computeDistance(my_unit, my_target_unit[j]) >= config.OB_RANGE:
+            if my_target_unit is None or computeDistance(my_unit, my_target_unit) >= config.OB_RANGE:
                 agent_obs = np.append(agent_obs, np.zeros(7))
             else:
-                agent_obs = np.append(agent_obs, computeDistance(my_unit[i], my_target_unit[j]) / (config.MAP_SIZE * 1.41))
-                agent_obs = np.append(agent_obs, my_target_unit[j].alliance / 4)
-                agent_obs = np.append(agent_obs, my_target_unit[j].unit_type / 1000)
-                agent_obs = np.append(agent_obs, my_target_unit[j].x / config.MAP_SIZE)
-                agent_obs = np.append(agent_obs, my_target_unit[j].y / config.MAP_SIZE)
-                agent_obs = np.append(agent_obs, my_target_unit[j].health / 1000)
-                agent_obs = np.append(agent_obs, my_target_unit[j].shield / 1000)
+                agent_obs = np.append(agent_obs, computeDistance(my_unit, my_target_unit) / (config.MAP_SIZE * 1.41))
+                agent_obs = np.append(agent_obs, my_target_unit.alliance / 4)
+                agent_obs = np.append(agent_obs, my_target_unit.unit_type / 1000)
+                agent_obs = np.append(agent_obs, my_target_unit.x / config.MAP_SIZE)
+                agent_obs = np.append(agent_obs, my_target_unit.y / config.MAP_SIZE)
+                agent_obs = np.append(agent_obs, my_target_unit.health / 1000)
+                agent_obs = np.append(agent_obs, my_target_unit.shield / 1000)
         for j in range(config.ENEMY_UNIT_NUMBER):
             enemy_target_unit = find_unit_by_tag(obs, init_enemy_units_tag[j])
             # 按顺序遍历每个己方单位的信息
-            if enemy_target_unit is None or computeDistance(my_unit, enemy_target_unit[j]) >= config.OB_RANGE:
+            if enemy_target_unit is None or computeDistance(my_unit, enemy_target_unit) >= config.OB_RANGE:
                 agent_obs = np.append(agent_obs, np.zeros(7))
             else:
-                agent_obs = np.append(agent_obs, computeDistance(my_unit[i], enemy_target_unit[j]) / (config.MAP_SIZE * 1.41))
-                agent_obs = np.append(agent_obs, enemy_target_unit[j].alliance / 4)
-                agent_obs = np.append(agent_obs, enemy_target_unit[j].unit_type / 1000)
-                agent_obs = np.append(agent_obs, enemy_target_unit[j].x / config.MAP_SIZE)
-                agent_obs = np.append(agent_obs, enemy_target_unit[j].y / config.MAP_SIZE)
-                agent_obs = np.append(agent_obs, enemy_target_unit[j].health / 1000)
-                agent_obs = np.append(agent_obs, enemy_target_unit[j].shield / 1000)
+                agent_obs = np.append(agent_obs, computeDistance(my_unit, enemy_target_unit) / (config.MAP_SIZE * 1.41))
+                agent_obs = np.append(agent_obs, enemy_target_unit.alliance / 4)
+                agent_obs = np.append(agent_obs, enemy_target_unit.unit_type / 1000)
+                agent_obs = np.append(agent_obs, enemy_target_unit.x / config.MAP_SIZE)
+                agent_obs = np.append(agent_obs, enemy_target_unit.y / config.MAP_SIZE)
+                agent_obs = np.append(agent_obs, enemy_target_unit.health / 1000)
+                agent_obs = np.append(agent_obs, enemy_target_unit.shield / 1000)
 
         agents_obs.append(agent_obs)
     return agents_obs
