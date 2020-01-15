@@ -1,6 +1,6 @@
 import tensorflow as tf
 from pysc2.agents.myAgent.myAgent_11.config import config
-from tensorflow_core.contrib import slim
+import tensorflow.contrib.slim as slim
 
 
 class bicnet(object):
@@ -26,7 +26,7 @@ class bicnet(object):
             a_ = self._build_graph_a(self.agents_local_observation_next, 'target', train=False)
 
         with tf.variable_scope('Critic'):
-            q = self._build_graph_c(self.state_input,  self.action_input, 'eval', train=True)
+            q = self._build_graph_c(self.state_input, self.a, 'eval', train=True)
             q_ = self._build_graph_c(self.state_input_next, a_, 'target', train=False)
 
         # networks parameters
@@ -43,8 +43,8 @@ class bicnet(object):
 
         self.td_error = tf.losses.mean_squared_error(labels=q_target, predictions=q)
         self.ctrain = tf.train.AdamOptimizer(self.learning_rate).minimize(self.td_error, var_list=self.ce_params)
-        q_temp = self._build_graph_c(self.state_input,  self.a, 'Critic/eval', train=False)
-        self.a_loss = - tf.reduce_mean(q_temp)  # maximize the q
+        # q_temp = self._build_graph_c(self.state_input,  self.a, 'Critic/eval', train=False)
+        self.a_loss = - tf.reduce_mean(q)  # maximize the q
         self.atrain = tf.train.AdamOptimizer(self.learning_rate).minimize(self.a_loss, var_list=self.ae_params)
 
     def _setup_placeholders_graph(self):
@@ -55,8 +55,6 @@ class bicnet(object):
         # s_
         self.state_input_next = tf.placeholder("float", shape=self.statedim, name='state_input_next')  # 全局状态
         self.agents_local_observation_next = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation_next')
-
-        self.action_input = tf.placeholder("float", shape=[None, self.agents_number, self.action_dim], name='action_input_next')  # 全局状态
 
         self.reward = tf.placeholder("float", shape=[None], name='reward')
 

@@ -39,7 +39,8 @@ mini_games = [
     "MoveToBeacon",  # 120s
     'DefeatUltralisk',
     'DefeatUltralisk1',
-    'DefeatZlot'
+    'DefeatZlot',
+    'DefeatZerglings'
 
 ]
 

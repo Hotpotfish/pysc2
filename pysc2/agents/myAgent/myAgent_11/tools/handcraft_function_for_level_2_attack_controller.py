@@ -97,7 +97,7 @@ def assembly_action(obs, action_probs, mark):
     controller = sa.attack_controller
 
     global epsilon
-    epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 100000
+    epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 25000
     if epsilon <= config.FINAL_EPSILON:
         epsilon = config.FINAL_EPSILON
 
@@ -243,11 +243,11 @@ def get_agent_state(unit):
 
     states = np.append(states, computeDistance_center(unit) / (config.MAP_SIZE * 1.41))
     states = np.append(states, unit.alliance / 4)
-    states = np.append(states, unit.unit_type / 1000)
+    states = np.append(states, unit.unit_type / 100)
     states = np.append(states, unit.x / config.MAP_SIZE)
     states = np.append(states, unit.y / config.MAP_SIZE)
-    states = np.append(states, unit.health / 1000)
-    states = np.append(states, unit.shield / 1000)
+    states = np.append(states, unit.health / 100)
+    states = np.append(states, unit.shield / 100)
     return states
 
 
@@ -316,11 +316,11 @@ def get_agents_obs(init_obs, obs):
             else:
                 agent_obs = np.append(agent_obs, computeDistance(my_unit, my_target_unit) / (config.MAP_SIZE * 1.41))
                 agent_obs = np.append(agent_obs, my_target_unit.alliance / 4)
-                agent_obs = np.append(agent_obs, my_target_unit.unit_type / 1000)
+                agent_obs = np.append(agent_obs, my_target_unit.unit_type / 100)
                 agent_obs = np.append(agent_obs, my_target_unit.x / config.MAP_SIZE)
                 agent_obs = np.append(agent_obs, my_target_unit.y / config.MAP_SIZE)
-                agent_obs = np.append(agent_obs, my_target_unit.health / 1000)
-                agent_obs = np.append(agent_obs, my_target_unit.shield / 1000)
+                agent_obs = np.append(agent_obs, my_target_unit.health / 100)
+                agent_obs = np.append(agent_obs, my_target_unit.shield / 100)
         for j in range(config.ENEMY_UNIT_NUMBER):
             enemy_target_unit = find_unit_by_tag(obs, init_enemy_units_tag[j])
             # 按顺序遍历每个己方单位的信息
@@ -329,11 +329,11 @@ def get_agents_obs(init_obs, obs):
             else:
                 agent_obs = np.append(agent_obs, computeDistance(my_unit, enemy_target_unit) / (config.MAP_SIZE * 1.41))
                 agent_obs = np.append(agent_obs, enemy_target_unit.alliance / 4)
-                agent_obs = np.append(agent_obs, enemy_target_unit.unit_type / 1000)
+                agent_obs = np.append(agent_obs, enemy_target_unit.unit_type / 100)
                 agent_obs = np.append(agent_obs, enemy_target_unit.x / config.MAP_SIZE)
                 agent_obs = np.append(agent_obs, enemy_target_unit.y / config.MAP_SIZE)
-                agent_obs = np.append(agent_obs, enemy_target_unit.health / 1000)
-                agent_obs = np.append(agent_obs, enemy_target_unit.shield / 1000)
+                agent_obs = np.append(agent_obs, enemy_target_unit.health / 100)
+                agent_obs = np.append(agent_obs, enemy_target_unit.shield / 100)
 
         agents_obs.append(agent_obs)
     return agents_obs
