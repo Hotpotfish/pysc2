@@ -63,6 +63,7 @@ class bicnet(object):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             with slim.arg_scope([slim.conv2d, slim.fully_connected],
                                 trainable=train,
+                                activation_fn=tf.nn.leaky_relu,
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
                                 weights_regularizer=slim.l2_regularizer(0.05)):
                 encoder_outputs = self._observation_encoder_a(agents_local_observation, self.agents_number, '_observation_encoder')
@@ -86,8 +87,9 @@ class bicnet(object):
             lstm_bw_cell = tf.nn.rnn_cell.GRUCell(self.action_dim, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             for i in range(agents_number):
-                fc1 = slim.fully_connected(bicnet_outputs[i], self.action_dim, scope='full_connected1' + "_" + str(i))
-                outputs.append(tf.nn.softmax(fc1))
+                fc1 = slim.fully_connected(bicnet_outputs[i], 30, scope='full_connected1' + "_" + str(i))
+                fc2 = slim.fully_connected(fc1, self.action_dim, activation_fn=tf.nn.softmax, scope='full_connected2' + "_" + str(i))
+                outputs.append(fc2)
 
             outputs = tf.unstack(outputs, self.agents_number)  # (agents_number, batch_size, action_dim)
             outputs = tf.transpose(outputs, [1, 0, 2])
