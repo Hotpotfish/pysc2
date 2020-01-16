@@ -26,7 +26,7 @@ class bicnet(object):
             a_ = self._build_graph_a(self.agents_local_observation_next, 'target', train=False)
 
         with tf.variable_scope('Critic'):
-            q = self._build_graph_c(self.state_input, self.a, 'eval', train=True)
+            self.q = self._build_graph_c(self.state_input, self.a, 'eval', train=True)
             q_ = self._build_graph_c(self.state_input_next, a_, 'target', train=False)
 
         # networks parameters
@@ -41,10 +41,10 @@ class bicnet(object):
 
         q_target = self.reward + config.GAMMA * q_
 
-        self.td_error = tf.losses.mean_squared_error(labels=q_target, predictions=q)
+        self.td_error = tf.losses.mean_squared_error(labels=q_target, predictions=self.q)
         self.ctrain = tf.train.AdamOptimizer(self.learning_rate).minimize(self.td_error, var_list=self.ce_params)
         # q_temp = self._build_graph_c(self.state_input,  self.a, 'Critic/eval', train=False)
-        self.a_loss = - tf.reduce_mean(q)  # maximize the q
+        self.a_loss = - tf.reduce_mean(self.q)  # maximize the q
         self.atrain = tf.train.AdamOptimizer(self.learning_rate).minimize(self.a_loss, var_list=self.ae_params)
 
     def _setup_placeholders_graph(self):
@@ -100,6 +100,8 @@ class bicnet(object):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             with slim.arg_scope([slim.conv2d, slim.fully_connected],
                                 trainable=train,
+                                activation_fn=tf.nn.leaky_relu,
+
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
                                 weights_regularizer=slim.l2_regularizer(0.05)):
                 encoder_outputs = self._observation_encoder_c(state_input, action_input, self.agents_number, '_observation_encoder')

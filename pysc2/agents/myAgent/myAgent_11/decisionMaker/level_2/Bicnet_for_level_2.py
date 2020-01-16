@@ -99,7 +99,7 @@ class Bicnet():
             self.saveLoss(save_path)
             self.saveRewardAvg(save_path)
 
-        self.replay_buffer.inQueue([state, action, reward , next_state, done])
+        self.replay_buffer.inQueue([state, action, reward, next_state, done])
 
     def train_Q_network(self):  # 训练网络
         if self.replay_buffer.real_size > config.BATCH_SIZE:
@@ -114,8 +114,8 @@ class Bicnet():
             action_batch = np.eye(self.action_dim)[action_batch]
 
             self.session.run(self.net.soft_replace)
-            _ = self.session.run(self.net.atrain, {self.net.state_input: state_input,
-                                                   self.net.agents_local_observation: agents_local_observation})
+            _, q = self.session.run([self.net.atrain, self.net.q], {self.net.state_input: state_input,
+                                                                    self.net.agents_local_observation: agents_local_observation})
             __, self.td_error = self.session.run([self.net.ctrain, self.net.td_error], {self.net.state_input: state_input,
                                                                                         self.net.agents_local_observation: agents_local_observation,
                                                                                         self.net.a: action_batch,
