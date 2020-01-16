@@ -27,4 +27,38 @@ def read_and_plot(path):
 
 
 if __name__ == "__main__":
-    read_and_plot('d:/model/20200116170919/reward.txt')
+    read_and_plot('d:/model/20200116214632/reward.txt')
+
+
+
+# import matplotlib.pyplot as plt
+# import numpy as np
+# import scipy.signal
+#
+#
+# def read_and_plot(path):
+#     f = open(path, 'r')
+#     points = []
+#     point = f.readline().strip('\n').split(' ')
+#     while 1:
+#
+#         if len(point) != 2:
+#             break
+#         # print(point)
+#         x = float(point[0])
+#         y = float(point[1])
+#         points.append([x, y])
+#         point = f.readline().strip('\n').split(' ')
+#
+#     f.close()
+#     points = np.array(points)
+#     plt.plot(points[:, 0], scipy.signal.savgol_filter(points[:, 1], 51, 2, mode='nearest'))
+#
+#     plt.xlabel('epsoide')
+#     plt.ylabel('reward')
+#     plt.title('reward curve')
+#     plt.show()
+#
+#
+# if __name__ == "__main__":
+#     read_and_plot('d:/model/20200116195055/reward.txt')
