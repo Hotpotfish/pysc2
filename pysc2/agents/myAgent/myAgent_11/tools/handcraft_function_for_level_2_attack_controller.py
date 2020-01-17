@@ -69,13 +69,13 @@ def actionSelect(unit, enemy_units, action_porb, mark, ep):
     if mark == 'test':
         return np.argmax(action_porb_real)
     if mark == 'train':
-
-        if random.random() >= ep:
-            return np.argmax(action_porb_real)
-        else:
-            avail_actions_ind = np.nonzero(action_porb_real)[0]
-            action = np.random.choice(avail_actions_ind)
-            return action
+        # if random.random() >= ep:
+        #     return np.argmax(action_porb_real)
+        # else:
+        #     avail_actions_ind = np.nonzero(action_porb_real)[0]
+        #     action = np.random.choice(avail_actions_ind)
+        action = np.random.choice(range(config.ATTACT_CONTROLLER_ACTIONDIM), p=action_porb_real)
+        return action
 
 
 ############################################
