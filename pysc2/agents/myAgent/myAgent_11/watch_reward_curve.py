@@ -27,10 +27,10 @@ def read_and_plot(path):
 
 
 if __name__ == "__main__":
-    read_and_plot('d:/model/20200116235507/reward.txt')
+    read_and_plot('d:/model/20200119204554/reward.txt')
 
 
-
+#
 # import matplotlib.pyplot as plt
 # import numpy as np
 # import scipy.signal
@@ -61,4 +61,4 @@ if __name__ == "__main__":
 #
 #
 # if __name__ == "__main__":
-#     read_and_plot('d:/model/20200116195055/reward.txt')
+#     read_and_plot('d:/model/20200119204554/reward.txt')

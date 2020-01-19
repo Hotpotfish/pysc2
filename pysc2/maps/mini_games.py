@@ -40,7 +40,8 @@ mini_games = [
     'DefeatUltralisk',
     'DefeatUltralisk1',
     'DefeatZlot',
-    'DefeatZerglings'
+    'DefeatZerglings',
+    'DefeatUltralisk'
 
 ]
 
