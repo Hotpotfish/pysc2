@@ -33,7 +33,8 @@ class Bicnet():
         # 网络结构初始化
         self.name = name
 
-        self.net = bicnet(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number, self.enemy_number, self.name + '_bicnet')
+        self.net = bicnet(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number,
+                          self.enemy_number, self.name + '_bicnet')
 
         # Init session
         self.session = tf.Session()
@@ -78,13 +79,14 @@ class Bicnet():
             thisPath = modelSavePath
             self.lossSaver = tf.summary.FileWriter(thisPath, self.session.graph)
 
-        data_summary = tf.Summary(value=[tf.Summary.Value(tag=self.name + '_' + "TD_ERROR", simple_value=self.td_error)])
+        data_summary = tf.Summary(
+            value=[tf.Summary.Value(tag=self.name + '_' + "TD_ERROR", simple_value=self.td_error)])
         self.lossSaver.add_summary(summary=data_summary, global_step=self.epsoide)
 
     def saveRewardAvg(self, modelSavePath):
         # loss save
         self.rewardSaver = open(modelSavePath + 'reward.txt', 'a+')
-        self.rewardSaver.write(str(self.epsoide) + ' ' + str(self.rewardAdd * 100000) + '\n')
+        self.rewardSaver.write(str(self.epsoide) + ' ' + str(self.rewardAdd) + '\n')
         self.rewardAdd = 0
         self.timeStep = 0
         # print(self.rewardAdd / self.rewardStep)
@@ -116,13 +118,15 @@ class Bicnet():
             self.session.run(self.net.soft_replace)
             _, q = self.session.run([self.net.atrain, self.net.q], {self.net.state_input: state_input,
                                                                     self.net.agents_local_observation: agents_local_observation})
-            __, self.td_error = self.session.run([self.net.ctrain, self.net.td_error], {self.net.state_input: state_input,
-                                                                                        self.net.agents_local_observation: agents_local_observation,
-                                                                                        self.net.a: action_batch,
-                                                                                        self.net.reward: reward_batch,
-                                                                                        self.net.state_input_next: state_input_next,
-                                                                                        self.net.agents_local_observation_next: agents_local_observation_next
-                                                                                        })
+
+            __, self.td_error = self.session.run([self.net.ctrain, self.net.td_error],
+                                                 {self.net.state_input: state_input,
+                                                  self.net.agents_local_observation: agents_local_observation,
+                                                  self.net.a: action_batch,
+                                                  self.net.reward: reward_batch,
+                                                  self.net.state_input_next: state_input_next,
+                                                  self.net.agents_local_observation_next: agents_local_observation_next
+                                                  })
 
     def get_execute_action(self, prob_value):
         actions = []
@@ -137,12 +141,14 @@ class Bicnet():
 
         state_input = state[0][np.newaxis, :, :]
         agents_local_observation = state[1][np.newaxis, :, :]
-        prob_value = self.session.run(self.net.a, {self.net.state_input: state_input, self.net.agents_local_observation: agents_local_observation})[0]
+        prob_value = self.session.run(self.net.a, {self.net.state_input: state_input,
+                                                   self.net.agents_local_observation: agents_local_observation})[0]
         actions = self.get_execute_action(prob_value)
         return actions
 
     def action(self, state):
         state_input = state[0][np.newaxis, :, :]
         agents_local_observation = state[1][np.newaxis, :, :]
-        prob_value = self.session.run(self.net.a, {self.net.state_input: state_input, self.net.agents_local_observation: agents_local_observation})[0]
+        prob_value = self.session.run(self.net.a, {self.net.state_input: state_input,
+                                                   self.net.agents_local_observation: agents_local_observation})[0]
         return prob_value

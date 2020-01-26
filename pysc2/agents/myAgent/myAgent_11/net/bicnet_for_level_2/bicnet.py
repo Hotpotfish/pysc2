@@ -36,13 +36,13 @@ class bicnet(object):
         self.ct_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/target')
 
         # target net replacement
-        self.soft_replace = [tf.assign(t, (1 - config.GAMMA_FOR_UPDATE) * t + config.GAMMA_FOR_UPDATE * e)
+        self.soft_replace = [tf.assign(t, (1 - config.TAU) * t + config.TAU * e)
                              for t, e in zip(self.at_params + self.ct_params, self.ae_params + self.ce_params)]
 
         q_target = self.reward + config.GAMMA * q_
 
         self.td_error = tf.losses.mean_squared_error(labels=q_target, predictions=self.q)
-        self.ctrain = tf.train.AdamOptimizer(self.learning_rate).minimize(self.td_error, var_list=self.ce_params)
+        self.ctrain = tf.train.AdamOptimizer(self.learning_rate * 2).minimize(self.td_error, var_list=self.ce_params)
         # q_temp = self._build_graph_c(self.state_input,  self.a, 'Critic/eval', train=False)
         self.a_loss = - tf.reduce_mean(self.q)  # maximize the q
         self.atrain = tf.train.AdamOptimizer(self.learning_rate).minimize(self.a_loss, var_list=self.ae_params)
@@ -67,7 +67,8 @@ class bicnet(object):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             with slim.arg_scope([slim.conv2d, slim.fully_connected],
                                 trainable=train,
-                                activation_fn=tf.nn.leaky_relu,
+                                activation_fn=tf.nn.relu,
+                                normalizer_fn=slim.batch_norm,
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
                                 weights_regularizer=slim.l2_regularizer(0.05)):
                 encoder_outputs = self._observation_encoder_a(agents_local_observation, self.agents_number,
@@ -95,7 +96,7 @@ class bicnet(object):
                                                                   dtype=tf.float32)
             for i in range(agents_number):
                 fc1 = slim.fully_connected(bicnet_outputs[i], 30, scope='full_connected1' + "_" + str(i))
-                fc2 = slim.fully_connected(fc1, self.action_dim, activation_fn=tf.nn.tanh,
+                fc2 = slim.fully_connected(fc1, self.action_dim, activation_fn=tf.nn.softmax,
                                            scope='full_connected2' + "_" + str(i))
                 outputs.append(fc2)
 
@@ -110,7 +111,9 @@ class bicnet(object):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             with slim.arg_scope([slim.conv2d, slim.fully_connected],
                                 trainable=train,
-                                activation_fn=tf.nn.leaky_relu,
+                                activation_fn=tf.nn.relu,
+                                normalizer_fn=slim.batch_norm,
+
 
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
                                 weights_regularizer=slim.l2_regularizer(0.05)):
@@ -148,7 +151,7 @@ class bicnet(object):
             outputs = tf.unstack(outputs, self.agents_number)  # (agents_number, batch_size,1)
             outputs = tf.transpose(outputs, [1, 0, 2])  # (batch_size,agents_number,1)
             outputs = slim.flatten(outputs)
-            fc2 = slim.fully_connected(outputs, 100, scope='full_connected2')
-            fc3 = slim.fully_connected(fc2, 1, activation_fn=None, scope='full_connected3')
+            fc2 = slim.fully_connected(outputs, 8, scope='full_connected2')
+            fc3 = slim.fully_connected(fc2, 1, scope='full_connected3')
 
             return fc3

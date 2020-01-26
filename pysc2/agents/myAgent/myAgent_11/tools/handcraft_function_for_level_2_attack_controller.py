@@ -183,52 +183,7 @@ def assembly_action(obs, action_probs, mark):
     return actions, action_numbers
 
 
-def get_friend_and_enemy_health(unit, obs, my_unit_number, enemy_unit_number):
-    friend = []
-    enemy = []
 
-    friend_k = np.zeros((my_unit_number,))
-    enemy_k = np.zeros((enemy_unit_number,))
-
-    for other_unit in obs.observation.raw_units:
-
-        if unit.tag == other_unit.tag:
-            continue
-
-        x_difference = math.pow(unit.x - other_unit.x, 2)
-        y_difference = math.pow(unit.y - other_unit.y, 2)
-
-        distance = math.sqrt(x_difference + y_difference)
-        # if distance <= config.OB_RANGE:
-        #     continue
-
-        if other_unit.alliance == features.PlayerRelative.SELF:
-            friend.append([distance, other_unit.health])
-            continue
-
-        if other_unit.alliance == features.PlayerRelative.ENEMY:
-            enemy.append((distance, other_unit.health))
-
-    friend = np.array(sorted(friend, key=lambda f: f[0]))
-    enemy = np.array(sorted(enemy, key=lambda e: e[0]))
-
-    if len(friend) >= my_unit_number:
-        friend_k = friend[:my_unit_number, 1]
-    elif 1 <= len(friend) < my_unit_number:
-        friend_k[:len(friend)] = friend[:, 1]
-    else:
-        friend_k = np.zeros(my_unit_number)
-
-    if len(enemy) >= enemy_unit_number:
-        enemy_k = enemy[:enemy_unit_number, 1]
-    elif 1 <= len(enemy) < enemy_unit_number:
-        enemy_k[:len(enemy)] = enemy[:, 1]
-    else:
-        enemy_k = np.zeros(enemy_unit_number)
-
-    return friend_k, enemy_k
-
-    #     enemy_K = enemy[:K, 1]
 
 
 def find_unit_by_tag(obs, tag):
@@ -243,7 +198,7 @@ def get_agent_state(unit):
 
     states = np.append(states, computeDistance_center(unit) / (config.MAP_SIZE * 1.41))
     states = np.append(states, unit.alliance / 4)
-    states = np.append(states, unit.unit_type / 100)
+    states = np.append(states, unit.unit_type / 10000)
     states = np.append(states, unit.x / config.MAP_SIZE)
     states = np.append(states, unit.y / config.MAP_SIZE)
     states = np.append(states, unit.health / 100)
@@ -316,7 +271,7 @@ def get_agents_obs(init_obs, obs):
             else:
                 agent_obs = np.append(agent_obs, computeDistance(my_unit, my_target_unit) / (config.MAP_SIZE * 1.41))
                 agent_obs = np.append(agent_obs, my_target_unit.alliance / 4)
-                agent_obs = np.append(agent_obs, my_target_unit.unit_type / 100)
+                agent_obs = np.append(agent_obs, my_target_unit.unit_type / 10000)
                 agent_obs = np.append(agent_obs, my_target_unit.x / config.MAP_SIZE)
                 agent_obs = np.append(agent_obs, my_target_unit.y / config.MAP_SIZE)
                 agent_obs = np.append(agent_obs, my_target_unit.health / 100)
@@ -329,7 +284,7 @@ def get_agents_obs(init_obs, obs):
             else:
                 agent_obs = np.append(agent_obs, computeDistance(my_unit, enemy_target_unit) / (config.MAP_SIZE * 1.41))
                 agent_obs = np.append(agent_obs, enemy_target_unit.alliance / 4)
-                agent_obs = np.append(agent_obs, enemy_target_unit.unit_type / 100)
+                agent_obs = np.append(agent_obs, enemy_target_unit.unit_type / 10000)
                 agent_obs = np.append(agent_obs, enemy_target_unit.x / config.MAP_SIZE)
                 agent_obs = np.append(agent_obs, enemy_target_unit.y / config.MAP_SIZE)
                 agent_obs = np.append(agent_obs, enemy_target_unit.health / 100)

@@ -116,7 +116,7 @@ class Windows(LocalBase):
   def __init__(self, version=None):
     exec_path = (os.environ.get("SC2PATH") or
                  _read_execute_info(os.path.expanduser("~/Documents"), 3) or
-                 "C:/Program Files (x86)/StarCraft II")
+                 "e:/StarCraft II")
     super(Windows, self).__init__(exec_path, "SC2_x64.exe",
                                   version=version, cwd="Support64")
 
