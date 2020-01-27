@@ -43,7 +43,7 @@ class bicnet(object):
 
         self.td_error = tf.losses.mean_squared_error(labels=q_target, predictions=self.q)
         self.ctrain = tf.train.AdamOptimizer(self.learning_rate * 2).minimize(self.td_error, var_list=self.ce_params)
-        # q_temp = self._build_graph_c(self.state_input,  self.a, 'Critic/eval', train=False)
+
         self.a_loss = - tf.reduce_mean(self.q)  # maximize the q
         self.atrain = tf.train.AdamOptimizer(self.learning_rate).minimize(self.a_loss, var_list=self.ae_params)
 
@@ -64,31 +64,28 @@ class bicnet(object):
 
     def _build_graph_a(self, agents_local_observation, scope_name, train):
         # 环境和智能体本地的共同观察
-        with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
+        with tf.variable_scope(scope_name):
             with slim.arg_scope([slim.conv2d, slim.fully_connected],
                                 trainable=train,
-                                activation_fn=tf.nn.relu,
                                 normalizer_fn=slim.batch_norm,
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
                                 weights_regularizer=slim.l2_regularizer(0.05)):
-                encoder_outputs = self._observation_encoder_a(agents_local_observation, self.agents_number,
-                                                              '_observation_encoder')
+                encoder_outputs = self._observation_encoder_a(agents_local_observation, self.agents_number, '_observation_encoder')
                 bicnet_outputs = self._bicnet_build_a(encoder_outputs, self.agents_number, '_bicnet_build')
                 return bicnet_outputs
 
     def _observation_encoder_a(self, agents_local_observation, agents_number, scope_name):
-        with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
+        with tf.variable_scope(scope_name):
             encoder = []
             for i in range(agents_number):
-                fc1 = slim.fully_connected(agents_local_observation[:, i, :], 100,
-                                           scope='full_connected1' + "_" + str(i))
+                fc1 = slim.fully_connected(agents_local_observation[:, i, :], 100, scope='full_connected1' + "_" + str(i))
                 encoder.append(fc1)
             encoder = tf.transpose(encoder, [1, 0, 2])
             encoder = tf.unstack(encoder, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
             return encoder
 
     def _bicnet_build_a(self, encoder_outputs, agents_number, scope_name):
-        with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
+        with tf.variable_scope(scope_name):
             outputs = []
             lstm_fw_cell = tf.nn.rnn_cell.GRUCell(self.action_dim, name="lstm_fw_cell")
             lstm_bw_cell = tf.nn.rnn_cell.GRUCell(self.action_dim, name="lstm_bw_cell")
@@ -108,10 +105,9 @@ class bicnet(object):
 
     def _build_graph_c(self, state_input, action_input, scope_name, train):
         # 环境和智能体本地的共同观察
-        with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
+        with tf.variable_scope(scope_name):
             with slim.arg_scope([slim.conv2d, slim.fully_connected],
                                 trainable=train,
-                                activation_fn=tf.nn.relu,
                                 normalizer_fn=slim.batch_norm,
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
                                 weights_regularizer=slim.l2_regularizer(0.05)):
@@ -121,7 +117,7 @@ class bicnet(object):
                 return bicnet_outputs
 
     def _observation_encoder_c(self, state_input, action_input, agents_number, scope_name):
-        with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
+        with tf.variable_scope(scope_name):
             encoder = []
             for i in range(agents_number):
                 fc1_s = slim.fully_connected(state_input[:, i], 50, scope='full_connected_s1' + "_" + str(i))
@@ -137,7 +133,7 @@ class bicnet(object):
             return encoder
 
     def _bicnet_build_c(self, encoder_outputs, agents_number, scope_name):
-        with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
+        with tf.variable_scope(scope_name):
             outputs = []
             lstm_fw_cell = tf.nn.rnn_cell.GRUCell(self.action_dim, name="lstm_fw_cell")
             lstm_bw_cell = tf.nn.rnn_cell.GRUCell(self.action_dim, name="lstm_bw_cell")
@@ -149,7 +145,7 @@ class bicnet(object):
             outputs = tf.unstack(outputs, self.agents_number)  # (agents_number, batch_size,1)
             outputs = tf.transpose(outputs, [1, 0, 2])  # (batch_size,agents_number,1)
             outputs = slim.flatten(outputs)
-            fc2 = slim.fully_connected(outputs, 8, scope='full_connected2')
+            fc2 = slim.fully_connected(outputs, 20, scope='full_connected2')
             fc3 = slim.fully_connected(fc2, 1, scope='full_connected3')
 
             return fc3

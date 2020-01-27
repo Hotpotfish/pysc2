@@ -6,7 +6,7 @@ from pysc2.agents.myAgent.myAgent_11.decisionMaker.level_2.Bicnet_for_level_2 im
 from pysc2.agents.myAgent.myAgent_11.tools import handcraft_function, handcraft_function_for_level_2_attack_controller
 
 from pysc2.agents.myAgent.myAgent_11.tools.handcraft_function_for_level_2_attack_controller import get_agents_state, \
-    get_agents_obs
+    get_agents_obs, get_reward
 
 
 class level_2_attack_controller:
@@ -18,6 +18,8 @@ class level_2_attack_controller:
                    config.ENEMY_UNIT_NUMBER, 'attack_controller'))
         self.index = handcraft_function.find_controller_index(sa.attack_controller)
         self.init_obs = None
+        self.pre_obs = None
+        self.current_obs = None
 
     def train_action(self, obs, save_path):
         if obs.first():
@@ -25,9 +27,10 @@ class level_2_attack_controller:
 
         self.controller.current_state = [np.array(get_agents_state(self.init_obs, obs)),
                                          np.array(get_agents_obs(self.init_obs, obs))]
+        self.current_obs = obs
 
         if self.controller.previous_action is not None:
-            self.controller.previous_reward = obs.reward / 10  # reward_compute_2(self.controller.previous_state, self.controller.current_state, obs)
+            self.controller.previous_reward = get_reward(self.current_obs, self.pre_obs) / 1000  # reward_compute_2(self.controller.previous_state, self.controller.current_state, obs)
             self.controller.network.perceive(self.controller.previous_state,
                                              self.controller.previous_action,
                                              self.controller.previous_reward,
@@ -42,9 +45,12 @@ class level_2_attack_controller:
             self.controller.previous_action = None
             self.controller.previous_reward = None
             self.init_obs = None
+            self.pre_obs = None
+            self.current_obs = None
         else:
             self.controller.previous_state = self.controller.current_state
             self.controller.previous_action = action_numbers
+            self.pre_obs = self.current_obs
 
         return actions
 
