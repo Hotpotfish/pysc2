@@ -113,8 +113,6 @@ class bicnet(object):
                                 trainable=train,
                                 activation_fn=tf.nn.relu,
                                 normalizer_fn=slim.batch_norm,
-
-
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
                                 weights_regularizer=slim.l2_regularizer(0.05)):
                 encoder_outputs = self._observation_encoder_c(state_input, action_input, self.agents_number,
