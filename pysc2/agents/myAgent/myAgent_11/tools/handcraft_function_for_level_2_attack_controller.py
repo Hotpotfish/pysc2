@@ -105,15 +105,15 @@ def assembly_action(init_obs, obs, action_probs, mark):
                 dir = action_number - 1
 
                 parameter.append(0)
-                parameter.append(my_unit[i].tag)
+                parameter.append(my_unit.tag)
                 if dir == 0:
-                    parameter.append((my_unit[i].x + 1, my_unit[i].y + 1))
+                    parameter.append((my_unit.x + 1, my_unit.y + 1))
                 elif dir == 1:
-                    parameter.append((my_unit[i].x - 1, my_unit[i].y - 1))
+                    parameter.append((my_unit.x - 1, my_unit.y - 1))
                 elif dir == 2:
-                    parameter.append((my_unit[i].x + 1, my_unit[i].y - 1))
+                    parameter.append((my_unit.x + 1, my_unit.y - 1))
                 elif dir == 3:
-                    parameter.append((my_unit[i].x - 1, my_unit[i].y + 1))
+                    parameter.append((my_unit.x - 1, my_unit.y + 1))
 
                 parameter = tuple(parameter)
                 actions.append(a(*parameter))
@@ -122,9 +122,9 @@ def assembly_action(init_obs, obs, action_probs, mark):
                 a = controller[2]
                 enemy = action_number - 1 - 4
                 parameter.append(0)
-                parameter.append(my_unit[i].tag)
+                parameter.append(my_unit.tag)
                 # print(str(len(enemy_units))+':'+enemy)
-                parameter.append(my_unit[enemy].tag)
+                parameter.append(init_enemy_units_tag[enemy])
                 parameter = tuple(parameter)
                 actions.append(a(*parameter))
     return actions, action_numbers
