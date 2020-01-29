@@ -67,6 +67,7 @@ class bicnet(object):
         with tf.variable_scope(scope_name):
             with slim.arg_scope([slim.conv2d, slim.fully_connected],
                                 trainable=train,
+                                # activation_fn=tf.nn.leaky_relu,
                                 normalizer_fn=slim.batch_norm,
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
                                 weights_regularizer=slim.l2_regularizer(0.05)):
@@ -108,6 +109,7 @@ class bicnet(object):
         with tf.variable_scope(scope_name):
             with slim.arg_scope([slim.conv2d, slim.fully_connected],
                                 trainable=train,
+                                # activation_fn=tf.nn.leaky_relu,
                                 normalizer_fn=slim.batch_norm,
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
                                 weights_regularizer=slim.l2_regularizer(0.05)):
