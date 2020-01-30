@@ -25,12 +25,11 @@ class level_2_attack_controller:
         if obs.first():
             self.init_obs = obs
 
-        self.controller.current_state = [np.array(get_agents_state(self.init_obs, obs)),
-                                         np.array(get_agents_obs(self.init_obs, obs))]
+        self.controller.current_state = [np.array(get_agents_state(self.init_obs, obs)), np.array(get_agents_obs(self.init_obs, obs))]
         self.current_obs = obs
 
         if self.controller.previous_action is not None:
-            self.controller.previous_reward = get_reward(self.current_obs, self.pre_obs) / 1000  # reward_compute_2(self.controller.previous_state, self.controller.current_state, obs)
+            self.controller.previous_reward = get_reward(self.current_obs, self.pre_obs) / 100  # reward_compute_2(self.controller.previous_state, self.controller.current_state, obs)
             self.controller.network.perceive(self.controller.previous_state,
                                              self.controller.previous_action,
                                              self.controller.previous_reward,

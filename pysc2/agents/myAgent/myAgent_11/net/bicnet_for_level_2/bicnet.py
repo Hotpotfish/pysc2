@@ -67,7 +67,7 @@ class bicnet(object):
         with tf.variable_scope(scope_name):
             with slim.arg_scope([slim.conv2d, slim.fully_connected],
                                 trainable=train,
-                                # activation_fn=tf.nn.leaky_relu,
+                                activation_fn=tf.nn.relu,
                                 normalizer_fn=slim.batch_norm,
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
                                 weights_regularizer=slim.l2_regularizer(0.05)):
@@ -93,10 +93,10 @@ class bicnet(object):
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs,
                                                                   dtype=tf.float32)
             for i in range(agents_number):
-                fc1 = slim.fully_connected(bicnet_outputs[i], 30, scope='full_connected1' + "_" + str(i))
-                fc2 = slim.fully_connected(fc1, self.action_dim, activation_fn=tf.nn.softmax,
-                                           scope='full_connected2' + "_" + str(i))
-                outputs.append(fc2)
+                # fc1 = slim.fully_connected(bicnet_outputs[i], 30, scope='full_connected1' + "_" + str(i))
+                fc1 = slim.fully_connected(bicnet_outputs[i], self.action_dim, activation_fn=tf.nn.softmax,
+                                           scope='full_connected1' + "_" + str(i))
+                outputs.append(fc1)
 
             outputs = tf.unstack(outputs, self.agents_number)  # (agents_number, batch_size, action_dim)
             outputs = tf.transpose(outputs, [1, 0, 2])
@@ -109,7 +109,7 @@ class bicnet(object):
         with tf.variable_scope(scope_name):
             with slim.arg_scope([slim.conv2d, slim.fully_connected],
                                 trainable=train,
-                                # activation_fn=tf.nn.leaky_relu,
+                                activation_fn=tf.nn.relu,
                                 normalizer_fn=slim.batch_norm,
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
                                 weights_regularizer=slim.l2_regularizer(0.05)):
@@ -122,13 +122,13 @@ class bicnet(object):
         with tf.variable_scope(scope_name):
             encoder = []
             for i in range(agents_number):
-                fc1_s = slim.fully_connected(state_input[:, i], 50, scope='full_connected_s1' + "_" + str(i))
-                fc2_s = slim.fully_connected(fc1_s, 30, scope='full_connected_s2' + "_" + str(i))
+                fc1_s = slim.fully_connected(state_input[:, i], 10, scope='full_connected_s1' + "_" + str(i))
+                # fc2_s = slim.fully_connected(fc1_s, 30, scope='full_connected_s2' + "_" + str(i))
 
-                fc1_a = slim.fully_connected(action_input[:, i], 30, scope='full_connected_a1' + "_" + str(i))
+                fc1_a = slim.fully_connected(action_input[:, i], 10, scope='full_connected_a1' + "_" + str(i))
 
-                data = tf.concat([fc2_s, fc1_a], axis=1)
-                fc1 = slim.fully_connected(data, 100, scope='full_connected1' + "_" + str(i))
+                data = fc1_s + fc1_a
+                fc1 = slim.fully_connected(data, 10, scope='full_connected1' + "_" + str(i))
                 encoder.append(fc1)
             encoder = tf.transpose(encoder, [1, 0, 2])
             encoder = tf.unstack(encoder, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
@@ -147,7 +147,7 @@ class bicnet(object):
             outputs = tf.unstack(outputs, self.agents_number)  # (agents_number, batch_size,1)
             outputs = tf.transpose(outputs, [1, 0, 2])  # (batch_size,agents_number,1)
             outputs = slim.flatten(outputs)
-            fc2 = slim.fully_connected(outputs, 20, scope='full_connected2')
-            fc3 = slim.fully_connected(fc2, 1, scope='full_connected3')
+            fc2 = slim.fully_connected(outputs, 1, scope='full_connected2')
+            # fc3 = slim.fully_connected(fc2, 1, scope='full_connected3')
 
-            return fc3
+            return fc2

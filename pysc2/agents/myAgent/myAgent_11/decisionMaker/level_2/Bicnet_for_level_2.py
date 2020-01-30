@@ -89,7 +89,6 @@ class Bicnet():
         self.rewardSaver.write(str(self.epsoide) + ' ' + str(self.rewardAdd) + '\n')
         self.rewardAdd = 0
         self.timeStep = 0
-        # print(self.rewardAdd / self.rewardStep)
         self.rewardSaver.close()
 
     def perceive(self, state, action, reward, next_state, done, save_path):  # 感知存储信息

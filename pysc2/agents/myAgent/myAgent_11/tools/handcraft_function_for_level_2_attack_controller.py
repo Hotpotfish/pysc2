@@ -169,16 +169,16 @@ def get_state(init_obs, obs):
 def get_agents_state(init_obs, obs):
     states = []
 
-    init_my_units_tag = [unit.tag for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
+    # init_my_units_tag = [unit.tag for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
 
     state_copy = get_state(init_obs, obs)
 
     for i in range(config.MY_UNIT_NUMBER):
-        my_unit = find_unit_by_tag(obs, init_my_units_tag[i])
-        if my_unit is None:
-            states.append(np.zeros(config.COOP_AGENTS_OBDIM))
-        else:
-            states.append(state_copy)
+        # my_unit = find_unit_by_tag(obs, init_my_units_tag[i])
+        # if my_unit is None:
+        #     states.append(np.zeros(config.COOP_AGENTS_OBDIM))
+        # else:
+        states.append(state_copy)
 
     return states
 
