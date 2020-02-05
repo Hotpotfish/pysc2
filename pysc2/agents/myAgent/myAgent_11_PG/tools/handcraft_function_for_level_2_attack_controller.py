@@ -1,13 +1,28 @@
 import math
 import random
+import itertools
 
-from pysc2.lib import actions as Action
 import numpy as np
-import pysc2.agents.myAgent.myAgent_11.smart_actions as sa
+import pysc2.agents.myAgent.myAgent_11_PG.smart_actions as sa
 # 获得全局的观察
 
-from pysc2.agents.myAgent.myAgent_11.config import config
+from pysc2.agents.myAgent.myAgent_11_PG.config import config
 from pysc2.lib import features
+
+
+# 十进制转任意进制 用于解析动作列表
+def transport(action_number, action_dim):
+    result = np.zeros(config.MY_UNIT_NUMBER)
+    an = action_number
+    ad = action_dim
+
+    for i in range(config.MY_UNIT_NUMBER):
+        if an / ad != 0:
+            result[config.MY_UNIT_NUMBER - i - 1] = int(an % ad)
+            an = int(an / ad)
+        else:
+            break
+    return result
 
 
 def computeDistance(unit, enemy_unit):
@@ -28,44 +43,41 @@ def computeDistance_center(unit):
     return distance
 
 
-def actionSelect(unit, obs, init_enemy_units_tag, action, var):
-    action = int(np.clip(np.random.normal(action, var), 1, config.ATTACT_CONTROLLER_ACTIONDIM - 0.01))
-    mask = []
-    mask.append(0)
-    for i in range(config.STATIC_ACTION_DIM):
-        mask.append(1)
+def get_bound(init_obs, obs):
+    bound = np.zeros(np.power(config.ATTACT_CONTROLLER_ACTIONDIM, config.MY_UNIT_NUMBER))
+    leagal_actions = []
+    init_my_units_tag = [unit.tag for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
+    init_enemy_units_tag = [unit.tag for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
 
-    for i in range(config.ENEMY_UNIT_NUMBER):
-        enemy = find_unit_by_tag(obs, init_enemy_units_tag[i])
-        if enemy is None:
-            mask.append(0)
-        elif computeDistance(unit, enemy) >= config.ATTACK_RANGE:
-            mask.append(0)
+    for i in range(config.MY_UNIT_NUMBER):
+        action = []
+        my_unit = find_unit_by_tag(obs, init_my_units_tag[i])
+        if my_unit is None:
+            leagal_actions.append([0])
+            continue
         else:
-            mask.append(1)
+            action.append(0)
+            # for j in range(config.STATIC_ACTION_DIM):
+            #     action.append(1)
 
-    mask_nozero = np.nonzero(mask)
-    if action in mask_nozero[0]:
-        return action
-    else:
-        return 1
+            for j in range(config.ENEMY_UNIT_NUMBER):
+                enemy = find_unit_by_tag(obs, init_enemy_units_tag[j])
+                if enemy is None:
+                    action.append(0)
+                # elif computeDistance(my_unit, enemy) >= config.ATTACK_RANGE:
+                #     action.append(0)
+                else:
+                    action.append(1)
+            leagal_actions.append(list(np.nonzero(action)[0]))
 
+    for i in itertools.product(*leagal_actions):
+        number = 0
+        for j in range(config.MY_UNIT_NUMBER):
+            number += i[j] * np.power(config.ATTACT_CONTROLLER_ACTIONDIM, config.MY_UNIT_NUMBER - 1 - j)
 
-    #
-    # action_porb_real = np.multiply(np.array(mask), np.array(action_porb))
-    #
-    # action_porb_real = action_porb_real / np.sum(action_porb_real)
+        bound[number] = 1
 
-    # if mark == 'test':
-    #     return np.argmax(action_porb_real)
-    # if mark == 'train':
-    #     if random.random() >= ep:
-    #         return np.argmax(action_porb_real)
-    #     else:
-    #         avail_actions_ind = np.nonzero(action_porb_real)[0]
-    #         action = np.random.choice(avail_actions_ind)
-    # action = np.random.choice(range(config.ATTACT_CONTROLLER_ACTIONDIM), p=action_porb_real)
-    # return action
+    return bound
 
 
 def find_unit_by_tag(obs, tag):
@@ -76,65 +88,33 @@ def find_unit_by_tag(obs, tag):
 
 
 ############################################
-global var
-var = 3
 
 
-def assembly_action(init_obs, obs, action, mark):
+def assembly_action(init_obs, action_number):
     actions = []
-    action_numbers = []
 
-    init_my_units_tag = [unit.tag for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
-    init_enemy_units_tag = [unit.tag for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
+    init_my_units = [unit for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
+    init_enemy_units = [unit for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
     controller = sa.attack_controller
 
-    global var
-    var *= 0.9995
-    # epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 25000
-    # if epsilon <= config.FINAL_EPSILON:
-    #     epsilon = config.FINAL_EPSILON
+    action_nmbers = transport(action_number, config.ATTACT_CONTROLLER_ACTIONDIM)
 
     for i in range(config.MY_UNIT_NUMBER):
-        my_unit = find_unit_by_tag(obs, init_my_units_tag[i])
-        if my_unit is None:
-            action_numbers.append(0)
+        if action_nmbers[i] == 0:
             continue
         else:
-            action_number = actionSelect(my_unit, obs, init_enemy_units_tag, action[i], var)
-            action_numbers.append(action_number)
             parameter = []
+            my_unit = init_my_units[i]
 
-            if action_number == 1:
-                actions.append(Action.RAW_FUNCTIONS.no_op())
-                continue
-
-            elif 1 < action_number <= 5:
-                a = controller[1]
-
-                dir = action_number - 1 - 1
-                parameter.append(0)
-                parameter.append(my_unit.tag)
-                if dir == 0:
-                    parameter.append((my_unit.x + 1, my_unit.y + 1))
-                elif dir == 1:
-                    parameter.append((my_unit.x - 1, my_unit.y - 1))
-                elif dir == 2:
-                    parameter.append((my_unit.x + 1, my_unit.y - 1))
-                elif dir == 3:
-                    parameter.append((my_unit.x - 1, my_unit.y + 1))
-
-                parameter = tuple(parameter)
-                actions.append(a(*parameter))
-
-            elif 5 < action_number <= 5 + config.ENEMY_UNIT_NUMBER:
+            if 0 < action_nmbers[i] <= config.ENEMY_UNIT_NUMBER:
                 a = controller[2]
-                enemy = action_number - 1 - 4 - 1
+                enemy = int(action_nmbers[i] - config.DEATH_ACTION_DIM)
                 parameter.append(0)
                 parameter.append(my_unit.tag)
-                parameter.append(init_enemy_units_tag[enemy])
+                parameter.append(init_enemy_units[enemy].tag)
                 parameter = tuple(parameter)
                 actions.append(a(*parameter))
-    return actions, action_numbers
+    return actions
 
 
 def get_agent_state(unit):
@@ -247,7 +227,9 @@ def get_reward(obs, pre_obs):
     enemy_units_health_pre = [unit.health for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
 
     # if len(enemy_units_health) == 0:
-    #     reward += 1000
+    #     reward += 250
+    # if len(my_units_health) == 0:
+    #     reward -= 250
 
     if len(my_units_health) < len(my_units_health_pre):
         reward -= (len(my_units_health_pre) - len(my_units_health)) * 100
@@ -257,4 +239,31 @@ def get_reward(obs, pre_obs):
 
     reward += (sum(my_units_health) - sum(my_units_health_pre)) - (sum(enemy_units_health) - sum(enemy_units_health_pre))
 
-    return reward
+    return float(reward)
+
+
+def discount_and_norm_rewards(rewards):
+    # discount episode rewards
+    discounted_ep_rs = np.zeros_like(rewards)
+    running_add = 0
+    for t in reversed(range(0, len(rewards))):
+        running_add = running_add * config.GAMMA + rewards[t]
+        discounted_ep_rs[t] = running_add
+
+    # normalize episode rewards
+    discounted_ep_rs -= np.mean(discounted_ep_rs)
+    discounted_ep_rs /= np.std(discounted_ep_rs)
+    return discounted_ep_rs
+
+
+def win_or_loss(obs):
+    if obs.last():
+
+        my_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
+
+        if len(my_units) == 0:
+            return -1
+        else:
+            return 1
+    else:
+        return 0

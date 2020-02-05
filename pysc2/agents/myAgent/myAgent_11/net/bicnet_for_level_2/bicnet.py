@@ -94,8 +94,9 @@ class bicnet(object):
                                                                   dtype=tf.float32)
             for i in range(agents_number):
                 # fc1 = slim.fully_connected(bicnet_outputs[i], 30, scope='full_connected1' + "_" + str(i))
-                fc1 = slim.fully_connected(bicnet_outputs[i], self.action_dim, activation_fn=tf.nn.softmax,
+                fc1 = slim.fully_connected(bicnet_outputs[i], 1, activation_fn=tf.nn.tanh,
                                            scope='full_connected1' + "_" + str(i))
+                fc1 = fc1 * self.action_dim
                 outputs.append(fc1)
 
             outputs = tf.unstack(outputs, self.agents_number)  # (agents_number, batch_size, action_dim)
@@ -123,7 +124,6 @@ class bicnet(object):
             encoder = []
             for i in range(agents_number):
                 fc1_s = slim.fully_connected(state_input[:, i], 10, scope='full_connected_s1' + "_" + str(i))
-                # fc2_s = slim.fully_connected(fc1_s, 30, scope='full_connected_s2' + "_" + str(i))
 
                 fc1_a = slim.fully_connected(action_input[:, i], 10, scope='full_connected_a1' + "_" + str(i))
 

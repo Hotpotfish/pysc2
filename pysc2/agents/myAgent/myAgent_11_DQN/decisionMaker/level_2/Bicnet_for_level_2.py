@@ -4,9 +4,9 @@ import random
 
 import numpy as np
 import tensorflow as tf
-import pysc2.agents.myAgent.myAgent_11.config.config as config
-from pysc2.agents.myAgent.myAgent_11.tools.SqQueue import SqQueue
-from pysc2.agents.myAgent.myAgent_11.net.bicnet_for_level_2.bicnet import bicnet
+import pysc2.agents.myAgent.myAgent_11_DQN.config.config as config
+from pysc2.agents.myAgent.myAgent_11_DQN.tools.SqQueue import SqQueue
+from pysc2.agents.myAgent.myAgent_11_DQN.net.bicnet_for_level_2.bicnet import bicnet
 
 
 class Bicnet():
@@ -40,12 +40,14 @@ class Bicnet():
         self.session = tf.Session()
         self.session.run(tf.initialize_all_variables())
 
-        # tf.get_default_graph().finalize()
-
         self.modelSaver = tf.train.Saver()
         self.session.graph.finalize()
 
+        self.epsilon = config.INITIAL_EPSILON
+
         self.lossSaver = None
+        self.loss = 0
+        self.win = 0
         self.epsoide = 0
 
         self.rewardSaver = None
@@ -80,7 +82,7 @@ class Bicnet():
             self.lossSaver = tf.summary.FileWriter(thisPath, self.session.graph)
 
         data_summary = tf.Summary(
-            value=[tf.Summary.Value(tag=self.name + '_' + "TD_ERROR", simple_value=self.td_error)])
+            value=[tf.Summary.Value(tag=self.name + '_' + "LOSS", simple_value=self.loss)])
         self.lossSaver.add_summary(summary=data_summary, global_step=self.epsoide)
 
     def saveRewardAvg(self, modelSavePath):
@@ -91,63 +93,68 @@ class Bicnet():
         self.timeStep = 0
         self.rewardSaver.close()
 
+    def saveWinRate(self, modelSavePath):
+        self.rewardSaver = open(modelSavePath + 'win_rate.txt', 'a+')
+        self.rewardSaver.write(str(self.epsoide) + ' ' + str(self.win / self.epsoide) + '\n')
+        self.rewardAdd = 0
+        self.timeStep = 0
+        self.rewardSaver.close()
+
     def perceive(self, state, action, reward, next_state, done, save_path):  # 感知存储信息
         self.rewardAdd += reward
         self.timeStep += 1
 
-        if done:
+        if done != 0:
             self.epsoide += 1
+            if done == 1:
+                self.win += 1
             self.saveLoss(save_path)
             self.saveRewardAvg(save_path)
+            self.saveWinRate(save_path)
 
         self.replay_buffer.inQueue([state, action, reward, next_state, done])
 
     def train_Q_network(self):  # 训练网络
         if self.replay_buffer.real_size > config.BATCH_SIZE:
             minibatch = random.sample(self.replay_buffer.queue, config.BATCH_SIZE)
-            state_input = np.array([data[0][0] for data in minibatch])
-            agents_local_observation = np.array([data[0][1] for data in minibatch])
+            action_bound = np.array([data[0][0] for data in minibatch])
+            state = np.array([data[0][1] for data in minibatch])
             action_batch = np.array([data[1] for data in minibatch])
             reward_batch = np.array([data[2] for data in minibatch])
-            state_input_next = np.array([data[3][0] for data in minibatch])
-            agents_local_observation_next = np.array([data[3][1] for data in minibatch])
+            action_bound_next = np.array([data[3][0] for data in minibatch])
+            state_next = np.array([data[3][1] for data in minibatch])
 
-            # action_batch = np.eye(self.action_dim)[action_batch]
+            action_batch = np.eye(np.power(self.action_dim, self.agents_number))[action_batch]
 
-            self.session.run(self.net.soft_replace)
-            _, q = self.session.run([self.net.atrain, self.net.q], {self.net.state_input: state_input,
-                                                                    self.net.agents_local_observation: agents_local_observation})
+            y_batch = []
+            Q_value_batch = self.session.run(self.net.q_value, {self.net.action_bound: action_bound,
+                                                                self.net.state: state})
+            for i in range(0, config.BATCH_SIZE):
+                done = minibatch[i][4]
+                if done:
+                    y_batch.append(reward_batch[i])
+                else:
+                    y_batch.append(reward_batch[i] + config.GAMMA * np.max(Q_value_batch[i]))
 
-            __, self.td_error = self.session.run([self.net.ctrain, self.net.td_error],
-                                                 {self.net.state_input: state_input,
-                                                  self.net.agents_local_observation: agents_local_observation,
-                                                  self.net.a: action_batch[:, :, np.newaxis],
-                                                  self.net.reward: reward_batch,
-                                                  self.net.state_input_next: state_input_next,
-                                                  self.net.agents_local_observation_next: agents_local_observation_next
-                                                  })
+            _, self.loss = self.session.run([self.net.trian_op, self.net.loss], {self.net.action_input: action_batch,
+                                                                                 self.net.y_input: y_batch,
+                                                                                 self.net.action_bound: action_bound_next,
+                                                                                 self.net.state: state_next})
 
-    def get_execute_action(self, prob_value):
-        actions = []
+    def egreedy_action(self, current_state):  # 输出带随机的动作
 
-        for i in range(config.MY_UNIT_NUMBER):
-            Nt = np.random.randn(self.action_dim)
-            actions.append(prob_value[i] + Nt)
+        Q_value = self.session.run(self.net.q_value, {self.net.action_bound: current_state[0][np.newaxis],
+                                                      self.net.state: current_state[1][np.newaxis]})
+        Q_value = np.multiply(current_state[0], Q_value)
+        self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 50000
+        if random.random() <= self.epsilon:
+            a = np.flatnonzero(Q_value)
+            return np.random.choice(a=a)
+        else:
+            return np.argmax(Q_value)
 
-        return actions
-
-    def egreedy_action(self, state):  # 输出带随机的动作
-
-        state_input = state[0][np.newaxis, :, :]
-        agents_local_observation = state[1][np.newaxis, :, :]
-        prob_value = self.session.run(self.net.a, {self.net.state_input: state_input,
-                                                   self.net.agents_local_observation: agents_local_observation})[0]
-        actions = self.get_execute_action(prob_value)
-        return actions
-
-    def action(self, state):
-        state_input = state[0][np.newaxis, :, :]
-        agents_local_observation = state[1][np.newaxis, :, :]
-        prob_value = self.session.run(self.net.a, {self.net.state_input: state_input,
-                                                   self.net.agents_local_observation: agents_local_observation})
-        return prob_value[0]
+    def action(self, current_state):
+        Q_value = self.session.run(self.net.q_value, {self.net.action_bound: current_state[0][np.newaxis],
+                                                      self.net.state: current_state[1][np.newaxis]})
+        Q_value = np.multiply(current_state[0], Q_value)
+        return np.argmax(Q_value)

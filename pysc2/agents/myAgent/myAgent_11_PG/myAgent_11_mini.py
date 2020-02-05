@@ -1,9 +1,9 @@
-import pysc2.agents.myAgent.myAgent_11.config.config as config
+import pysc2.agents.myAgent.myAgent_11_PG.config.config as config
 from absl import app
 from pysc2.agents import base_agent
-from pysc2.agents.myAgent.myAgent_11.decisionMaker.hierarchical_learning_structure import \
+from pysc2.agents.myAgent.myAgent_11_PG.decisionMaker.hierarchical_learning_structure import \
     hierarchical_learning_structure
-from pysc2.agents.myAgent.myAgent_11.tools.plt_function import plt_function
+from pysc2.agents.myAgent.myAgent_11_PG.tools.plt_function import plt_function
 from pysc2.env.environment import StepType
 
 from pysc2.lib import actions, features
@@ -27,7 +27,7 @@ class myAgent(base_agent.BaseAgent):
         super(myAgent, self).step(obs)
         action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'd:/model/', None)
         # action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'e:/model/',  'D:/model/20191230172144/episode_300')
-        # action = self.hierarchical_learning_structure.execute(obs, 'TEST', None, 'D:/model/20200104145848/episode_13000')
+        # action = self.hierarchical_learning_structure.execute(obs, 'TEST', None, 'D:/model/20200204175642/episode_43000')
         # print(action)
         return action
 
@@ -54,7 +54,7 @@ def main(unused_argv):
                 realtime=False,
 
         ) as env:
-            run_loop.run_loop([agent1], env)
+            run_loop.run_loop([agent1], env,max_episodes=config.EPISODES)
 
     except KeyboardInterrupt:
         pass
