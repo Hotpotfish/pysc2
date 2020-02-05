@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def read_and_plot(path):
+def read_and_plot_reward(path):
     f = open(path, 'r')
     points = []
     point = f.readline().strip('\n').split(' ')
@@ -25,12 +25,39 @@ def read_and_plot(path):
     plt.title('reward curve')
     plt.show()
 
+def read_and_plot_win_rate(path):
+    f = open(path, 'r')
+    points = []
+    point = f.readline().strip('\n').split(' ')
+    while 1:
+
+        if len(point) != 2:
+            break
+        # print(point)
+        x = float(point[0])
+        y = float(point[1])
+        points.append([x, y])
+        point = f.readline().strip('\n').split(' ')
+
+    f.close()
+    points = np.array(points)
+    plt.plot(points[:, 0], points[:, 1])
+
+    plt.xlabel('epsoide')
+    plt.ylabel('win_rate')
+    plt.title('win_rate curve')
+    plt.show()
+
+
+def plot_all(path):
+
+    read_and_plot_win_rate(path + '/win_rate.txt')
+    read_and_plot_reward(path + '/reward.txt')
+
 
 if __name__ == "__main__":
-    read_and_plot('d:/model/20200206021001/reward.txt')
+    plot_all('d:/model/20200206022607')
 
-
-#
 # import matplotlib.pyplot as plt
 # import numpy as np
 # import scipy.signal
@@ -61,4 +88,4 @@ if __name__ == "__main__":
 #
 #
 # if __name__ == "__main__":
-#     read_and_plot('d:/model/20200119204554/reward.txt')
+#     read_and_plot('d:/model/20200203155334/reward.txt')

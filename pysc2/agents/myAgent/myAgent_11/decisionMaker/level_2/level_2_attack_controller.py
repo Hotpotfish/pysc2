@@ -6,7 +6,7 @@ from pysc2.agents.myAgent.myAgent_11.decisionMaker.level_2.Bicnet_for_level_2 im
 from pysc2.agents.myAgent.myAgent_11.tools import handcraft_function, handcraft_function_for_level_2_attack_controller
 
 from pysc2.agents.myAgent.myAgent_11.tools.handcraft_function_for_level_2_attack_controller import get_agents_state, \
-    get_agents_obs, get_reward
+    get_agents_obs, get_reward, win_or_loss
 from pysc2.lib.actions import RAW_FUNCTIONS
 
 
@@ -35,7 +35,7 @@ class level_2_attack_controller:
                                              self.controller.previous_action,
                                              self.controller.previous_reward,
                                              self.controller.current_state,
-                                             obs.last(),
+                                             win_or_loss(obs),
                                              save_path)
 
         if obs.last():

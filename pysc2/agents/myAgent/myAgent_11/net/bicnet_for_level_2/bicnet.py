@@ -147,7 +147,7 @@ class bicnet(object):
             outputs = tf.unstack(outputs, self.agents_number)  # (agents_number, batch_size,1)
             outputs = tf.transpose(outputs, [1, 0, 2])  # (batch_size,agents_number,1)
             outputs = slim.flatten(outputs)
-            fc2 = slim.fully_connected(outputs, 1, scope='full_connected2')
+            fc2 = slim.fully_connected(outputs, 1, activation_fn=None,scope='full_connected2')
             # fc3 = slim.fully_connected(fc2, 1, scope='full_connected3')
 
             return fc2

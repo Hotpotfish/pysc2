@@ -47,6 +47,7 @@ class Bicnet():
 
         self.lossSaver = None
         self.epsoide = 0
+        self.win = 0
 
         self.rewardSaver = None
         self.rewardAdd = 0
@@ -91,14 +92,25 @@ class Bicnet():
         self.timeStep = 0
         self.rewardSaver.close()
 
+    def saveWinRate(self, modelSavePath):
+        self.rewardSaver = open(modelSavePath + 'win_rate.txt', 'a+')
+        self.rewardSaver.write(str(self.epsoide) + ' ' + str(self.win / self.epsoide) + '\n')
+        self.rewardAdd = 0
+        self.timeStep = 0
+        self.rewardSaver.close()
+
     def perceive(self, state, action, reward, next_state, done, save_path):  # 感知存储信息
         self.rewardAdd += reward
         self.timeStep += 1
 
-        if done:
+        if done != 0:
             self.epsoide += 1
+            if done == 1:
+                self.win += 1
+
             self.saveLoss(save_path)
             self.saveRewardAvg(save_path)
+            self. saveWinRate(save_path)
 
         self.replay_buffer.inQueue([state, action, reward, next_state, done])
 

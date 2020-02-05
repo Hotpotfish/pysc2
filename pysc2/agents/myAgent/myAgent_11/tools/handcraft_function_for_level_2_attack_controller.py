@@ -50,7 +50,6 @@ def actionSelect(unit, obs, init_enemy_units_tag, action, var):
     else:
         return 1
 
-
     #
     # action_porb_real = np.multiply(np.array(mask), np.array(action_porb))
     #
@@ -258,3 +257,16 @@ def get_reward(obs, pre_obs):
     reward += (sum(my_units_health) - sum(my_units_health_pre)) - (sum(enemy_units_health) - sum(enemy_units_health_pre))
 
     return reward
+
+
+def win_or_loss(obs):
+    if obs.last():
+
+        my_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
+
+        if len(my_units) == 0:
+            return -1
+        else:
+            return 1
+    else:
+        return 0
