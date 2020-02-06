@@ -2,7 +2,7 @@ MAP_SIZE = 64
 
 FEATURE_UNITS_LENGTH = 29
 RAW_UNITS_LENGTH = 46
-EPISODES = 50000
+EPISODES = 5000000
 
 # Hyper Parameters for DQN
 GAMMA = 0.9  # discount factor for target Q
@@ -25,7 +25,7 @@ COLUMN = 4
 # 参数维度 = 队列（QUEUED）+我方目标单位(MY_UNIT_NUMBER)+敌方目标单位(ENEMY_UNIT_NUMBER) +坐标(MAP_SIZE *MAP_SIZE)
 QUEUED = 2
 MY_UNIT_NUMBER = 3
-ENEMY_UNIT_NUMBER = 3  # 选择敌方智能体的空间
+ENEMY_UNIT_NUMBER = 4  # 选择敌方智能体的空间
 POINT_NUMBER = MAP_SIZE * MAP_SIZE
 
 DEATH_ACTION_DIM = 1

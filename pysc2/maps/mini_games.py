@@ -21,12 +21,12 @@ from pysc2.maps import lib
 
 
 class MiniGame(lib.Map):
-  directory = "mini_games"
-  download = "https://github.com/deepmind/pysc2#get-the-maps"
-  players = 1
-  score_index = 0
-  game_steps_per_episode = 0
-  step_mul = 8
+    directory = "mini_games"
+    download = "https://github.com/deepmind/pysc2#get-the-maps"
+    players = 1
+    score_index = 0
+    game_steps_per_episode = 0
+    step_mul = 8
 
 
 mini_games = [
@@ -37,14 +37,11 @@ mini_games = [
     "DefeatZerglingsAndBanelings",  # 120s
     "FindAndDefeatZerglings",  # 180s
     "MoveToBeacon",  # 120s
-    'DefeatReaper',
-    'DefeatReaper1',
-    'DefeatZlot',
-    'DefeatZerglings',
-    'DefeatUltralisk'
+    '3m_vs_3m',
+    '3r_vs_3r',
+    '3r_vs_4r',
 
 ]
 
-
 for name in mini_games:
-  globals()[name] = type(name, (MiniGame,), dict(filename=name))
+    globals()[name] = type(name, (MiniGame,), dict(filename=name))

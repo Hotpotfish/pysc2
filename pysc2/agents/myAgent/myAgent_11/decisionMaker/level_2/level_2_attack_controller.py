@@ -48,7 +48,7 @@ class level_2_attack_controller:
             return RAW_FUNCTIONS.no_op()
         else:
             action_prob = self.controller.network.action(self.controller.current_state)
-            actions, action_numbers = handcraft_function_for_level_2_attack_controller.assembly_action(self.init_obs, obs, action_prob, 'train')
+            actions, action_numbers = handcraft_function_for_level_2_attack_controller.assembly_action(self.init_obs, obs, action_prob)
             self.controller.previous_state = self.controller.current_state
             self.controller.previous_action = action_numbers
             self.pre_obs = self.current_obs

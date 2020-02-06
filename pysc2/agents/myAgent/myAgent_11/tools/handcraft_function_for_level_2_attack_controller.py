@@ -29,26 +29,25 @@ def computeDistance_center(unit):
 
 
 def actionSelect(unit, obs, init_enemy_units_tag, action, var):
-    action = int(np.clip(np.random.normal(action, var), 1, config.ATTACT_CONTROLLER_ACTIONDIM - 0.01))
+    action = int(np.clip(np.random.normal(action, var), 2, config.ATTACT_CONTROLLER_ACTIONDIM - 0.01))
+
     mask = []
     mask.append(0)
-    for i in range(config.STATIC_ACTION_DIM):
-        mask.append(1)
-
     for i in range(config.ENEMY_UNIT_NUMBER):
         enemy = find_unit_by_tag(obs, init_enemy_units_tag[i])
         if enemy is None:
             mask.append(0)
-        elif computeDistance(unit, enemy) >= config.ATTACK_RANGE:
-            mask.append(0)
+        # elif computeDistance(unit, enemy) >= config.ATTACK_RANGE:
+        #     mask.append(0)
         else:
             mask.append(1)
 
+    #
     mask_nozero = np.nonzero(mask)
     if action in mask_nozero[0]:
         return action
     else:
-        return 1
+        return 0
 
     #
     # action_porb_real = np.multiply(np.array(mask), np.array(action_porb))
@@ -79,7 +78,7 @@ global var
 var = 3
 
 
-def assembly_action(init_obs, obs, action, mark):
+def assembly_action(init_obs, obs, action):
     actions = []
     action_numbers = []
 
@@ -100,34 +99,16 @@ def assembly_action(init_obs, obs, action, mark):
             continue
         else:
             action_number = actionSelect(my_unit, obs, init_enemy_units_tag, action[i], var)
+            # action_number = int(action[i])
+
             action_numbers.append(action_number)
+            if action_number == 1:
+                continue
             parameter = []
 
-            if action_number == 1:
-                actions.append(Action.RAW_FUNCTIONS.no_op())
-                continue
-
-            elif 1 < action_number <= 5:
-                a = controller[1]
-
-                dir = action_number - 1 - 1
-                parameter.append(0)
-                parameter.append(my_unit.tag)
-                if dir == 0:
-                    parameter.append((my_unit.x + 1, my_unit.y + 1))
-                elif dir == 1:
-                    parameter.append((my_unit.x - 1, my_unit.y - 1))
-                elif dir == 2:
-                    parameter.append((my_unit.x + 1, my_unit.y - 1))
-                elif dir == 3:
-                    parameter.append((my_unit.x - 1, my_unit.y + 1))
-
-                parameter = tuple(parameter)
-                actions.append(a(*parameter))
-
-            elif 5 < action_number <= 5 + config.ENEMY_UNIT_NUMBER:
+            if 1 < action_number <= 1+config.ENEMY_UNIT_NUMBER:
                 a = controller[2]
-                enemy = action_number - 1 - 4 - 1
+                enemy = action_number - 1 -1
                 parameter.append(0)
                 parameter.append(my_unit.tag)
                 parameter.append(init_enemy_units_tag[enemy])

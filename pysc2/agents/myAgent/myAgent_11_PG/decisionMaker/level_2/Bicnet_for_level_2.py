@@ -87,14 +87,14 @@ class Bicnet():
         self.lossSaver.add_summary(summary=data_summary, global_step=self.epsoide)
 
     def saveRewardAvg(self, modelSavePath):
-        self.rewardSaver = open(modelSavePath + 'reward.txt', 'a+')
+        self.rewardSaver = open(modelSavePath + 'PG_reward.txt', 'a+')
         self.rewardSaver.write(str(self.epsoide) + ' ' + str(self.rewardAdd / self.timeStep) + '\n')
         self.rewardAdd = 0
         self.timeStep = 0
         self.rewardSaver.close()
 
     def saveWinRate(self, modelSavePath):
-        self.rewardSaver = open(modelSavePath + 'win_rate.txt', 'a+')
+        self.rewardSaver = open(modelSavePath + 'PG_win_rate.txt', 'a+')
         self.rewardSaver.write(str(self.epsoide) + ' ' + str(self.win / self.epsoide) + '\n')
         self.rewardAdd = 0
         self.timeStep = 0
