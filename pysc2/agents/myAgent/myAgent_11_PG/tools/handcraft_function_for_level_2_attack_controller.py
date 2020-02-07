@@ -231,6 +231,13 @@ def get_reward(obs, pre_obs):
     # if len(my_units_health) == 0:
     #     reward -= 250
 
+    if len(enemy_units_health) == 0:
+        reward = 250
+        return reward
+    if len(my_units_health) == 0:
+        reward = -250
+        return reward
+
     if len(my_units_health) < len(my_units_health_pre):
         reward -= (len(my_units_health_pre) - len(my_units_health)) * 100
 
