@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow as tf
 import pysc2.agents.myAgent.myAgent_11_DQN.config.config as config
 
-from pysc2.agents.myAgent.myAgent_11_DQN.net.lenet_for_level_1 import Lenet
+from pysc2.agents.myAgent.myAgent_11_DQN.net.net_for_level_1 import Lenet
 from pysc2.agents.myAgent.myAgent_11_DQN.tools.SqQueue import SqQueue
 
 

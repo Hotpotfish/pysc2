@@ -37,7 +37,7 @@ class bicnet(object):
         self.actions_value = tf.placeholder("float", shape=[None], name='actions_value')
 
         self.action_input = tf.placeholder("float", [None, np.power(self.action_dim, self.agents_number)], name='action_input')
-        self.action_bound = tf.placeholder("float", [None, np.power(self.action_dim, self.agents_number)], name='action_bound')
+        # self.action_bound = tf.placeholder("float", [None, np.power(self.action_dim, self.agents_number)], name='action_bound')
 
     def _build_graph_q(self, state, scope_name, train):
         # 环境和智能体本地的共同观察

@@ -118,7 +118,6 @@ class Bicnet():
         if len(self.replay_buffer.queue) == 0:
             return
         minibatch = self.replay_buffer.queue
-        action_bound = np.array([data[0][0] for data in minibatch])
         state = np.array([data[0][1] for data in minibatch])
         action_batch = np.array([data[1] for data in minibatch])
         reward_batch = np.array([data[2] for data in minibatch])
@@ -129,14 +128,12 @@ class Bicnet():
 
         _, self.loss = self.session.run([self.net.trian_op, self.net.loss], {self.net.state: state,
                                                                              self.net.action_input: action_batch,
-                                                                             self.net.action_bound: action_bound,
                                                                              self.net.actions_value: discounted_ep_rs_norm})
         self.replay_buffer.empty()
 
     def egreedy_action(self, current_state):  # 输出带随机的动作
 
-        action_output = self.session.run(self.net.action_output, {self.net.action_bound: current_state[0][np.newaxis],
-                                                                  self.net.state: current_state[1][np.newaxis]})
+        action_output = self.session.run(self.net.action_output, {self.net.state: current_state[1][np.newaxis]})
         action_output = np.multiply(current_state[0], action_output)
 
         action_output = action_output / sum(action_output[0])
@@ -145,7 +142,6 @@ class Bicnet():
         return action
 
     def action(self, current_state):
-        action_output = self.session.run(self.net.action_output, {self.net.action_bound: current_state[0][np.newaxis],
-                                                                  self.net.state: current_state[1][np.newaxis]})
+        action_output = self.session.run(self.net.action_output, {self.net.state: current_state[1][np.newaxis]})
         action_output = np.multiply(current_state[0], action_output)
         return np.argmax(action_output)

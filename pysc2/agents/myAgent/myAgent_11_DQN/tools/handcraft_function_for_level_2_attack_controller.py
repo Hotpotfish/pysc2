@@ -269,3 +269,5 @@ def win_or_loss(obs):
             return 1
     else:
         return 0
+
+

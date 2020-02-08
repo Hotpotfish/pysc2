@@ -6,10 +6,10 @@ import numpy as np
 import tensorflow as tf
 import pysc2.agents.myAgent.myAgent_11_DQN.config.config as config
 from pysc2.agents.myAgent.myAgent_11_DQN.tools.SqQueue import SqQueue
-from pysc2.agents.myAgent.myAgent_11_DQN.net.bicnet_for_level_2.bicnet import bicnet
+from pysc2.agents.myAgent.myAgent_11_DQN.net.net_for_level_2.net1 import net1
 
 
-class Bicnet():
+class net():
 
     def __init__(self, mu, sigma, learning_rate, action_dim, statedim, agents_number, enemy_number, name):  # 初始化
         # 初始化回放缓冲区，用REPLAY_SIZE定义其最大长度
@@ -33,8 +33,8 @@ class Bicnet():
         # 网络结构初始化
         self.name = name
 
-        self.net = bicnet(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number,
-                          self.enemy_number, self.name + '_bicnet')
+        self.net = net1(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number,
+                        self.enemy_number, self.name + '_net1')
 
         # Init session
         self.session = tf.Session()

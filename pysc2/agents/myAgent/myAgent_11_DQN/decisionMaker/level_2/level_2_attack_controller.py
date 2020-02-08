@@ -2,7 +2,7 @@ from pysc2.agents.myAgent.myAgent_11_DQN.config import config
 import numpy as np
 from pysc2.agents.myAgent.myAgent_11_DQN.decisionMaker.decision_maker import decision_maker
 import pysc2.agents.myAgent.myAgent_11_DQN.smart_actions as sa
-from pysc2.agents.myAgent.myAgent_11_DQN.decisionMaker.level_2.Bicnet_for_level_2 import Bicnet
+from pysc2.agents.myAgent.myAgent_11_DQN.decisionMaker.level_2.net_for_level_2 import net
 from pysc2.agents.myAgent.myAgent_11_DQN.tools import handcraft_function, handcraft_function_for_level_2_attack_controller
 
 from pysc2.agents.myAgent.myAgent_11_DQN.tools.handcraft_function_for_level_2_attack_controller import get_reward, get_bound, get_state, win_or_loss
@@ -13,9 +13,9 @@ class level_2_attack_controller:
     def __init__(self):
         self.state_data_shape = (None, config.MY_UNIT_NUMBER, config.COOP_AGENTS_OBDIM)
         self.controller = decision_maker(
-            Bicnet(config.MU, config.SIGMA, config.LEARING_RATE, config.ATTACT_CONTROLLER_ACTIONDIM,
-                   self.state_data_shape, config.MY_UNIT_NUMBER,
-                   config.ENEMY_UNIT_NUMBER, 'attack_controller'))
+            net(config.MU, config.SIGMA, config.LEARING_RATE, config.ATTACT_CONTROLLER_ACTIONDIM,
+                self.state_data_shape, config.MY_UNIT_NUMBER,
+                config.ENEMY_UNIT_NUMBER, 'attack_controller'))
         self.index = handcraft_function.find_controller_index(sa.attack_controller)
         self.init_obs = None
         self.pre_obs = None
