@@ -37,7 +37,7 @@ def main(unused_argv):
 
     try:
         with sc2_env.SC2Env(
-                map_name="3m_vs_3m",
+                map_name="30m_vs_60z",
                 players=[sc2_env.Agent(sc2_env.Race.terran), ],
                 agent_interface_format=features.AgentInterfaceFormat(
                     feature_dimensions=features.Dimensions(screen=config.MAP_SIZE,
@@ -48,7 +48,7 @@ def main(unused_argv):
                     raw_resolution=config.MAP_SIZE,
                 ),
                 score_index=0,
-                step_mul=1,
+                step_mul=8,
                 disable_fog=False,
                 visualize=False,
                 realtime=True,

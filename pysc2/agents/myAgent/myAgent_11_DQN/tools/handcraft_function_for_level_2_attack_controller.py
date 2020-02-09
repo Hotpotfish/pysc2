@@ -210,19 +210,19 @@ def get_reward(obs, pre_obs):
     enemy_units_health_pre = [unit.health for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
 
     if len(enemy_units_health) == 0:
-        reward = 250
+        reward = 1
         return reward
     if len(my_units_health) == 0:
-        reward = -250
+        reward = -1
         return reward
 
-    if len(my_units_health) < len(my_units_health_pre):
-        reward -= (len(my_units_health_pre) - len(my_units_health)) * 100
-
-    if len(enemy_units_health) < len(enemy_units_health_pre):
-        reward += (len(enemy_units_health_pre) - len(enemy_units_health)) * 100
-
-    reward += (sum(my_units_health) - sum(my_units_health_pre)) - (sum(enemy_units_health) - sum(enemy_units_health_pre))
+    # if len(my_units_health) < len(my_units_health_pre):
+    #     reward -= (len(my_units_health_pre) - len(my_units_health)) * 100
+    #
+    # if len(enemy_units_health) < len(enemy_units_health_pre):
+    #     reward += (len(enemy_units_health_pre) - len(enemy_units_health)) * 100
+    #
+    # reward += (sum(my_units_health) - sum(my_units_health_pre)) - (sum(enemy_units_health) - sum(enemy_units_health_pre))
 
     return float(reward)
 
@@ -303,22 +303,46 @@ def get_state_test(my_units, enemy_units):
     return state
 
 
+def compute_distance_test(x, y, units):
+    temp = []
+    for i in range(len(units)):
+        x_difference = math.pow(units[i].x - x, 2)
+        y_difference = math.pow(units[i].y - y, 2)
+        distance = math.sqrt(x_difference + y_difference)
+        temp.append((units[i], distance))
+
+    return sorted(temp, key=lambda y: y[1])
+
+
 def get_bounds_and_states(obs_new):
     bounds_and_states = []
     my_units_and_enemy_units_pack = []
 
     for i in range(len(obs_new)):
-        my_units = []
-        enemy_units = []
-        while len(obs_new[i][0]) != 0 and len(obs_new[i][1]) != 0:
+
+        sort_my_units = compute_distance_test(0, 0, obs_new[i][0])
+
+        while len(sort_my_units) != 0:
+            my_units = []
+            enemy_units = []
+            x = 0
+            y = 0
             for j in range(config.MY_UNIT_NUMBER):
-                if len(obs_new[i][0]) == 0:
-                    break
-                my_units.append(obs_new[i][0].pop())
+                if len(sort_my_units) == 0:
+                    continue
+                my_unit = sort_my_units.pop()[0]
+                x += my_unit.x
+                y += my_unit.y
+                my_units.append(my_unit)
+            x = x / config.MY_UNIT_NUMBER
+            y = y / config.MY_UNIT_NUMBER
+
+            sort_enemy_units = compute_distance_test(x, y, obs_new[i][1])
             for j in range(config.ENEMY_UNIT_NUMBER):
-                if len(obs_new[i][1]) == 0:
+                if j >= len(sort_enemy_units):
                     break
-                enemy_units.append(obs_new[i][1].pop())
+                enemy_units.append(sort_enemy_units[j][0])
+
             my_units_and_enemy_units_pack.append([my_units, enemy_units])
             bounds_and_states.append([get_bound_test(my_units, enemy_units), get_state_test(my_units, enemy_units)])
 
@@ -369,11 +393,6 @@ def get_clusters_test(obs):
         # 此时进行战区状态的划分
         i = 0
         while 1:
-            # my_units = []
-            # enemy_units = []
-            #
-            # for unit in obs.observation['raw_units']:
-            #     if unit.alliance == features.PlayerRelative.SELF and unit.unit_type in  unit_list:
 
             my_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF and
                         unit.unit_type in unit_list.combat_unit and

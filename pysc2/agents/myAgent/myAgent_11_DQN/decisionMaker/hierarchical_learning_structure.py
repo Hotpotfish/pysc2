@@ -32,8 +32,8 @@ class hierarchical_learning_structure():
         self.level_2.train_network()
 
     def test_action(self, obs):
-        controller_number = self.leve1_1.test_action(obs)
-        action = self.level_2.test_action(obs, controller_number)
+        # controller_number = self.leve1_1.test_action(obs)
+        action = self.level_2.test_action(obs, 0)
         print(action)
         return action
 
