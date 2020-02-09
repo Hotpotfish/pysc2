@@ -127,8 +127,8 @@ class net():
             action_batch = np.eye(np.power(self.action_dim, self.agents_number))[action_batch]
 
             y_batch = []
-            Q_value_batch = self.session.run(self.net.q_value, {self.net.action_bound: action_bound,
-                                                                self.net.state: state})
+            Q_value_batch = self.session.run(self.net.q_value, {
+                self.net.state: state})
             for i in range(0, config.BATCH_SIZE):
                 done = minibatch[i][4]
                 if done:
@@ -138,13 +138,11 @@ class net():
 
             _, self.loss = self.session.run([self.net.trian_op, self.net.loss], {self.net.action_input: action_batch,
                                                                                  self.net.y_input: y_batch,
-                                                                                 self.net.action_bound: action_bound_next,
                                                                                  self.net.state: state_next})
 
     def egreedy_action(self, current_state):  # 输出带随机的动作
 
-        Q_value = self.session.run(self.net.q_value, {self.net.action_bound: current_state[0][np.newaxis],
-                                                      self.net.state: current_state[1][np.newaxis]})
+        Q_value = self.session.run(self.net.q_value, {self.net.state: current_state[1][np.newaxis]})
         Q_value = np.multiply(current_state[0], Q_value)
         self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 50000
         if random.random() <= self.epsilon:
@@ -154,7 +152,6 @@ class net():
             return np.argmax(Q_value)
 
     def action(self, current_state):
-        Q_value = self.session.run(self.net.q_value, {self.net.action_bound: current_state[0][np.newaxis],
-                                                      self.net.state: current_state[1][np.newaxis]})
+        Q_value = self.session.run(self.net.q_value, {self.net.state: current_state[1][np.newaxis]})
         Q_value = np.multiply(current_state[0], Q_value)
         return np.argmax(Q_value)
