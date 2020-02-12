@@ -210,19 +210,19 @@ def get_reward(obs, pre_obs):
     enemy_units_health_pre = [unit.health for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
 
     if len(enemy_units_health) == 0:
-        reward = 1
+        reward = 100
         return reward
     if len(my_units_health) == 0:
-        reward = -1
+        reward = -100
         return reward
 
-    # if len(my_units_health) < len(my_units_health_pre):
-    #     reward -= (len(my_units_health_pre) - len(my_units_health)) * 100
-    #
-    # if len(enemy_units_health) < len(enemy_units_health_pre):
-    #     reward += (len(enemy_units_health_pre) - len(enemy_units_health)) * 100
-    #
-    # reward += (sum(my_units_health) - sum(my_units_health_pre)) - (sum(enemy_units_health) - sum(enemy_units_health_pre))
+    if len(my_units_health) < len(my_units_health_pre):
+        reward -= (len(my_units_health_pre) - len(my_units_health)) * 100
+
+    if len(enemy_units_health) < len(enemy_units_health_pre):
+        reward += (len(enemy_units_health_pre) - len(enemy_units_health)) * 100
+
+    reward += (sum(my_units_health) - sum(my_units_health_pre)) - (sum(enemy_units_health) - sum(enemy_units_health_pre))
 
     return float(reward)
 
