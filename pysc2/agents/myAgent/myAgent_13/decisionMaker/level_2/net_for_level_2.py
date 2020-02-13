@@ -4,9 +4,9 @@ import random
 
 import numpy as np
 import tensorflow as tf
-import pysc2.agents.myAgent.myAgent_11_DQN.config.config as config
-from pysc2.agents.myAgent.myAgent_11_DQN.tools.SqQueue import SqQueue
-from pysc2.agents.myAgent.myAgent_11_DQN.net.net_for_level_2.net1 import net1
+import pysc2.agents.myAgent.myAgent_13.config.config as config
+from pysc2.agents.myAgent.myAgent_13.tools.SqQueue import SqQueue
+from pysc2.agents.myAgent.myAgent_13.net.net_for_level_2.net1 import net1
 
 
 class net():

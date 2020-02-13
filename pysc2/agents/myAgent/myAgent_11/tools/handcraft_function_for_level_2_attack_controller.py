@@ -37,8 +37,8 @@ def actionSelect(unit, obs, init_enemy_units_tag, action, var):
         enemy = find_unit_by_tag(obs, init_enemy_units_tag[i])
         if enemy is None:
             mask.append(0)
-        # elif computeDistance(unit, enemy) >= config.ATTACK_RANGE:
-        #     mask.append(0)
+        elif computeDistance(unit, enemy) >= config.ATTACK_RANGE:
+            mask.append(0)
         else:
             mask.append(1)
 

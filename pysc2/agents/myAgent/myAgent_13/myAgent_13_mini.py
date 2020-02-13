@@ -38,11 +38,12 @@ def main(unused_argv):
 
     try:
         with sc2_env.SC2Env(
-                map_name="3m_vs_3m",
+                map_name="2m_vs_1zlot",
                 players=[sc2_env.Agent(sc2_env.Race.terran), ],
                 agent_interface_format=features.AgentInterfaceFormat(
                     feature_dimensions=features.Dimensions(screen=config.MAP_SIZE,
                                                            minimap=config.MAP_SIZE),
+
                     camera_width_world_units=config.MAP_SIZE * 1,
                     action_space=actions.ActionSpace.RAW,
                     use_raw_units=True,

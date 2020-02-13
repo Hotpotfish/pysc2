@@ -29,7 +29,7 @@ class level_2_attack_controller:
         self.current_obs = obs
 
         if self.controller.previous_action is not None:
-            self.controller.previous_reward = get_reward(self.current_obs, self.pre_obs) / 100
+            self.controller.previous_reward = get_reward(self.current_obs, self.pre_obs)
             self.controller.network.perceive(self.controller.previous_state,
                                              self.controller.previous_action,
                                              self.controller.previous_reward,

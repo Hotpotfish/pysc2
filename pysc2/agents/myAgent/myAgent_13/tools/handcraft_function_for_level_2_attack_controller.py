@@ -100,20 +100,37 @@ def assembly_action(init_obs, action_number):
     action_nmbers = transport(action_number, config.ATTACT_CONTROLLER_ACTIONDIM)
 
     for i in range(config.MY_UNIT_NUMBER):
+        parameter = []
         if action_nmbers[i] == 0:
             continue
-        else:
-            parameter = []
+        elif  action_nmbers[i] ==1:
             my_unit = init_my_units[i]
+            a = controller[1]
+            # dir = action_nmbers[i] - 1
+            #
+            # parameter.append(0)
+            # parameter.append(init_my_units[i].tag)
+            # if dir == 0:
+            #     parameter.append((min([my_unit.x + 5, config.MAP_SIZE]), min([my_unit.y + 5, config.MAP_SIZE])))
+            # elif dir == 1:
+            #     parameter.append((max([my_unit.x - 5, 0]), max([my_unit.y - 5, 0])))
+            # elif dir == 2:
+            #     parameter.append((min([my_unit.x + 5, config.MAP_SIZE]), max([my_unit.y - 5, 0])))
+            # elif dir == 3:
+            parameter.append((max([my_unit.x - 5, 0]), min([my_unit.y + 5, config.MAP_SIZE])))
 
-            if 0 < action_nmbers[i] <= config.ENEMY_UNIT_NUMBER:
-                a = controller[2]
-                enemy = int(action_nmbers[i] - config.DEATH_ACTION_DIM)
-                parameter.append(0)
-                parameter.append(my_unit.tag)
-                parameter.append(init_enemy_units[enemy].tag)
-                parameter = tuple(parameter)
-                actions.append(a(*parameter))
+            parameter = tuple(parameter)
+            actions.append(a(*parameter))
+        elif 1 < action_nmbers[i] <= 1 + config.ENEMY_UNIT_NUMBER:
+            my_unit = init_my_units[i]
+            a = controller[2]
+            enemy = int(action_nmbers[i] - config.DEATH_ACTION_DIM - config.STATIC_ACTION_DIM)
+            parameter.append(0)
+            parameter.append(my_unit.tag)
+            parameter.append(init_enemy_units[enemy].tag)
+            parameter = tuple(parameter)
+            actions.append(a(*parameter))
+
     return actions
 
 
@@ -206,23 +223,23 @@ def get_reward(obs, pre_obs):
     my_units_health = [unit.health for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
     enemy_units_health = [unit.health for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
 
-    my_units_health_pre = [unit.health for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
-    enemy_units_health_pre = [unit.health for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
+    # my_units_health_pre = [unit.health for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
+    # enemy_units_health_pre = [unit.health for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
 
     if len(enemy_units_health) == 0:
-        reward = 100
+        reward = 1
         return reward
     if len(my_units_health) == 0:
-        reward = -100
+        reward = -1
         return reward
 
-    if len(my_units_health) < len(my_units_health_pre):
-        reward -= (len(my_units_health_pre) - len(my_units_health)) * 100
-
-    if len(enemy_units_health) < len(enemy_units_health_pre):
-        reward += (len(enemy_units_health_pre) - len(enemy_units_health)) * 100
-
-    reward += (sum(my_units_health) - sum(my_units_health_pre)) - (sum(enemy_units_health) - sum(enemy_units_health_pre))
+    # if len(my_units_health) < len(my_units_health_pre):
+    #     reward -= (len(my_units_health_pre) - len(my_units_health)) * 100
+    #
+    # if len(enemy_units_health) < len(enemy_units_health_pre):
+    #     reward += (len(enemy_units_health_pre) - len(enemy_units_health)) * 100
+    #
+    # reward += (sum(my_units_health) - sum(my_units_health_pre)) - (sum(enemy_units_health) - sum(enemy_units_health_pre))
 
     return float(reward)
 
