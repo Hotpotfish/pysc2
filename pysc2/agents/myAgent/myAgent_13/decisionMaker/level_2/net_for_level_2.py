@@ -33,8 +33,7 @@ class net():
         # 网络结构初始化
         self.name = name
 
-        self.net = net1(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number,
-                        self.enemy_number, self.name + '_net1')
+        self.net = net1(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number, self.enemy_number, self.name + '_net1')
 
         # Init session
         self.session = tf.Session()
@@ -117,11 +116,11 @@ class net():
     def train_Q_network(self):  # 训练网络
         if self.replay_buffer.real_size > config.BATCH_SIZE:
             minibatch = random.sample(self.replay_buffer.queue, config.BATCH_SIZE)
-            # action_bound = np.array([data[0][0] for data in minibatch])
+            agents_local_observation = np.array([data[0][2] for data in minibatch])
             state = np.array([data[0][1] for data in minibatch])
             action_batch = np.array([data[1] for data in minibatch])
             reward_batch = np.array([data[2] for data in minibatch])
-            # action_bound_next = np.array([data[3][0] for data in minibatch])
+            agents_local_observation_next = np.array([data[3][2] for data in minibatch])
             state_next = np.array([data[3][1] for data in minibatch])
             action_batch_input = []
             for i in range(config.BATCH_SIZE):
@@ -129,7 +128,7 @@ class net():
                 action_batch_input.append(action_one_hot)
 
             y_batch = []
-            Q_value_batch = self.session.run(self.net.q_value, {self.net.state: state})
+            Q_value_batch = self.session.run(self.net.q_value, {self.net.state: state, self.net.agents_local_observation: agents_local_observation})
             for i in range(0, config.BATCH_SIZE):
                 done = minibatch[i][4]
                 if done:
@@ -137,13 +136,14 @@ class net():
                 else:
                     y_batch.append(reward_batch[i] + config.GAMMA * np.sum(np.max(Q_value_batch[i], axis=1)))
 
-            _, self.loss = self.session.run([self.net.trian_op, self.net.loss], {self.net.action_input: action_batch_input,
+            _, self.loss = self.session.run([self.net.trian_op, self.net.loss], {self.net.action_input: np.array(action_batch_input),
                                                                                  self.net.y_input: y_batch,
-                                                                                 self.net.state: state_next})
+                                                                                 self.net.state: state_next,
+                                                                                 self.net.agents_local_observation: agents_local_observation_next})
 
     def egreedy_action(self, current_state):  # 输出带随机的动作
 
-        Q_value = self.session.run(self.net.q_value, {self.net.state: current_state[1][np.newaxis]})
+        Q_value = self.session.run(self.net.q_value, {self.net.state: current_state[1][np.newaxis], self.net.agents_local_observation: current_state[2][np.newaxis]})[0]
         Q_value = np.multiply(current_state[0], Q_value)
         self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 50000
         if random.random() <= self.epsilon:

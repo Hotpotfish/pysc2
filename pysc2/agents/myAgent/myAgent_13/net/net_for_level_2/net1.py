@@ -36,8 +36,6 @@ class net1(object):
         self.y_input = tf.placeholder("float", shape=[None], name='y_input')
         self.action_input = tf.placeholder("float", [None, self.agents_number, self.action_dim], name='action_input')
 
-        # self.action_bound = tf.placeholder("float", [None, np.power(self.action_dim, self.agents_number)], name='action_bound')
-
     def _build_graph_q(self, state_input, agents_local_observation, scope_name, train):
         # 环境和智能体本地的共同观察
         with tf.variable_scope(scope_name):
@@ -47,8 +45,7 @@ class net1(object):
                                 normalizer_fn=slim.batch_norm,
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
                                 weights_regularizer=slim.l2_regularizer(0.05)):
-                encoder_outputs = self._observation_encoder_q(state_input, agents_local_observation, self.agents_number,
-                                                              '_observation_encoder')
+                encoder_outputs = self._observation_encoder_q(state_input, agents_local_observation, self.agents_number, '_observation_encoder')
                 bicnet_outputs = self._bicnet_build_q(encoder_outputs, self.agents_number, '_bicnet_build')
                 return bicnet_outputs
 
@@ -56,14 +53,13 @@ class net1(object):
         with tf.variable_scope(scope_name):
             encoder = []
             for i in range(agents_number):
-                fc1_s = slim.fully_connected(state_input[:, i], 30, scope='full_connected_s1' + "_" + str(i))
+                fc1_s = slim.fully_connected(state_input, 30, scope='full_connected_s1' + "_" + str(i))
                 fc1_o = slim.fully_connected(agents_local_observation[:, i], 30, scope='full_connected_o1' + "_" + str(i))
-                data = tf.concat([fc1_s, fc1_o])
-
+                data = tf.concat([fc1_s, fc1_o], 1)
                 fc1 = slim.fully_connected(data, 30, scope='full_connected1' + "_" + str(i))
                 encoder.append(fc1)
             encoder = tf.transpose(encoder, [1, 0, 2])
-            encoder = tf.unstack(encoder, agents_number)  # (self.agents_number,batch_size,obs_add_dim)
+            encoder = tf.unstack(encoder, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
             return encoder
 
     def _bicnet_build_q(self, encoder_outputs, agents_number, scope_name):
@@ -80,7 +76,7 @@ class net1(object):
             return outputs
 
     def create_training_method(self, action_input, q_value, y_input):
-        Q_action = tf.reduce_sum(tf.multiply(q_value, action_input), reduction_indices=1)
+        Q_action = tf.reduce_sum(tf.reduce_sum(tf.multiply(q_value, action_input), reduction_indices=2),reduction_indices=1)
         cost = tf.reduce_mean(tf.square(y_input - Q_action))
         train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(cost)
         return train_op, cost

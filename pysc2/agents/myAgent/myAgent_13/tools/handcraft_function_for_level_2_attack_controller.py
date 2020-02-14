@@ -55,6 +55,7 @@ def get_bound(init_obs, obs):
             bound.append(1)
             for j in range(config.ATTACT_CONTROLLER_ACTIONDIM - config.DEATH_ACTION_DIM):
                 bound.append(0)
+            bounds.append(bound)
             continue
         else:
             bound.append(0)

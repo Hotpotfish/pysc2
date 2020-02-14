@@ -5,7 +5,7 @@ import pysc2.agents.myAgent.myAgent_13.smart_actions as sa
 from pysc2.agents.myAgent.myAgent_13.decisionMaker.level_2.net_for_level_2 import net
 from pysc2.agents.myAgent.myAgent_13.tools import handcraft_function, handcraft_function_for_level_2_attack_controller
 
-from pysc2.agents.myAgent.myAgent_13.tools.handcraft_function_for_level_2_attack_controller import get_reward, get_bound, get_state, win_or_loss, get_clusters_test, get_bounds_and_states, assembly_action_test
+from pysc2.agents.myAgent.myAgent_13.tools.handcraft_function_for_level_2_attack_controller import get_reward, get_bound, get_state, win_or_loss, get_clusters_test, get_bounds_and_states, assembly_action_test, get_agents_obs
 from pysc2.lib.actions import RAW_FUNCTIONS
 
 
@@ -25,7 +25,7 @@ class level_2_attack_controller:
         if obs.first():
             self.init_obs = obs
 
-        self.controller.current_state = [np.array(get_bound(self.init_obs, obs)), np.array(get_state(self.init_obs, obs))]
+        self.controller.current_state = [np.array(get_bound(self.init_obs, obs)), np.array(get_state(self.init_obs, obs)), np.array(get_agents_obs(self.init_obs, obs))]
         self.current_obs = obs
 
         if self.controller.previous_action is not None:
