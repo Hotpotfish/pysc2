@@ -34,7 +34,7 @@ class net1(object):
         self.agents_local_observation = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation')
 
         self.y_input = tf.placeholder("float", shape=[None], name='y_input')
-        self.action_input = tf.placeholder("float", [None, np.power(self.action_dim, self.agents_number)], name='action_input')
+        self.action_input = tf.placeholder("float", [None, self.agents_number, self.action_dim], name='action_input')
 
         # self.action_bound = tf.placeholder("float", [None, np.power(self.action_dim, self.agents_number)], name='action_bound')
 
@@ -80,7 +80,7 @@ class net1(object):
             return outputs
 
     def create_training_method(self, action_input, q_value, y_input):
-        Q_action = tf.reduce_sum(tf.multiply(q_value, action_input), reduction_indices=2)
+        Q_action = tf.reduce_sum(tf.multiply(q_value, action_input), reduction_indices=1)
         cost = tf.reduce_mean(tf.square(y_input - Q_action))
         train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(cost)
         return train_op, cost

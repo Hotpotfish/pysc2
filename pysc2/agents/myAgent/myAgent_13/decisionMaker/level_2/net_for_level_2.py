@@ -117,26 +117,27 @@ class net():
     def train_Q_network(self):  # 训练网络
         if self.replay_buffer.real_size > config.BATCH_SIZE:
             minibatch = random.sample(self.replay_buffer.queue, config.BATCH_SIZE)
-            action_bound = np.array([data[0][0] for data in minibatch])
+            # action_bound = np.array([data[0][0] for data in minibatch])
             state = np.array([data[0][1] for data in minibatch])
             action_batch = np.array([data[1] for data in minibatch])
             reward_batch = np.array([data[2] for data in minibatch])
-            action_bound_next = np.array([data[3][0] for data in minibatch])
+            # action_bound_next = np.array([data[3][0] for data in minibatch])
             state_next = np.array([data[3][1] for data in minibatch])
-
-            action_batch = np.eye(np.power(self.action_dim, self.agents_number))[action_batch]
+            action_batch_input = []
+            for i in range(config.BATCH_SIZE):
+                action_one_hot = np.eye(self.action_dim)[action_batch[i]]
+                action_batch_input.append(action_one_hot)
 
             y_batch = []
-            Q_value_batch = self.session.run(self.net.q_value, {
-                self.net.state: state})
+            Q_value_batch = self.session.run(self.net.q_value, {self.net.state: state})
             for i in range(0, config.BATCH_SIZE):
                 done = minibatch[i][4]
                 if done:
                     y_batch.append(reward_batch[i])
                 else:
-                    y_batch.append(reward_batch[i] + config.GAMMA * np.max(Q_value_batch[i]))
+                    y_batch.append(reward_batch[i] + config.GAMMA * np.sum(np.max(Q_value_batch[i], axis=1)))
 
-            _, self.loss = self.session.run([self.net.trian_op, self.net.loss], {self.net.action_input: action_batch,
+            _, self.loss = self.session.run([self.net.trian_op, self.net.loss], {self.net.action_input: action_batch_input,
                                                                                  self.net.y_input: y_batch,
                                                                                  self.net.state: state_next})
 
