@@ -57,9 +57,9 @@ class bicnet(object):
                                 normalizer_fn=slim.batch_norm,
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
                                 weights_regularizer=slim.l2_regularizer(0.05)):
-                encoder_outputs = self._observation_encoder_c(state_input, action_input, self.agents_number,
+                encoder_outputs = self._observation_encoder_q(state_input, action_input, self.agents_number,
                                                               '_observation_encoder')
-                bicnet_outputs = self._bicnet_build_c(encoder_outputs, self.agents_number, '_bicnet_build')
+                bicnet_outputs = self._bicnet_build_q(encoder_outputs, self.agents_number, '_bicnet_build')
                 return bicnet_outputs
 
     def _observation_encoder_q(self, state_input, action_input, agents_number, scope_name):
