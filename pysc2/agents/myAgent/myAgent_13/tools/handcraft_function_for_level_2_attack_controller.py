@@ -44,40 +44,61 @@ def computeDistance_center(unit):
 
 
 def get_bound(init_obs, obs):
-    bound = np.zeros(np.power(config.ATTACT_CONTROLLER_ACTIONDIM, config.MY_UNIT_NUMBER))
-    leagal_actions = []
+    bounds = []
     init_my_units_tag = [unit.tag for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
     init_enemy_units_tag = [unit.tag for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
 
     for i in range(config.MY_UNIT_NUMBER):
-        action = []
+        bound = []
         my_unit = find_unit_by_tag(obs, init_my_units_tag[i])
         if my_unit is None:
-            leagal_actions.append([0])
+            bound.append(1)
+            for j in range(config.ATTACT_CONTROLLER_ACTIONDIM - config.DEATH_ACTION_DIM):
+                bound.append(0)
             continue
         else:
-            action.append(0)
+            bound.append(0)
             for j in range(config.STATIC_ACTION_DIM):
-                action.append(1)
-
+                bound.append(1)
             for j in range(config.ENEMY_UNIT_NUMBER):
                 enemy = find_unit_by_tag(obs, init_enemy_units_tag[j])
                 if enemy is None:
-                    action.append(0)
-                # elif computeDistance(my_unit, enemy) >= config.ATTACK_RANGE:
-                #     action.append(0)
+                    bound.append(0)
+                elif computeDistance(my_unit, enemy) >= config.ATTACK_RANGE:
+                    bound.append(0)
                 else:
-                    action.append(1)
-            leagal_actions.append(list(np.nonzero(action)[0]))
+                    bound.append(1)
+        bounds.append(bound)
+    return bounds
 
-    for i in itertools.product(*leagal_actions):
-        number = 0
-        for j in range(config.MY_UNIT_NUMBER):
-            number += i[j] * np.power(config.ATTACT_CONTROLLER_ACTIONDIM, config.MY_UNIT_NUMBER - 1 - j)
-
-        bound[number] = 1
-
-    return bound
+    #     action = []
+    #     my_unit = find_unit_by_tag(obs, init_my_units_tag[i])
+    #     if my_unit is None:
+    #         leagal_actions.append([0])
+    #         continue
+    #     else:
+    #         action.append(0)
+    #         for j in range(config.STATIC_ACTION_DIM):
+    #             action.append(1)
+    #
+    #         for j in range(config.ENEMY_UNIT_NUMBER):
+    #             enemy = find_unit_by_tag(obs, init_enemy_units_tag[j])
+    #             if enemy is None:
+    #                 action.append(0)
+    #             # elif computeDistance(my_unit, enemy) >= config.ATTACK_RANGE:
+    #             #     action.append(0)
+    #             else:
+    #                 action.append(1)
+    #         leagal_actions.append(list(np.nonzero(action)[0]))
+    #
+    # for i in itertools.product(*leagal_actions):
+    #     number = 0
+    #     for j in range(config.MY_UNIT_NUMBER):
+    #         number += i[j] * np.power(config.ATTACT_CONTROLLER_ACTIONDIM, config.MY_UNIT_NUMBER - 1 - j)
+    #
+    #     bound[number] = 1
+    #
+    # return bound
 
 
 def find_unit_by_tag(obs, tag):
@@ -103,7 +124,7 @@ def assembly_action(init_obs, action_number):
         parameter = []
         if action_nmbers[i] == 0:
             continue
-        elif  action_nmbers[i] ==1:
+        elif action_nmbers[i] == 1:
             my_unit = init_my_units[i]
             a = controller[1]
             # dir = action_nmbers[i] - 1
