@@ -71,35 +71,6 @@ def get_bound(init_obs, obs):
         bounds.append(bound)
     return bounds
 
-    #     action = []
-    #     my_unit = find_unit_by_tag(obs, init_my_units_tag[i])
-    #     if my_unit is None:
-    #         leagal_actions.append([0])
-    #         continue
-    #     else:
-    #         action.append(0)
-    #         for j in range(config.STATIC_ACTION_DIM):
-    #             action.append(1)
-    #
-    #         for j in range(config.ENEMY_UNIT_NUMBER):
-    #             enemy = find_unit_by_tag(obs, init_enemy_units_tag[j])
-    #             if enemy is None:
-    #                 action.append(0)
-    #             # elif computeDistance(my_unit, enemy) >= config.ATTACK_RANGE:
-    #             #     action.append(0)
-    #             else:
-    #                 action.append(1)
-    #         leagal_actions.append(list(np.nonzero(action)[0]))
-    #
-    # for i in itertools.product(*leagal_actions):
-    #     number = 0
-    #     for j in range(config.MY_UNIT_NUMBER):
-    #         number += i[j] * np.power(config.ATTACT_CONTROLLER_ACTIONDIM, config.MY_UNIT_NUMBER - 1 - j)
-    #
-    #     bound[number] = 1
-    #
-    # return bound
-
 
 def find_unit_by_tag(obs, tag):
     for unit in obs.observation['raw_units']:
@@ -111,41 +82,41 @@ def find_unit_by_tag(obs, tag):
 ############################################
 
 
-def assembly_action(init_obs, action_number):
+def assembly_action(init_obs, action_numbers):
     actions = []
 
     init_my_units = [unit for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
     init_enemy_units = [unit for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
     controller = sa.attack_controller
 
-    action_nmbers = transport(action_number, config.ATTACT_CONTROLLER_ACTIONDIM)
+    # action_nmbers = transport(action_number, config.ATTACT_CONTROLLER_ACTIONDIM)
 
     for i in range(config.MY_UNIT_NUMBER):
         parameter = []
-        if action_nmbers[i] == 0:
+        if action_numbers[i] == 0:
             continue
-        elif action_nmbers[i] == 1:
+        elif 0 < action_numbers[i] <= 4:
             my_unit = init_my_units[i]
             a = controller[1]
-            # dir = action_nmbers[i] - 1
-            #
-            # parameter.append(0)
-            # parameter.append(init_my_units[i].tag)
-            # if dir == 0:
-            #     parameter.append((min([my_unit.x + 5, config.MAP_SIZE]), min([my_unit.y + 5, config.MAP_SIZE])))
-            # elif dir == 1:
-            #     parameter.append((max([my_unit.x - 5, 0]), max([my_unit.y - 5, 0])))
-            # elif dir == 2:
-            #     parameter.append((min([my_unit.x + 5, config.MAP_SIZE]), max([my_unit.y - 5, 0])))
-            # elif dir == 3:
-            parameter.append((max([my_unit.x - 5, 0]), min([my_unit.y + 5, config.MAP_SIZE])))
+            dir = action_numbers[i] - config.DEATH_ACTION_DIM
+
+            parameter.append(0)
+            parameter.append(init_my_units[i].tag)
+            if dir == 0:
+                parameter.append((min([my_unit.x + 5, config.MAP_SIZE]), min([my_unit.y + 5, config.MAP_SIZE])))
+            elif dir == 1:
+                parameter.append((max([my_unit.x - 5, 0]), max([my_unit.y - 5, 0])))
+            elif dir == 2:
+                parameter.append((min([my_unit.x + 5, config.MAP_SIZE]), max([my_unit.y - 5, 0])))
+            elif dir == 3:
+                parameter.append((max([my_unit.x - 5, 0]), min([my_unit.y + 5, config.MAP_SIZE])))
 
             parameter = tuple(parameter)
             actions.append(a(*parameter))
-        elif 1 < action_nmbers[i] <= 1 + config.ENEMY_UNIT_NUMBER:
+        elif 4 < action_numbers[i] <= 4 + config.ENEMY_UNIT_NUMBER:
             my_unit = init_my_units[i]
             a = controller[2]
-            enemy = int(action_nmbers[i] - config.DEATH_ACTION_DIM - config.STATIC_ACTION_DIM)
+            enemy = int(action_numbers[i] - config.DEATH_ACTION_DIM - config.STATIC_ACTION_DIM)
             parameter.append(0)
             parameter.append(my_unit.tag)
             parameter.append(init_enemy_units[enemy].tag)
