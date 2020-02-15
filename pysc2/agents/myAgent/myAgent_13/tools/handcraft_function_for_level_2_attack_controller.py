@@ -65,8 +65,8 @@ def get_bound(init_obs, obs):
                 enemy = find_unit_by_tag(obs, init_enemy_units_tag[j])
                 if enemy is None:
                     bound.append(0)
-                elif computeDistance(my_unit, enemy) >= config.ATTACK_RANGE:
-                    bound.append(0)
+                # elif computeDistance(my_unit, enemy) >= config.ATTACK_RANGE:
+                #     bound.append(0)
                 else:
                     bound.append(1)
         bounds.append(bound)
@@ -256,15 +256,13 @@ def discount_and_norm_rewards(rewards):
 def win_or_loss(obs):
     if obs.last():
 
-        my_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
+        # my_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
         enemy_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
 
-        if len(my_units) == 0:
-            return -1
-        elif len(enemy_units) == 0:
+        if len(enemy_units) == 0:
             return 1
         else:
-            return 0
+            return -1
     else:
         return 0
 
