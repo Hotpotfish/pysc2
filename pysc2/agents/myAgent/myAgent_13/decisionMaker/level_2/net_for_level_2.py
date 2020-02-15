@@ -148,7 +148,7 @@ class net():
         self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 50000
         if random.random() <= self.epsilon:
             actions = []
-            for i in range(config.ENEMY_UNIT_NUMBER):
+            for i in range(config.MY_UNIT_NUMBER):
                 a = np.flatnonzero(Q_value[i])
                 action = np.random.choice(a=a)
                 actions.append(action)
@@ -158,6 +158,6 @@ class net():
             return np.argmax(Q_value, axis=1)
 
     def action(self, current_state):
-        Q_value = self.session.run(self.net.q_value, {self.net.state: current_state[1][np.newaxis]})
+        Q_value = self.session.run(self.net.q_value, {self.net.state: current_state[1][np.newaxis], self.net.agents_local_observation: current_state[2][np.newaxis]})[0]
         Q_value = np.multiply(current_state[0], Q_value)
-        return np.argmax(Q_value)
+        return np.argmax(Q_value, axis=1)

@@ -83,7 +83,7 @@ def find_unit_by_tag(obs, tag):
 ############################################
 
 
-def assembly_action(init_obs, action_numbers):
+def assembly_action(init_obs, obs, action_numbers):
     actions = []
 
     init_my_units = [unit for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
@@ -95,27 +95,28 @@ def assembly_action(init_obs, action_numbers):
     for i in range(config.MY_UNIT_NUMBER):
         parameter = []
         if action_numbers[i] == 0:
+
             continue
         elif 0 < action_numbers[i] <= 4:
-            my_unit = init_my_units[i]
+            my_unit = find_unit_by_tag(obs, init_my_units[i].tag)
             a = controller[1]
             dir = action_numbers[i] - config.DEATH_ACTION_DIM
 
             parameter.append(0)
             parameter.append(init_my_units[i].tag)
             if dir == 0:
-                parameter.append((min([my_unit.x + 5, config.MAP_SIZE]), min([my_unit.y + 5, config.MAP_SIZE])))
+                parameter.append((min([my_unit.x + 2, config.MAP_SIZE]), min([my_unit.y + 2, config.MAP_SIZE])))
             elif dir == 1:
-                parameter.append((max([my_unit.x - 5, 0]), max([my_unit.y - 5, 0])))
+                parameter.append((max([my_unit.x - 2, 0]), max([my_unit.y - 2, 0])))
             elif dir == 2:
-                parameter.append((min([my_unit.x + 5, config.MAP_SIZE]), max([my_unit.y - 5, 0])))
+                parameter.append((min([my_unit.x + 2, config.MAP_SIZE]), max([my_unit.y - 2, 0])))
             elif dir == 3:
-                parameter.append((max([my_unit.x - 5, 0]), min([my_unit.y + 5, config.MAP_SIZE])))
+                parameter.append((max([my_unit.x - 2, 0]), min([my_unit.y + 2, config.MAP_SIZE])))
 
             parameter = tuple(parameter)
             actions.append(a(*parameter))
         elif 4 < action_numbers[i] <= 4 + config.ENEMY_UNIT_NUMBER:
-            my_unit = init_my_units[i]
+            my_unit = find_unit_by_tag(obs, init_my_units[i].tag)
             a = controller[2]
             enemy = int(action_numbers[i] - config.DEATH_ACTION_DIM - config.STATIC_ACTION_DIM)
             parameter.append(0)
@@ -123,6 +124,7 @@ def assembly_action(init_obs, action_numbers):
             parameter.append(init_enemy_units[enemy].tag)
             parameter = tuple(parameter)
             actions.append(a(*parameter))
+    # print(actions)
 
     return actions
 
@@ -216,25 +218,25 @@ def get_reward(obs, pre_obs):
     my_units_health = [unit.health for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
     enemy_units_health = [unit.health for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
 
-    # my_units_health_pre = [unit.health for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
-    # enemy_units_health_pre = [unit.health for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
+    my_units_health_pre = [unit.health for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
+    enemy_units_health_pre = [unit.health for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
 
     if len(enemy_units_health) == 0:
-        reward = 1
+        reward = 3
         return reward
     if len(my_units_health) == 0:
-        reward = -1
+        reward = -3
         return reward
 
-    # if len(my_units_health) < len(my_units_health_pre):
-    #     reward -= (len(my_units_health_pre) - len(my_units_health)) * 100
-    #
-    # if len(enemy_units_health) < len(enemy_units_health_pre):
-    #     reward += (len(enemy_units_health_pre) - len(enemy_units_health)) * 100
-    #
-    # reward += (sum(my_units_health) - sum(my_units_health_pre)) - (sum(enemy_units_health) - sum(enemy_units_health_pre))
+    if len(my_units_health) < len(my_units_health_pre):
+        reward -= (len(my_units_health_pre) - len(my_units_health)) * 100
 
-    return float(reward)
+    if len(enemy_units_health) < len(enemy_units_health_pre):
+        reward += (len(enemy_units_health_pre) - len(enemy_units_health)) * 100
+
+    reward += (sum(my_units_health) - sum(my_units_health_pre)) - (sum(enemy_units_health) - sum(enemy_units_health_pre))
+
+    return float(reward) / 100
 
 
 def discount_and_norm_rewards(rewards):
@@ -255,11 +257,14 @@ def win_or_loss(obs):
     if obs.last():
 
         my_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
+        enemy_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
 
         if len(my_units) == 0:
             return -1
-        else:
+        elif len(enemy_units) == 0:
             return 1
+        else:
+            return 0
     else:
         return 0
 
