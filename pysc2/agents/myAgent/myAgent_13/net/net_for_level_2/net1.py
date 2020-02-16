@@ -76,7 +76,7 @@ class net1(object):
             return outputs
 
     def create_training_method(self, action_input, q_value, y_input):
-        Q_action = tf.reduce_sum(tf.reduce_sum(tf.multiply(q_value, action_input), reduction_indices=2),reduction_indices=1)
+        Q_action = tf.reduce_sum(tf.reduce_sum(tf.multiply(q_value, action_input), reduction_indices=2), reduction_indices=1)
         cost = tf.reduce_mean(tf.square(y_input - Q_action))
         train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(cost)
         return train_op, cost
