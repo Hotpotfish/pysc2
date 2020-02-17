@@ -38,7 +38,7 @@ class net1(object):
 
     def _build_graph_q(self, state_input, agents_local_observation, scope_name, train):
         # 环境和智能体本地的共同观察
-        with tf.variable_scope(scope_name):
+        with tf.variable_scope(scope_name,reuse=tf.AUTO_REUSE):
             with slim.arg_scope([slim.conv2d, slim.fully_connected],
                                 trainable=train,
                                 activation_fn=tf.nn.selu,
@@ -52,11 +52,11 @@ class net1(object):
     def _observation_encoder_q(self, state_input, agents_local_observation, agents_number, scope_name):
         with tf.variable_scope(scope_name):
             encoder = []
+            fc1_s = slim.fully_connected(state_input, 30, scope='full_connected_s1')
             for i in range(agents_number):
-                fc1_s = slim.fully_connected(state_input, 30, scope='full_connected_s1' + "_" + str(i))
-                fc1_o = slim.fully_connected(agents_local_observation[:, i], 30, scope='full_connected_o1' + "_" + str(i))
+                fc1_o = slim.fully_connected(agents_local_observation[:, i], 30, scope='full_connected_o1')
                 data = tf.concat([fc1_s, fc1_o], 1)
-                fc1 = slim.fully_connected(data, 30, scope='full_connected1' + "_" + str(i))
+                fc1 = slim.fully_connected(data, 30, scope='full_connected1')
                 encoder.append(fc1)
             encoder = tf.transpose(encoder, [1, 0, 2])
             encoder = tf.unstack(encoder, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
@@ -69,7 +69,7 @@ class net1(object):
             lstm_bw_cell = tf.nn.rnn_cell.GRUCell(self.action_dim, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             for i in range(agents_number):
-                fc1 = slim.fully_connected(bicnet_outputs[i], self.action_dim, activation_fn=tf.nn.softmax, scope='full_connected1' + "_" + str(i))
+                fc1 = slim.fully_connected(bicnet_outputs[i], self.action_dim, activation_fn=tf.nn.softmax, scope='full_connected1')
                 outputs.append(fc1)
             outputs = tf.unstack(outputs, self.agents_number)  # (agents_number, batch_size,1)
             outputs = tf.transpose(outputs, [1, 0, 2])  # (batch_size,agents_number,1)
