@@ -131,13 +131,13 @@ def assembly_action(init_obs, obs, action_numbers):
 def get_agent_state(unit):
     states = np.array([])
 
-    states = np.append(states, computeDistance_center(unit) / (config.MAP_SIZE * 1.41))
-    states = np.append(states, unit.alliance / 4)
-    states = np.append(states, unit.unit_type / 10000)
-    states = np.append(states, unit.x / config.MAP_SIZE)
-    states = np.append(states, unit.y / config.MAP_SIZE)
-    states = np.append(states, unit.health / 100)
-    states = np.append(states, unit.shield / 100)
+    states = np.append(states, computeDistance_center(unit))
+    states = np.append(states, unit.alliance)
+    states = np.append(states, unit.unit_type)
+    states = np.append(states, unit.x)
+    states = np.append(states, unit.y)
+    states = np.append(states, unit.health)
+    states = np.append(states, unit.shield)
     return states
 
 
@@ -187,26 +187,26 @@ def get_agents_obs(init_obs, obs):
             if my_target_unit is None or computeDistance(my_unit, my_target_unit) >= config.OB_RANGE:
                 agent_obs = np.append(agent_obs, np.zeros(7))
             else:
-                agent_obs = np.append(agent_obs, computeDistance(my_unit, my_target_unit) / (config.MAP_SIZE * 1.41))
-                agent_obs = np.append(agent_obs, my_target_unit.alliance / 4)
-                agent_obs = np.append(agent_obs, my_target_unit.unit_type / 10000)
-                agent_obs = np.append(agent_obs, my_target_unit.x / config.MAP_SIZE)
-                agent_obs = np.append(agent_obs, my_target_unit.y / config.MAP_SIZE)
-                agent_obs = np.append(agent_obs, my_target_unit.health / 100)
-                agent_obs = np.append(agent_obs, my_target_unit.shield / 100)
+                agent_obs = np.append(agent_obs, computeDistance(my_unit, my_target_unit))
+                agent_obs = np.append(agent_obs, my_target_unit.alliance)
+                agent_obs = np.append(agent_obs, my_target_unit.unit_type)
+                agent_obs = np.append(agent_obs, my_target_unit.x)
+                agent_obs = np.append(agent_obs, my_target_unit.y)
+                agent_obs = np.append(agent_obs, my_target_unit.health)
+                agent_obs = np.append(agent_obs, my_target_unit.shield)
         for j in range(config.ENEMY_UNIT_NUMBER):
             enemy_target_unit = find_unit_by_tag(obs, init_enemy_units_tag[j])
             # 按顺序遍历每个己方单位的信息
             if enemy_target_unit is None or computeDistance(my_unit, enemy_target_unit) >= config.OB_RANGE:
                 agent_obs = np.append(agent_obs, np.zeros(7))
             else:
-                agent_obs = np.append(agent_obs, computeDistance(my_unit, enemy_target_unit) / (config.MAP_SIZE * 1.41))
-                agent_obs = np.append(agent_obs, enemy_target_unit.alliance / 4)
-                agent_obs = np.append(agent_obs, enemy_target_unit.unit_type / 10000)
-                agent_obs = np.append(agent_obs, enemy_target_unit.x / config.MAP_SIZE)
-                agent_obs = np.append(agent_obs, enemy_target_unit.y / config.MAP_SIZE)
-                agent_obs = np.append(agent_obs, enemy_target_unit.health / 100)
-                agent_obs = np.append(agent_obs, enemy_target_unit.shield / 100)
+                agent_obs = np.append(agent_obs, computeDistance(my_unit, enemy_target_unit))
+                agent_obs = np.append(agent_obs, enemy_target_unit.alliance)
+                agent_obs = np.append(agent_obs, enemy_target_unit.unit_type)
+                agent_obs = np.append(agent_obs, enemy_target_unit.x)
+                agent_obs = np.append(agent_obs, enemy_target_unit.y)
+                agent_obs = np.append(agent_obs, enemy_target_unit.health)
+                agent_obs = np.append(agent_obs, enemy_target_unit.shield)
 
         agents_obs.append(agent_obs)
     return agents_obs
@@ -218,25 +218,25 @@ def get_reward(obs, pre_obs):
     enemy_units_health = [unit.health for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
     # reward = len(my_units_health) / (len(my_units_health) + len(enemy_units_health))
 
-    # my_units_health_pre = [unit.health for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
-    # enemy_units_health_pre = [unit.health for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
+    my_units_health_pre = [unit.health for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
+    enemy_units_health_pre = [unit.health for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
 
     if len(enemy_units_health) == 0:
-        reward = 1
-        return reward
+        reward = sum(my_units_health) + 200
+        return reward / 200
     if len(my_units_health) == 0:
-        reward = -1
-        return reward
+        reward = -sum(my_units_health) - 200
+        return reward / 200
 
-    # if len(my_units_health) < len(my_units_health_pre):
-    #     reward -= (len(my_units_health_pre) - len(my_units_health)) * 10
-    #
-    # if len(enemy_units_health) < len(enemy_units_health_pre):
-    #     reward += (len(enemy_units_health_pre) - len(enemy_units_health)) * 10
-    #
-    # reward += (sum(my_units_health) - sum(my_units_health_pre)) / 2 - (sum(enemy_units_health) - sum(enemy_units_health_pre))
+    if len(my_units_health) < len(my_units_health_pre):
+        reward -= (len(my_units_health_pre) - len(my_units_health)) * 10
 
-    return float(reward)
+    if len(enemy_units_health) < len(enemy_units_health_pre):
+        reward += (len(enemy_units_health_pre) - len(enemy_units_health)) * 10
+
+    reward += (sum(my_units_health) - sum(my_units_health_pre)) / 2 - (sum(enemy_units_health) - sum(enemy_units_health_pre))
+
+    return float(reward) / 200
 
 
 def discount_and_norm_rewards(rewards):
