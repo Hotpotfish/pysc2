@@ -65,8 +65,8 @@ def get_bound(init_obs, obs):
                 enemy = find_unit_by_tag(obs, init_enemy_units_tag[j])
                 if enemy is None:
                     bound.append(0)
-                elif computeDistance(my_unit, enemy) >= config.ATTACK_RANGE:
-                    bound.append(0)
+                # elif computeDistance(my_unit, enemy) >= config.ATTACK_RANGE:
+                #     bound.append(0)
                 else:
                     bound.append(1)
         bounds.append(bound)
