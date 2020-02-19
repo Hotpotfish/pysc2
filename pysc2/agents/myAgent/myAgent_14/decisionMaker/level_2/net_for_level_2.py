@@ -129,28 +129,17 @@ class net():
                 action_one_hot = np.eye(self.action_dim)[action_batch[i]]
                 action_batch_input.append(action_one_hot)
 
-            a_learn, c_learn = self.session.run([self.net.actor_train_ops, self.net.critic_train_op], {self.net.state: state,
-                                                                                                       self.net.agents_local_observation: agents_local_observation,
-                                                                                                       self.net.bounds: bounds,
-                                                                                                       self.net.state_next: state_next,
-                                                                                                       self.net.agents_local_observation_next: agents_local_observation_next,
-                                                                                                       self.net.action_input: action_batch_input,
-                                                                                                       self.net.reward: reward_batch[np.newaxis]
-                                                                                                       })
+            a_learn, c_learn, td_error = self.session.run([self.net.actor_train_ops, self.net.critic_train_op, self.net.td_error], {self.net.state: state,
+                                                                                                                                    self.net.agents_local_observation: agents_local_observation,
+                                                                                                                                    self.net.bounds: bounds,
+                                                                                                                                    self.net.state_next: state_next,
+                                                                                                                                    self.net.agents_local_observation_next: agents_local_observation_next,
+                                                                                                                                    self.net.action_input: action_batch_input,
+                                                                                                                                    self.net.reward: reward_batch[np.newaxis]
+                                                                                                                                    })
+            self.loss = td_error[0][0]
 
-            # y_batch = []
-            # Q_value_batch = self.session.run(self.net.q_value, {self.net.state: state, self.net.agents_local_observation: agents_local_observation})
-            # for i in range(0, config.BATCH_SIZE):
-            #     done = minibatch[i][4]
-            #     if done:
-            #         y_batch.append(reward_batch[i])
-            #     else:
-            #         y_batch.append(reward_batch[i] + config.GAMMA * np.sum(np.max(Q_value_batch[i], axis=1)))
-            #
-            # _, self.loss = self.session.run([self.net.trian_op, self.net.loss], {self.net.action_input: np.array(action_batch_input),
-            #                                                                      self.net.y_input: y_batch,
-            #                                                                      self.net.state: state_next,
-            #                                                                      self.net.agents_local_observation: agents_local_observation_next})
+
 
     def egreedy_action(self, current_state):  # 输出带随机的动作
         actions_prob = self.session.run(self.net.actions_prob, {self.net.agents_local_observation: current_state[2][np.newaxis], self.net.bounds: current_state[0][np.newaxis]})[0]
@@ -160,17 +149,6 @@ class net():
             actions.append(action)
         return actions
 
-        # self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 50000
-        # if random.random() <= self.epsilon:
-        #     actions = []
-        #     for i in range(config.MY_UNIT_NUMBER):
-        #         a = np.flatnonzero(Q_value[i])
-        #         action = np.random.choice(a=a)
-        #         actions.append(action)
-        #
-        #     return np.array(actions)
-        # else:
-        #     return np.argmax(Q_value, axis=1)
 
     def action(self, current_state):
         Q_value = self.session.run(self.net.q_value, {self.net.state: current_state[1][np.newaxis], self.net.agents_local_observation: current_state[2][np.newaxis]})[0]

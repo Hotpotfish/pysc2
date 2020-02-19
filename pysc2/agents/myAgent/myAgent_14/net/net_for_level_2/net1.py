@@ -35,10 +35,9 @@ class net1(object):
         all_q_next = self._build_graph_c(self.state_next, self.agents_local_observation_next, 'all_q', True)
 
         q_s_u = tf.reduce_sum(tf.multiply(all_q, self.action_input), reduction_indices=2)
-        # q_s_u_next = tf.reduce_sum(tf.multiply(all_q_next, self.action_input_next), reduction_indices=2)
 
         self.actor_train_ops = self.actor_learn(q_s_u, all_q, self.action_input, self.actions_prob, agent_params)
-        self.critic_train_op = self.critic_learn(all_q, all_q_next)
+        self.critic_train_op, self.td_error = self.critic_learn(all_q, all_q_next)
 
     def _setup_placeholders_graph(self):
         # s
@@ -115,13 +114,13 @@ class net1(object):
         for i in range(self.agents_number):
             A = tf.square(q_s_u[0][i] - expectation[0][i])
             exp_v = tf.reduce_mean(log_actions_prob[0][i] * A)
-            train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(-exp_v, var_list=agent_params[i])
+            train_op = tf.train.AdamOptimizer(self.learning_rate,name='agent_'+str(i)).minimize(-exp_v)
             train_ops.append(train_op)
         return train_ops
 
-    def critic_learn(self, q_s_u, q_s_u_next):
-        td_error = tf.reduce_sum(self.reward + config.GAMMA * q_s_u_next - q_s_u)
+    def critic_learn(self, all_q, all_q_next):
+        td_error = self.reward + tf.reduce_sum(config.GAMMA * all_q_next - all_q)
         loss = tf.square(td_error)
         train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(loss)
 
-        return train_op
+        return train_op, td_error
