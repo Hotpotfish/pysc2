@@ -138,6 +138,7 @@ def get_agent_state(unit):
     states = np.append(states, unit.y)
     states = np.append(states, unit.health)
     states = np.append(states, unit.shield)
+    states = np.append(states, unit.weapon_cooldown)
     return states
 
 
@@ -185,7 +186,7 @@ def get_agents_obs(init_obs, obs):
             my_target_unit = find_unit_by_tag(obs, init_my_units_tag[j])
             # 按顺序遍历每个己方单位的信息
             if my_target_unit is None or computeDistance(my_unit, my_target_unit) >= config.OB_RANGE:
-                agent_obs = np.append(agent_obs, np.zeros(7))
+                agent_obs = np.append(agent_obs, np.zeros(8))
             else:
                 agent_obs = np.append(agent_obs, computeDistance(my_unit, my_target_unit))
                 agent_obs = np.append(agent_obs, my_target_unit.alliance)
@@ -194,11 +195,12 @@ def get_agents_obs(init_obs, obs):
                 agent_obs = np.append(agent_obs, my_target_unit.y)
                 agent_obs = np.append(agent_obs, my_target_unit.health)
                 agent_obs = np.append(agent_obs, my_target_unit.shield)
+                agent_obs = np.append(agent_obs,  my_target_unit.weapon_cooldown)
         for j in range(config.ENEMY_UNIT_NUMBER):
             enemy_target_unit = find_unit_by_tag(obs, init_enemy_units_tag[j])
             # 按顺序遍历每个己方单位的信息
             if enemy_target_unit is None or computeDistance(my_unit, enemy_target_unit) >= config.OB_RANGE:
-                agent_obs = np.append(agent_obs, np.zeros(7))
+                agent_obs = np.append(agent_obs, np.zeros(8))
             else:
                 agent_obs = np.append(agent_obs, computeDistance(my_unit, enemy_target_unit))
                 agent_obs = np.append(agent_obs, enemy_target_unit.alliance)
@@ -207,6 +209,7 @@ def get_agents_obs(init_obs, obs):
                 agent_obs = np.append(agent_obs, enemy_target_unit.y)
                 agent_obs = np.append(agent_obs, enemy_target_unit.health)
                 agent_obs = np.append(agent_obs, enemy_target_unit.shield)
+                agent_obs = np.append(agent_obs,  enemy_target_unit.weapon_cooldown)
 
         agents_obs.append(agent_obs)
     return agents_obs

@@ -52,11 +52,11 @@ class net1(object):
     def _observation_encoder_q(self, state_input, agents_local_observation, agents_number, scope_name):
         with tf.variable_scope(scope_name):
             encoder = []
-            fc1_s = slim.fully_connected(state_input, 30, scope='full_connected_s1')
+            fc1_s = slim.fully_connected(state_input, 60, scope='full_connected_s1')
             for i in range(agents_number):
-                fc1_o = slim.fully_connected(agents_local_observation[:, i], 30, scope='full_connected_o1')
+                fc1_o = slim.fully_connected(agents_local_observation[:, i], 60, scope='full_connected_o1')
                 data = tf.concat([fc1_s, fc1_o], 1)
-                fc1 = slim.fully_connected(data, 30, scope='full_connected1')
+                fc1 = slim.fully_connected(data, 60, scope='full_connected1')
                 encoder.append(fc1)
             encoder = tf.transpose(encoder, [1, 0, 2])
             encoder = tf.unstack(encoder, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
@@ -65,8 +65,8 @@ class net1(object):
     def _bicnet_build_q(self, encoder_outputs, agents_number, scope_name):
         with tf.variable_scope(scope_name):
             outputs = []
-            lstm_fw_cell = tf.nn.rnn_cell.GRUCell(self.action_dim, name="lstm_fw_cell")
-            lstm_bw_cell = tf.nn.rnn_cell.GRUCell(self.action_dim, name="lstm_bw_cell")
+            lstm_fw_cell = tf.nn.rnn_cell.GRUCell(30, name="lstm_fw_cell")
+            lstm_bw_cell = tf.nn.rnn_cell.GRUCell(30, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             for i in range(agents_number):
                 fc1 = slim.fully_connected(bicnet_outputs[i], self.action_dim, activation_fn=tf.nn.softmax, scope='full_connected1')

@@ -1,12 +1,12 @@
 import numpy as np
-import pysc2.agents.myAgent.myAgent_13.config.config as config
-import pysc2.agents.myAgent.myAgent_13.smart_actions as sa
+import pysc2.agents.myAgent.myAgent_14.config.config as config
+import pysc2.agents.myAgent.myAgent_14.smart_actions as sa
 
-from pysc2.agents.myAgent.myAgent_13.decisionMaker.level_2.level_2_attack_controller import level_2_attack_controller
-from pysc2.agents.myAgent.myAgent_13.decisionMaker.level_2.level_2_build_controller import level_2_build_controller
-from pysc2.agents.myAgent.myAgent_13.decisionMaker.level_2.level_2_harvest_controller import level_2_harvest_controller
-from pysc2.agents.myAgent.myAgent_13.decisionMaker.level_2.level_2_research_controller import level_2_research_controller
-from pysc2.agents.myAgent.myAgent_13.decisionMaker.level_2.level_2_train_controller import level_2_train_controller
+from pysc2.agents.myAgent.myAgent_14.decisionMaker.level_2.level_2_attack_controller import level_2_attack_controller
+from pysc2.agents.myAgent.myAgent_14.decisionMaker.level_2.level_2_build_controller import level_2_build_controller
+from pysc2.agents.myAgent.myAgent_14.decisionMaker.level_2.level_2_harvest_controller import level_2_harvest_controller
+from pysc2.agents.myAgent.myAgent_14.decisionMaker.level_2.level_2_research_controller import level_2_research_controller
+from pysc2.agents.myAgent.myAgent_14.decisionMaker.level_2.level_2_train_controller import level_2_train_controller
 
 # 平铺嵌套数组
 from pysc2.env.environment import StepType

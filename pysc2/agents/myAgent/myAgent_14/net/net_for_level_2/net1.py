@@ -1,7 +1,6 @@
 import tensorflow as tf
 from pysc2.agents.myAgent.myAgent_14.config import config
 import tensorflow.contrib.slim as slim
-import numpy as np
 
 
 class net1(object):
@@ -23,22 +22,23 @@ class net1(object):
 
         self._setup_placeholders_graph()
 
-        actions_prob = []
+        temp_prob = []
         agent_params = []
 
         for i in range(self.agents_number):
-            actions_prob.append(self._build_graph_a(self.agents_local_observation[i], self.bounds[i], 'actor_' + str(i), True))
+            temp_prob.append(self._build_graph_a(self.agents_local_observation[:, i], self.bounds[:, i], 'actor_' + str(i), True))
             agent_params.append(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='actor_' + str(i)))
 
-        actions_prob = tf.reshape(actions_prob, [-1, self.agents_number, self.action_dim])
+        self.actions_prob = tf.reshape(temp_prob, [-1, self.agents_number, self.action_dim])
 
         all_q = self._build_graph_c(self.state, self.agents_local_observation, 'all_q', True)
         all_q_next = self._build_graph_c(self.state_next, self.agents_local_observation_next, 'all_q', True)
 
         q_s_u = tf.reduce_sum(tf.multiply(all_q, self.action_input), reduction_indices=2)
-        q_s_u_next = tf.reduce_sum(tf.multiply(all_q_next, self.action_input_next), reduction_indices=2)
+        # q_s_u_next = tf.reduce_sum(tf.multiply(all_q_next, self.action_input_next), reduction_indices=2)
 
-        actor_train_ops = self.actor_learn(q_s_u, all_q, self.action_input, actions_prob, agent_params)
+        self.actor_train_ops = self.actor_learn(q_s_u, all_q, self.action_input, self.actions_prob, agent_params)
+        self.critic_train_op = self.critic_learn(all_q, all_q_next)
 
     def _setup_placeholders_graph(self):
         # s
@@ -49,13 +49,10 @@ class net1(object):
 
         self.state_next = tf.placeholder("float", shape=[None, config.COOP_AGENTS_OBDIM], name='state_next')
         self.agents_local_observation_next = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation_next')
-        self.bounds_next = tf.placeholder("float", shape=[None, self.agents_number, self.action_dim], name='bounds_next')
 
         self.reward = tf.placeholder("float", [None, 1], name='reward')
 
-        # self.y_input = tf.placeholder("float", shape=[None], name='y_input')
         self.action_input = tf.placeholder("float", [None, self.agents_number, self.action_dim], name='action_input')
-        self.action_input_next = tf.placeholder("float", [None, self.agents_number, self.action_dim], name='action_input_next')
 
     def _build_graph_a(self, agent_local_observation, bound, scope_name, train):
         with tf.variable_scope(scope_name):
@@ -66,12 +63,10 @@ class net1(object):
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
                                 weights_regularizer=slim.l2_regularizer(0.05)):
                 fc1 = slim.fully_connected(agent_local_observation, 30, scope='full_connected_1')
-                action_prob = slim.fully_connected(fc1, self.action_dim, activation_fn=tf.nn.softmax, scope='full_connected_1')
+                action_prob = slim.fully_connected(fc1, self.action_dim, activation_fn=tf.nn.softmax, scope='output')
                 action_prob = tf.multiply(action_prob, bound)
                 action_prob = action_prob / tf.reduce_sum(action_prob)
 
-                # action = tf.argmax(tf.multiply(action_prob, bound))
-                # real_prob = tf.reduce_max(tf.multiply(action_prob, bound))
                 return action_prob
 
     def _build_graph_c(self, state_input, agents_local_observation, scope_name, train):
@@ -125,10 +120,8 @@ class net1(object):
         return train_ops
 
     def critic_learn(self, q_s_u, q_s_u_next):
-        td_error = self.reward + config.GAMMA * q_s_u_next - q_s_u
+        td_error = tf.reduce_sum(self.reward + config.GAMMA * q_s_u_next - q_s_u)
         loss = tf.square(td_error)
         train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(loss)
 
         return train_op
-
-

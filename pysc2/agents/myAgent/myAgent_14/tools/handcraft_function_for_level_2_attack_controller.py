@@ -3,10 +3,10 @@ import math
 import itertools
 from sklearn.cluster import DBSCAN
 import numpy as np
-import pysc2.agents.myAgent.myAgent_13.smart_actions as sa
+import pysc2.agents.myAgent.myAgent_14.smart_actions as sa
 
-from pysc2.agents.myAgent.myAgent_13.config import config
-from pysc2.agents.myAgent.myAgent_13.tools import unit_list
+from pysc2.agents.myAgent.myAgent_14.config import config
+from pysc2.agents.myAgent.myAgent_14.tools import unit_list
 from pysc2.lib import features
 
 
@@ -239,18 +239,6 @@ def get_reward(obs, pre_obs):
     return float(reward) / 200
 
 
-def discount_and_norm_rewards(rewards):
-    # discount episode rewards
-    discounted_ep_rs = np.zeros_like(rewards)
-    running_add = 0
-    for t in reversed(range(0, len(rewards))):
-        running_add = running_add * config.GAMMA + rewards[t]
-        discounted_ep_rs[t] = running_add
-
-    # normalize episode rewards
-    discounted_ep_rs -= np.mean(discounted_ep_rs)
-    discounted_ep_rs /= np.std(discounted_ep_rs)
-    return discounted_ep_rs
 
 
 def win_or_loss(obs):
