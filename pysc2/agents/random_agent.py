@@ -19,7 +19,7 @@ from __future__ import print_function
 
 import numpy
 
-import pysc2.agents.myAgent.myAgent_13.config.config as config
+import pysc2.agents.myAgent.myAgent_13_BIC_DQN.config.config as config
 from absl import app
 from pysc2.agents import base_agent
 
@@ -38,8 +38,9 @@ class RandomAgent(base_agent.BaseAgent):
         super(RandomAgent, self).step(obs)
         function_id = 3
         args = [[0], [0], [1]]
+        args2 = [[0], [1], [1]]
 
-        return actions.FunctionCall(function_id, args)
+        return [actions.FunctionCall(function_id, args),actions.FunctionCall(function_id, args2)]
 
 
 def main(unused_argv):

@@ -21,7 +21,7 @@ from __future__ import print_function
 import numpy
 
 
-import pysc2.agents.myAgent.myAgent_13.config.config as config
+import pysc2.agents.myAgent.myAgent_13_BIC_DQN.config.config as config
 from absl import app
 from pysc2.agents import base_agent
 
