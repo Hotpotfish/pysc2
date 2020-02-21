@@ -47,7 +47,6 @@ class Bicnet():
 
         self.lossSaver = None
         self.epsoide = 0
-        self.win = 0
 
         self.rewardSaver = None
         self.rewardAdd = 0
@@ -87,14 +86,7 @@ class Bicnet():
     def saveRewardAvg(self, modelSavePath):
         # loss save
         self.rewardSaver = open(modelSavePath + 'reward.txt', 'a+')
-        self.rewardSaver.write(str(self.epsoide) + ' ' + str(self.rewardAdd / self.timeStep) + '\n')
-        self.rewardAdd = 0
-        self.timeStep = 0
-        self.rewardSaver.close()
-
-    def saveWinRate(self, modelSavePath):
-        self.rewardSaver = open(modelSavePath + 'win_rate.txt', 'a+')
-        self.rewardSaver.write(str(self.epsoide) + ' ' + str(self.win / self.epsoide) + '\n')
+        self.rewardSaver.write(str(self.epsoide) + ' ' + str(self.rewardAdd) + '\n')
         self.rewardAdd = 0
         self.timeStep = 0
         self.rewardSaver.close()
@@ -103,14 +95,10 @@ class Bicnet():
         self.rewardAdd += reward
         self.timeStep += 1
 
-        if done != 0:
+        if done:
             self.epsoide += 1
-            if done == 1:
-                self.win += 1
-
             self.saveLoss(save_path)
             self.saveRewardAvg(save_path)
-            self. saveWinRate(save_path)
 
         self.replay_buffer.inQueue([state, action, reward, next_state, done])
 
@@ -124,7 +112,7 @@ class Bicnet():
             state_input_next = np.array([data[3][0] for data in minibatch])
             agents_local_observation_next = np.array([data[3][1] for data in minibatch])
 
-            # action_batch = np.eye(self.action_dim)[action_batch]
+            action_batch = np.eye(self.action_dim)[action_batch]
 
             self.session.run(self.net.soft_replace)
             _, q = self.session.run([self.net.atrain, self.net.q], {self.net.state_input: state_input,
@@ -133,7 +121,7 @@ class Bicnet():
             __, self.td_error = self.session.run([self.net.ctrain, self.net.td_error],
                                                  {self.net.state_input: state_input,
                                                   self.net.agents_local_observation: agents_local_observation,
-                                                  self.net.a: action_batch[:, :, np.newaxis],
+                                                  self.net.a: action_batch,
                                                   self.net.reward: reward_batch,
                                                   self.net.state_input_next: state_input_next,
                                                   self.net.agents_local_observation_next: agents_local_observation_next
@@ -161,5 +149,5 @@ class Bicnet():
         state_input = state[0][np.newaxis, :, :]
         agents_local_observation = state[1][np.newaxis, :, :]
         prob_value = self.session.run(self.net.a, {self.net.state_input: state_input,
-                                                   self.net.agents_local_observation: agents_local_observation})
-        return prob_value[0]
+                                                   self.net.agents_local_observation: agents_local_observation})[0]
+        return prob_value

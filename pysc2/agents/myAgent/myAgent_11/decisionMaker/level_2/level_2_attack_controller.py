@@ -6,8 +6,7 @@ from pysc2.agents.myAgent.myAgent_11.decisionMaker.level_2.Bicnet_for_level_2 im
 from pysc2.agents.myAgent.myAgent_11.tools import handcraft_function, handcraft_function_for_level_2_attack_controller
 
 from pysc2.agents.myAgent.myAgent_11.tools.handcraft_function_for_level_2_attack_controller import get_agents_state, \
-    get_agents_obs, get_reward, win_or_loss
-from pysc2.lib.actions import RAW_FUNCTIONS
+    get_agents_obs, get_reward
 
 
 class level_2_attack_controller:
@@ -35,9 +34,11 @@ class level_2_attack_controller:
                                              self.controller.previous_action,
                                              self.controller.previous_reward,
                                              self.controller.current_state,
-                                             win_or_loss(obs),
+                                             obs.last(),
                                              save_path)
 
+        action_prob = self.controller.network.action(self.controller.current_state)
+        actions, action_numbers = handcraft_function_for_level_2_attack_controller.assembly_action(self.init_obs, obs, action_prob, 'train')
         if obs.last():
             self.controller.previous_state = None
             self.controller.previous_action = None
@@ -45,10 +46,7 @@ class level_2_attack_controller:
             self.init_obs = None
             self.pre_obs = None
             self.current_obs = None
-            return RAW_FUNCTIONS.no_op()
         else:
-            action_prob = self.controller.network.action(self.controller.current_state)
-            actions, action_numbers = handcraft_function_for_level_2_attack_controller.assembly_action(self.init_obs, obs, action_prob)
             self.controller.previous_state = self.controller.current_state
             self.controller.previous_action = action_numbers
             self.pre_obs = self.current_obs
