@@ -38,7 +38,7 @@ class net1(object):
 
     def _build_graph_q(self, state_input, agents_local_observation, scope_name, train):
         # 环境和智能体本地的共同观察
-        with tf.variable_scope(scope_name,reuse=tf.AUTO_REUSE):
+        with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             with slim.arg_scope([slim.conv2d, slim.fully_connected],
                                 trainable=train,
                                 activation_fn=tf.nn.selu,
@@ -65,8 +65,8 @@ class net1(object):
     def _bicnet_build_q(self, encoder_outputs, agents_number, scope_name):
         with tf.variable_scope(scope_name):
             outputs = []
-            lstm_fw_cell = tf.nn.rnn_cell.GRUCell(30, name="lstm_fw_cell")
-            lstm_bw_cell = tf.nn.rnn_cell.GRUCell(30, name="lstm_bw_cell")
+            lstm_fw_cell = tf.nn.rnn_cell.LSTMCell(30, name="lstm_fw_cell")
+            lstm_bw_cell = tf.nn.rnn_cell.LSTMCell(30, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             for i in range(agents_number):
                 fc1 = slim.fully_connected(bicnet_outputs[i], self.action_dim, activation_fn=tf.nn.softmax, scope='full_connected1')

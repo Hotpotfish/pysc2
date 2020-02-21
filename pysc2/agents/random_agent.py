@@ -19,16 +19,58 @@ from __future__ import print_function
 
 import numpy
 
+import pysc2.agents.myAgent.myAgent_13.config.config as config
+from absl import app
 from pysc2.agents import base_agent
-from pysc2.lib import actions
+
+from pysc2.lib import actions, features
+from pysc2.env import sc2_env, run_loop
 
 
 class RandomAgent(base_agent.BaseAgent):
-  """A random agent for starcraft."""
+    """A random agent for starcraft."""
 
-  def step(self, obs):
-    super(RandomAgent, self).step(obs)
-    function_id = numpy.random.choice(obs.observation.available_actions)
-    args = [[numpy.random.randint(0, size) for size in arg.sizes]
-            for arg in self.action_spec.functions[function_id].args]
-    return actions.FunctionCall(function_id, args)
+    def step(self, obs):
+        # super(RandomAgent, self).step(obs)
+        # function_id = numpy.random.choice(563)
+        # args = [[numpy.random.randint(0, size) for size in arg.sizes]
+        #         for arg in self.action_spec.functions[function_id].args]
+        super(RandomAgent, self).step(obs)
+        function_id = 3
+        args = [[0], [0], [1]]
+
+        return actions.FunctionCall(function_id, args)
+
+
+def main(unused_argv):
+    agent1 = RandomAgent()
+
+    try:
+        with sc2_env.SC2Env(
+                map_name="DefeatRoaches",
+                players=[sc2_env.Agent(sc2_env.Race.terran), ],
+                agent_interface_format=features.AgentInterfaceFormat(
+                    feature_dimensions=features.Dimensions(screen=config.MAP_SIZE,
+                                                           minimap=config.MAP_SIZE),
+
+                    camera_width_world_units=config.MAP_SIZE * 1,
+                    action_space=actions.ActionSpace.RAW,
+                    use_raw_units=True,
+                    raw_resolution=config.MAP_SIZE,
+                ),
+                score_index=0,
+                step_mul=8,
+                disable_fog=False,
+                visualize=False,
+                realtime=False,
+
+        ) as env:
+            # env=available_actions_printer.AvailableActionsPrinter(env)
+            run_loop.run_loop([agent1], env, max_episodes=config.EPISODES)
+
+    except KeyboardInterrupt:
+        pass
+
+
+if __name__ == "__main__":
+    app.run(main)

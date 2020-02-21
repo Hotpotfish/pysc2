@@ -7,7 +7,7 @@ from pysc2.agents.myAgent.myAgent_13.tools.plt_function import plt_function
 from pysc2.env.environment import StepType
 
 from pysc2.lib import actions, features
-from pysc2.env import sc2_env, run_loop
+from pysc2.env import sc2_env, run_loop, available_actions_printer
 
 
 class myAgent(base_agent.BaseAgent):
@@ -56,6 +56,7 @@ def main(unused_argv):
                 realtime=False,
 
         ) as env:
+            # env=available_actions_printer.AvailableActionsPrinter(env)
             run_loop.run_loop([agent1], env, max_episodes=config.EPISODES)
 
     except KeyboardInterrupt:

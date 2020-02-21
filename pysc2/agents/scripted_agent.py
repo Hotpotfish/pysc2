@@ -13,15 +13,22 @@
 # limitations under the License.
 """Scripted agents."""
 
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import numpy
 
+
+import pysc2.agents.myAgent.myAgent_13.config.config as config
+from absl import app
 from pysc2.agents import base_agent
-from pysc2.lib import actions
-from pysc2.lib import features
+
+
+from pysc2.lib import actions, features
+from pysc2.env import sc2_env, run_loop
+
 
 _PLAYER_SELF = features.PlayerRelative.SELF
 _PLAYER_NEUTRAL = features.PlayerRelative.NEUTRAL  # beacon/minerals
@@ -218,3 +225,35 @@ class DefeatRoachesRaw(base_agent.BaseAgent):
       return RAW_FUNCTIONS.Attack_unit("now", marines, target)
 
     return FUNCTIONS.no_op()
+
+def main(unused_argv):
+  agent1 = MoveToBeacon()
+
+  try:
+    with sc2_env.SC2Env(
+            map_name="MoveToBeacon",
+            players=[sc2_env.Agent(sc2_env.Race.terran), ],
+            agent_interface_format=features.AgentInterfaceFormat(
+              feature_dimensions=features.Dimensions(screen=config.MAP_SIZE,
+                                                     minimap=config.MAP_SIZE),
+
+              camera_width_world_units=config.MAP_SIZE * 1,
+              # action_space=actions.ActionSpace.RAW,
+              use_raw_units=True,
+              raw_resolution=config.MAP_SIZE,
+            ),
+            score_index=0,
+            step_mul=8,
+            disable_fog=False,
+            visualize=False,
+            realtime=False,
+
+    ) as env:
+      run_loop.run_loop([agent1], env, max_episodes=config.EPISODES)
+
+  except KeyboardInterrupt:
+    pass
+
+
+if __name__ == "__main__":
+  app.run(main)
