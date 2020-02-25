@@ -37,10 +37,11 @@ class RandomAgent(base_agent.BaseAgent):
         #         for arg in self.action_spec.functions[function_id].args]
         super(RandomAgent, self).step(obs)
         function_id = 3
-        args = [[0], [0], [1]]
-        args2 = [[0], [1], [1]]
+        args = [[0], [0], [-1]]
+        args2 = [[0], [1], [-1]]
+        print(actions.FunctionCall(function_id, args))
 
-        return [actions.FunctionCall(function_id, args),actions.FunctionCall(function_id, args2)]
+        return [actions.FunctionCall(function_id, args)]#actions.FunctionCall(function_id, args2)]
 
 
 def main(unused_argv):
