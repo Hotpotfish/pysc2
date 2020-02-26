@@ -98,6 +98,7 @@ class net1(object):
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             for i in range(agents_number):
                 fc1 = slim.fully_connected(bicnet_outputs[i], self.action_dim, activation_fn=tf.nn.sigmoid, scope='full_connected1')
+                # fc1 = tf.Print(fc1,[fc1])
                 action = tf.multiply(fc1, self.bound)
                 outputs.append(action)
 
@@ -124,9 +125,9 @@ class net1(object):
     def _observation_encoder_c(self, state_input, action_input, agents_number, scope_name):
         with tf.variable_scope(scope_name):
             encoder = []
-            fc1_s = slim.fully_connected(state_input, 20, scope='full_connected_s1')
+            fc1_s = slim.fully_connected(state_input, 10, scope='full_connected_s1')
             for i in range(agents_number):
-                fc1_a = slim.fully_connected(action_input[:, i], 20, scope='full_connected_a1')
+                fc1_a = slim.fully_connected(action_input[:, i], 10, scope='full_connected_a1')
                 data = fc1_s + fc1_a
                 # fc1 = slim.fully_connected(data, 10, scope='full_connected1' + "_" + str(i))
                 encoder.append(data)
