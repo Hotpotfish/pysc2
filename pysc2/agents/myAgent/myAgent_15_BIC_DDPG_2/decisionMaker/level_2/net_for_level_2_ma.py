@@ -136,18 +136,17 @@ class net():
                                                   self.net.state_input_next: state_next,
                                                   self.net.agents_local_observation_next: agents_local_observation_next
                                                   })
-            print()
 
     def egreedy_action(self, current_state):  # 输出带随机的动作
 
-        action = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[2][np.newaxis], self.net.bound: current_state[0][np.newaxis]})[0]
-        action_k = get_action_combination(self.valid_action, action)
+        actio_proto = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[2][np.newaxis], self.net.bound: current_state[0][np.newaxis]})[0]
+        action_k = get_action_combination(self.valid_action, actio_proto)
         temp_qs = []
         for i in range(np.power(config.K, self.agents_number)):
             temp_q = self.session.run(self.net.q, {self.net.state_input: current_state[1][np.newaxis], self.net.a: action_k[i][np.newaxis]})[0]
             temp_qs.append(temp_q)
         action = action_k[np.argmax(temp_qs)]
-        return action
+        return actio_proto, action
 
     def action(self, current_state):
         Q_value = self.session.run(self.net.q_value, {self.net.state: current_state[1][np.newaxis], self.net.agents_local_observation: current_state[2][np.newaxis]})[0]

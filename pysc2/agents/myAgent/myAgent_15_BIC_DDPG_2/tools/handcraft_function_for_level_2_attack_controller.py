@@ -9,6 +9,7 @@ from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.config import config
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools import unit_list
 from pysc2.lib import features
 from pysc2.lib import actions as a
+from scipy.spatial import KDTree
 
 
 def get_all_vaild_action():
@@ -36,30 +37,44 @@ def get_all_vaild_action():
 
 # 找出最接近每个智能体输出的动作
 def get_k_closest_action(vaild_action, proto_action):
-    agents_action_dicts = []
-    for i in range(config.MY_UNIT_NUMBER):
-        agents_action_dicts.append({})
-
-    for i in range(len(vaild_action)):
-        for j in range(config.MY_UNIT_NUMBER):
-            distance = np.linalg.norm(np.array(vaild_action[i]) - np.array(proto_action[j]))
-            agents_action_dicts[j].update({(str(vaild_action[i])): distance})
-
-    action_distance_sorted = []
-    for i in range(config.MY_UNIT_NUMBER):
-        r = sorted(agents_action_dicts[i].items(), key=lambda x: x[1])
-        action_distance_sorted.append(r)
-
+    tree = KDTree(vaild_action)
+    temp_r = tree.query(proto_action, k=config.K)
     k_closest_action = []
     for i in range(config.MY_UNIT_NUMBER):
-        actions = []
-        for j in range(config.K):
-            action = action_distance_sorted[i][j][0].replace('[', '')
-            action = action.replace(']', '')
-            action = action.split(',')
-            actions.append(np.array(list(map(int, action))))
-        k_closest_action.append(actions)
-    return np.array(k_closest_action)
+        action = []
+        if config.K == 1:
+            action.append(vaild_action[temp_r[1][i]])
+        else:
+            for j in range(config.K):
+                action.append(vaild_action[temp_r[1][i][j]])
+        k_closest_action.append(action)
+
+    return k_closest_action
+
+    # agents_action_dicts = []
+    # for i in range(config.MY_UNIT_NUMBER):
+    #     agents_action_dicts.append({})
+    #
+    # for i in range(len(vaild_action)):
+    #     for j in range(config.MY_UNIT_NUMBER):
+    #         distance = np.linalg.norm(np.array(vaild_action[i]) - np.array(proto_action[j]))
+    #         agents_action_dicts[j].update({(str(vaild_action[i])): distance})
+    #
+    # action_distance_sorted = []
+    # for i in range(config.MY_UNIT_NUMBER):
+    #     r = sorted(agents_action_dicts[i].items(), key=lambda x: x[1])
+    #     action_distance_sorted.append(r)
+    #
+    # k_closest_action = []
+    # for i in range(config.MY_UNIT_NUMBER):
+    #     actions = []
+    #     for j in range(config.K):
+    #         action = action_distance_sorted[i][j][0].replace('[', '')
+    #         action = action.replace(']', '')
+    #         action = action.split(',')
+    #         actions.append(np.array(list(map(int, action))))
+    #     k_closest_action.append(actions)
+    # return np.array(k_closest_action)
 
 
 def get_action_combination(vaild_action, proto_action):
@@ -104,7 +119,7 @@ def computeDistance_center(unit):
 
 
 def get_bound():
-    bound = [len(sa.attack_controller) - 1, config.ENEMY_UNIT_NUMBER - 1, config.MAP_SIZE - 1, config.MAP_SIZE - 1]
+    bound = [len(sa.attack_controller) , config.ENEMY_UNIT_NUMBER , config.MAP_SIZE , config.MAP_SIZE]
     return bound
 
 
@@ -160,54 +175,19 @@ def assembly_action(init_obs, obs, action_numbers):
         actions.append(a.FunctionCall(function_id, parameter))
     return actions
 
-    # target_unit_pos = find_unit_pos(obs, init_enemy_units_tag[action_numbers[i][1]])
-
-    # parameter = []
-    # if action_numbers[i] == 0:
-    #
-    #     continue
-    # elif 0 < action_numbers[i] <= 4:
-    #     my_unit = find_unit_by_tag(obs, init_my_units[i].tag)
-    #     a = controller[1]
-    #     dir = action_numbers[i] - config.DEATH_ACTION_DIM
-    #
-    #     parameter.append(0)
-    #     parameter.append(init_my_units[i].tag)
-    #     if dir == 0:
-    #         parameter.append((min([my_unit.x + 2, config.MAP_SIZE]), min([my_unit.y + 2, config.MAP_SIZE])))
-    #     elif dir == 1:
-    #         parameter.append((max([my_unit.x - 2, 0]), max([my_unit.y - 2, 0])))
-    #     elif dir == 2:
-    #         parameter.append((min([my_unit.x + 2, config.MAP_SIZE]), max([my_unit.y - 2, 0])))
-    #     elif dir == 3:
-    #         parameter.append((max([my_unit.x - 2, 0]), min([my_unit.y + 2, config.MAP_SIZE])))
-    #
-    #     parameter = tuple(parameter)
-    #     actions.append(a(*parameter))
-    # elif 4 < action_numbers[i] <= 4 + config.ENEMY_UNIT_NUMBER:
-    #     my_unit = find_unit_by_tag(obs, init_my_units[i].tag)
-    #     a = controller[2]
-    #     enemy = int(action_numbers[i] - config.DEATH_ACTION_DIM - config.STATIC_ACTION_DIM)
-    #     parameter.append(0)
-    #     parameter.append(my_unit.tag)
-    #     parameter.append(init_enemy_units[enemy].tag)
-    #     parameter = tuple(parameter)
-    #     actions.append(a(*parameter))
-
-    # return actions
 
 
 def get_agent_state(unit):
     states = np.array([])
 
-    states = np.append(states, computeDistance_center(unit))
-    states = np.append(states, unit.alliance)
-    states = np.append(states, unit.unit_type)
-    states = np.append(states, unit.x)
-    states = np.append(states, unit.y)
-    states = np.append(states, unit.health)
-    states = np.append(states, unit.shield)
-    states = np.append(states, unit.weapon_cooldown)
+    states = np.append(states, computeDistance_center(unit) / (config.MAP_SIZE * 1.41))
+    states = np.append(states, unit.alliance / 4)
+    states = np.append(states, unit.unit_type / 10000)
+    states = np.append(states, unit.x / config.MAP_SIZE)
+    states = np.append(states, unit.y / config.MAP_SIZE)
+    states = np.append(states, unit.health / 100)
+    states = np.append(states, unit.shield / 100)
+    states = np.append(states, unit.weapon_cooldown/10)
     return states
 
 
@@ -257,28 +237,28 @@ def get_agents_obs(init_obs, obs):
             if my_target_unit is None or computeDistance(my_unit, my_target_unit) >= config.OB_RANGE:
                 agent_obs = np.append(agent_obs, np.zeros(8))
             else:
-                agent_obs = np.append(agent_obs, computeDistance(my_unit, my_target_unit))
-                agent_obs = np.append(agent_obs, my_target_unit.alliance)
-                agent_obs = np.append(agent_obs, my_target_unit.unit_type)
-                agent_obs = np.append(agent_obs, my_target_unit.x)
-                agent_obs = np.append(agent_obs, my_target_unit.y)
-                agent_obs = np.append(agent_obs, my_target_unit.health)
-                agent_obs = np.append(agent_obs, my_target_unit.shield)
-                agent_obs = np.append(agent_obs, my_target_unit.weapon_cooldown)
+                agent_obs = np.append(agent_obs, computeDistance(my_unit, my_target_unit) / (config.MAP_SIZE * 1.41))
+                agent_obs = np.append(agent_obs, my_target_unit.alliance / 4)
+                agent_obs = np.append(agent_obs, my_target_unit.unit_type / 10000)
+                agent_obs = np.append(agent_obs, my_target_unit.x / config.MAP_SIZE)
+                agent_obs = np.append(agent_obs, my_target_unit.y / config.MAP_SIZE)
+                agent_obs = np.append(agent_obs, my_target_unit.health / 100)
+                agent_obs = np.append(agent_obs, my_target_unit.shield / 100)
+                agent_obs = np.append(agent_obs, my_target_unit.weapon_cooldown/10)
         for j in range(config.ENEMY_UNIT_NUMBER):
             enemy_target_unit = find_unit_by_tag(obs, init_enemy_units_tag[j])
             # 按顺序遍历每个己方单位的信息
             if enemy_target_unit is None or computeDistance(my_unit, enemy_target_unit) >= config.OB_RANGE:
                 agent_obs = np.append(agent_obs, np.zeros(8))
             else:
-                agent_obs = np.append(agent_obs, computeDistance(my_unit, enemy_target_unit))
-                agent_obs = np.append(agent_obs, enemy_target_unit.alliance)
-                agent_obs = np.append(agent_obs, enemy_target_unit.unit_type)
-                agent_obs = np.append(agent_obs, enemy_target_unit.x)
-                agent_obs = np.append(agent_obs, enemy_target_unit.y)
-                agent_obs = np.append(agent_obs, enemy_target_unit.health)
-                agent_obs = np.append(agent_obs, enemy_target_unit.shield)
-                agent_obs = np.append(agent_obs, enemy_target_unit.weapon_cooldown)
+                agent_obs = np.append(agent_obs, computeDistance(my_unit, enemy_target_unit) / (config.MAP_SIZE * 1.41))
+                agent_obs = np.append(agent_obs, enemy_target_unit.alliance / 4)
+                agent_obs = np.append(agent_obs, enemy_target_unit.unit_type / 10000)
+                agent_obs = np.append(agent_obs, enemy_target_unit.x / config.MAP_SIZE)
+                agent_obs = np.append(agent_obs, enemy_target_unit.y / config.MAP_SIZE)
+                agent_obs = np.append(agent_obs, enemy_target_unit.health / 100)
+                agent_obs = np.append(agent_obs, enemy_target_unit.shield / 100)
+                agent_obs = np.append(agent_obs, enemy_target_unit.weapon_cooldown/10)
 
         agents_obs.append(agent_obs)
     return agents_obs

@@ -72,7 +72,10 @@ class net1(object):
             with slim.arg_scope([slim.fully_connected],
                                 trainable=train,
                                 activation_fn=tf.nn.selu,
-                                normalizer_fn=slim.batch_norm):
+                                weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
+                                weights_regularizer=slim.l2_regularizer(0.05)
+                                ):
+                                # normalizer_fn=slim.batch_norm):
                 encoder_outputs = self._observation_encoder_a(agents_local_observation, self.agents_number, '_observation_encoder')
                 bicnet_outputs = self._bicnet_build_a(encoder_outputs, self.agents_number, '_bicnet_build')
                 return bicnet_outputs
@@ -81,7 +84,7 @@ class net1(object):
         with tf.variable_scope(scope_name):
             encoder = []
             for i in range(agents_number):
-                fc1 = slim.fully_connected(agents_local_observation[:, i, :], 100, scope='full_connected1')
+                fc1 = slim.fully_connected(agents_local_observation[:, i, :], 10, scope='full_connected1')
                 encoder.append(fc1)
             encoder = tf.transpose(encoder, [1, 0, 2])
             encoder = tf.unstack(encoder, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
@@ -94,7 +97,6 @@ class net1(object):
             lstm_bw_cell = tf.nn.rnn_cell.GRUCell(self.action_dim, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             for i in range(agents_number):
-                # fc1 = slim.fully_connected(bicnet_outputs[i], 30, scope='full_connected1' + "_" + str(i))
                 fc1 = slim.fully_connected(bicnet_outputs[i], self.action_dim, activation_fn=tf.nn.sigmoid, scope='full_connected1')
                 action = tf.multiply(fc1, self.bound)
                 outputs.append(action)
@@ -111,7 +113,9 @@ class net1(object):
             with slim.arg_scope([slim.fully_connected],
                                 trainable=train,
                                 activation_fn=tf.nn.selu,
-                                normalizer_fn=slim.batch_norm):
+                                weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
+                                weights_regularizer=slim.l2_regularizer(0.05)):
+                                # normalizer_fn=slim.batch_norm):
                 encoder_outputs = self._observation_encoder_c(state_input, action_input, self.agents_number,
                                                               '_observation_encoder')
                 bicnet_outputs = self._bicnet_build_c(encoder_outputs, self.agents_number, '_bicnet_build')
