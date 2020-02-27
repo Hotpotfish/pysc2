@@ -119,7 +119,7 @@ def computeDistance_center(unit):
 
 
 def get_bound():
-    bound = [len(sa.attack_controller) , config.ENEMY_UNIT_NUMBER , config.MAP_SIZE , config.MAP_SIZE]
+    bound = [len(sa.attack_controller), config.ENEMY_UNIT_NUMBER, config.MAP_SIZE, config.MAP_SIZE]
     return bound
 
 
@@ -163,18 +163,25 @@ def assembly_action(init_obs, obs, action_numbers):
                 parameter.append([my_unit_pos])
                 continue
             if arg.name == 'target_unit_tag':
-                enemy_unit_pos = find_unit_pos(obs, init_enemy_units_tag[action_numbers[i][1]])
-                if enemy_unit_pos == None:
+                if action_numbers[i][1] < config.MY_UNIT_NUMBER:
+                    target_unit_pos = find_unit_pos(obs, init_my_units_tag[action_numbers[i][1]])
+                else:
+                    target_unit_pos = find_unit_pos(obs, init_enemy_units_tag[action_numbers[i][1] - config.MY_UNIT_NUMBER])
+
+                if target_unit_pos == None:
+                    parameter.clear()
                     break
                 else:
-                    parameter.append([enemy_unit_pos])
+                    parameter.append([target_unit_pos])
                     continue
             if arg.name == 'world':
                 # coordinate = [action_numbers[i][2],action_numbers[i][3]]
                 parameter.append([action_numbers[i][2], action_numbers[i][3]])
-        actions.append(a.FunctionCall(function_id, parameter))
+        if len(parameter) == 0:
+            continue
+        else:
+            actions.append(a.FunctionCall(function_id, parameter))
     return actions
-
 
 
 def get_agent_state(unit):
@@ -187,7 +194,7 @@ def get_agent_state(unit):
     states = np.append(states, unit.y / config.MAP_SIZE)
     states = np.append(states, unit.health / 100)
     states = np.append(states, unit.shield / 100)
-    states = np.append(states, unit.weapon_cooldown/10)
+    states = np.append(states, unit.weapon_cooldown / 10)
     return states
 
 
@@ -244,7 +251,7 @@ def get_agents_obs(init_obs, obs):
                 agent_obs = np.append(agent_obs, my_target_unit.y / config.MAP_SIZE)
                 agent_obs = np.append(agent_obs, my_target_unit.health / 100)
                 agent_obs = np.append(agent_obs, my_target_unit.shield / 100)
-                agent_obs = np.append(agent_obs, my_target_unit.weapon_cooldown/10)
+                agent_obs = np.append(agent_obs, my_target_unit.weapon_cooldown / 10)
         for j in range(config.ENEMY_UNIT_NUMBER):
             enemy_target_unit = find_unit_by_tag(obs, init_enemy_units_tag[j])
             # 按顺序遍历每个己方单位的信息
@@ -258,7 +265,7 @@ def get_agents_obs(init_obs, obs):
                 agent_obs = np.append(agent_obs, enemy_target_unit.y / config.MAP_SIZE)
                 agent_obs = np.append(agent_obs, enemy_target_unit.health / 100)
                 agent_obs = np.append(agent_obs, enemy_target_unit.shield / 100)
-                agent_obs = np.append(agent_obs, enemy_target_unit.weapon_cooldown/10)
+                agent_obs = np.append(agent_obs, enemy_target_unit.weapon_cooldown / 10)
 
         agents_obs.append(agent_obs)
     return agents_obs
