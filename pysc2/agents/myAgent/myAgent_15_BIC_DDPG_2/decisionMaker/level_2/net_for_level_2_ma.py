@@ -137,6 +137,7 @@ class net():
                                                   self.net.agents_local_observation_next: agents_local_observation_next
                                                   })
 
+
     def egreedy_action(self, current_state):  # 输出带随机的动作
 
         actio_proto = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[2][np.newaxis], self.net.bound: current_state[0][np.newaxis]})[0]

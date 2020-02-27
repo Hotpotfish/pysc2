@@ -57,7 +57,7 @@ def main(unused_argv):
 
         ) as env:
             # env=available_actions_printer.AvailableActionsPrinter(env)
-            run_loop.run_loop([agent1], env, max_episodes=config.EPISODES)
+            run_loop.run_loop([agent1], env)
 
     except KeyboardInterrupt:
         pass

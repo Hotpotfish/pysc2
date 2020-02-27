@@ -119,7 +119,7 @@ def computeDistance_center(unit):
 
 
 def get_bound():
-    bound = [len(sa.attack_controller), config.ENEMY_UNIT_NUMBER, config.MAP_SIZE, config.MAP_SIZE]
+    bound = [len(sa.attack_controller) - 1, config.ENEMY_UNIT_NUMBER + config.MY_UNIT_NUMBER - 1, config.MAP_SIZE - 1, config.MAP_SIZE - 1]
     return bound
 
 

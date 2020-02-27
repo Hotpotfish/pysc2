@@ -50,12 +50,12 @@ def read_and_plot_win_rate(path):
 
 
 def plot_all(path):
-    read_and_plot_reward(path + '/DQN_reward.txt')
-    read_and_plot_win_rate(path + '/DQN_win_rate.txt')
+    read_and_plot_reward(path + '/BIC_DDPG_reward.txt')
+    read_and_plot_win_rate(path + '/BIC_DDPG_win_rate.txt')
 
 
 if __name__ == "__main__":
-    plot_all('d:/model/20200220180959')
+    plot_all('d:/model/20200227161859')
 
 # import matplotlib.pyplot as plt
 # import numpy as np
