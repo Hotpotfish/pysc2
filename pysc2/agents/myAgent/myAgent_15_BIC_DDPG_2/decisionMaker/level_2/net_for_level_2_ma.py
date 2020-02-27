@@ -8,6 +8,7 @@ import pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.config.config as config
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.SqQueue import SqQueue
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.net.net_for_level_2.net1 import net1
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.handcraft_function_for_level_2_attack_controller import get_k_closest_action, get_action_combination
+import pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.smart_actions as sa
 
 
 class net():
@@ -19,6 +20,7 @@ class net():
         # 神经网络参数
         self.mu = mu
         self.sigma = sigma
+        self.var = 3
         self.learning_rate = learning_rate
 
         # 动作维度数，动作参数维度数（默认为6）,状态维度数
@@ -137,10 +139,15 @@ class net():
                                                   self.net.agents_local_observation_next: agents_local_observation_next
                                                   })
 
-
     def egreedy_action(self, current_state):  # 输出带随机的动作
 
         actio_proto = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[2][np.newaxis], self.net.bound: current_state[0][np.newaxis]})[0]
+        for i in range(config.MY_UNIT_NUMBER):
+            actio_proto[i][0] = np.clip(np.random.normal(actio_proto[i][0], self.var), 0, len(sa.attack_controller) - 1)
+            actio_proto[i][1] = np.clip(np.random.normal(actio_proto[i][0], self.var), 0, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER - 1)
+            actio_proto[i][2] = np.clip(np.random.normal(actio_proto[i][0], self.var), 0, config.MAP_SIZE - 1)
+            actio_proto[i][3] = np.clip(np.random.normal(actio_proto[i][0], self.var), 0, config.MAP_SIZE - 1)
+        self.var *= 0.995
         action_k = get_action_combination(self.valid_action, actio_proto)
         temp_qs = []
         for i in range(np.power(config.K, self.agents_number)):

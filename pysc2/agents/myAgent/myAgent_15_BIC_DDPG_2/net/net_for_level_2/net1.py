@@ -97,8 +97,7 @@ class net1(object):
             lstm_bw_cell = tf.nn.rnn_cell.GRUCell(self.action_dim, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             for i in range(agents_number):
-                fc1 = slim.fully_connected(bicnet_outputs[i], self.action_dim, activation_fn=tf.nn.tanh, scope='full_connected1')
-
+                fc1 = slim.fully_connected(bicnet_outputs[i], self.action_dim, activation_fn=tf.nn.sigmoid, scope='full_connected1')
                 action = tf.multiply(fc1, self.bound)
                 outputs.append(action)
 
@@ -147,7 +146,7 @@ class net1(object):
             outputs = tf.transpose(outputs, [1, 0, 2])  # (batch_size,agents_number,1)
             outputs = slim.flatten(outputs)
 
-            fc2 = slim.fully_connected(outputs, 1, activation_fn=tf.nn.tanh, scope='full_connected2')
-            # fc2 = tf.Print(fc2,[fc2])
+            fc2 = slim.fully_connected(outputs, 1, activation_fn=None, scope='full_connected2')
+            fc2 = tf.Print(fc2,[fc2])
 
             return fc2

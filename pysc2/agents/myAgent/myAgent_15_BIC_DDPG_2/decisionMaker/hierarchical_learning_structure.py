@@ -13,7 +13,7 @@ class hierarchical_learning_structure():
         self.begin_time = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
         self.load_mark = False
 
-        self.leve1_1 = level_1()
+        # self.leve1_1 = level_1()
         self.level_2 = level_2()
 
     def get_model_savePath(self, topPath):

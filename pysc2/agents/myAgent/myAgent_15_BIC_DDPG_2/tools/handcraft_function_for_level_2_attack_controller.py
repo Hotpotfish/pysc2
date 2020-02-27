@@ -51,31 +51,6 @@ def get_k_closest_action(vaild_action, proto_action):
 
     return k_closest_action
 
-    # agents_action_dicts = []
-    # for i in range(config.MY_UNIT_NUMBER):
-    #     agents_action_dicts.append({})
-    #
-    # for i in range(len(vaild_action)):
-    #     for j in range(config.MY_UNIT_NUMBER):
-    #         distance = np.linalg.norm(np.array(vaild_action[i]) - np.array(proto_action[j]))
-    #         agents_action_dicts[j].update({(str(vaild_action[i])): distance})
-    #
-    # action_distance_sorted = []
-    # for i in range(config.MY_UNIT_NUMBER):
-    #     r = sorted(agents_action_dicts[i].items(), key=lambda x: x[1])
-    #     action_distance_sorted.append(r)
-    #
-    # k_closest_action = []
-    # for i in range(config.MY_UNIT_NUMBER):
-    #     actions = []
-    #     for j in range(config.K):
-    #         action = action_distance_sorted[i][j][0].replace('[', '')
-    #         action = action.replace(']', '')
-    #         action = action.split(',')
-    #         actions.append(np.array(list(map(int, action))))
-    #     k_closest_action.append(actions)
-    # return np.array(k_closest_action)
-
 
 def get_action_combination(vaild_action, proto_action):
     k_closest_action = get_k_closest_action(vaild_action, proto_action)
@@ -282,10 +257,10 @@ def get_reward(obs, pre_obs):
 
     if len(enemy_units_health) == 0:
         reward = sum(my_units_health) + 200
-        return reward / 200
+        return reward / 20
     if len(my_units_health) == 0:
         reward = -sum(my_units_health) - 200
-        return reward / 200
+        return reward / 20
 
     if len(my_units_health) < len(my_units_health_pre):
         reward -= (len(my_units_health_pre) - len(my_units_health)) * 10
@@ -295,7 +270,7 @@ def get_reward(obs, pre_obs):
 
     reward += (sum(my_units_health) - sum(my_units_health_pre)) / 2 - (sum(enemy_units_health) - sum(enemy_units_health_pre))
 
-    return float(reward) / 200
+    return float(reward) / 20
 
 
 def win_or_loss(obs):
