@@ -250,7 +250,7 @@ def get_reward(obs, pre_obs):
     reward = 0
     my_units_health = [unit.health for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
     enemy_units_health = [unit.health for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
-    # reward = len(my_units_health) / (len(my_units_health) + len(enemy_units_health))
+    # # reward = len(my_units_health) / (len(my_units_health) + len(enemy_units_health))
 
     my_units_health_pre = [unit.health for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
     enemy_units_health_pre = [unit.health for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
@@ -271,6 +271,14 @@ def get_reward(obs, pre_obs):
     reward += (sum(my_units_health) - sum(my_units_health_pre)) / 2 - (sum(enemy_units_health) - sum(enemy_units_health_pre))
 
     return float(reward) / 20
+    # if len(enemy_units_health) == 0:
+    #     reward = 1
+    #     return reward
+    # elif len(my_units_health) == 0:
+    #     reward = -1
+    #     return reward
+    # else:
+    #     return 0
 
 
 def win_or_loss(obs):

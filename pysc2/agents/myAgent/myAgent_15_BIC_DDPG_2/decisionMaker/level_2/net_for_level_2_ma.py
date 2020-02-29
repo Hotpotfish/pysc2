@@ -145,8 +145,8 @@ class net():
         for i in range(config.MY_UNIT_NUMBER):
             actio_proto[i][0] = np.clip(np.random.normal(actio_proto[i][0], self.var[0]), 0, len(sa.attack_controller) - 1)
             actio_proto[i][1] = np.clip(np.random.normal(actio_proto[i][1], self.var[1]), 0, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER - 1)
-            actio_proto[i][2] = np.clip(np.random.normal(actio_proto[i][2], self.var[2]), 0, config.MAP_SIZE - 1)
-            actio_proto[i][3] = np.clip(np.random.normal(actio_proto[i][3], self.var[3]), 0, config.MAP_SIZE - 1)
+            actio_proto[i][2] = np.clip(np.random.normal(actio_proto[i][2], 0), 0, config.MAP_SIZE - 1)
+            actio_proto[i][3] = np.clip(np.random.normal(actio_proto[i][3], 0), 0, config.MAP_SIZE - 1)
         self.var = self.var * 0.995
         action_k = get_action_combination(self.valid_action, actio_proto)
         temp_qs = []
