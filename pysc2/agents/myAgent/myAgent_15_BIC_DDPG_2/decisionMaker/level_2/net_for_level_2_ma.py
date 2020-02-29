@@ -20,7 +20,7 @@ class net():
         # 神经网络参数
         self.mu = mu
         self.sigma = sigma
-        self.var = 3
+        self.var = self.var = np.array([len(sa.attack_controller) - 1, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER - 1, config.MAP_SIZE - 1, config.MAP_SIZE - 1])
         self.learning_rate = learning_rate
 
         # 动作维度数，动作参数维度数（默认为6）,状态维度数
@@ -143,11 +143,11 @@ class net():
 
         actio_proto = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[2][np.newaxis], self.net.bound: current_state[0][np.newaxis]})[0]
         for i in range(config.MY_UNIT_NUMBER):
-            actio_proto[i][0] = np.clip(np.random.normal(actio_proto[i][0], self.var), 0, len(sa.attack_controller) - 1)
-            actio_proto[i][1] = np.clip(np.random.normal(actio_proto[i][0], self.var), 0, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER - 1)
-            actio_proto[i][2] = np.clip(np.random.normal(actio_proto[i][0], self.var), 0, config.MAP_SIZE - 1)
-            actio_proto[i][3] = np.clip(np.random.normal(actio_proto[i][0], self.var), 0, config.MAP_SIZE - 1)
-        self.var *= 0.995
+            actio_proto[i][0] = np.clip(np.random.normal(actio_proto[i][0], self.var[0]), 0, len(sa.attack_controller) - 1)
+            actio_proto[i][1] = np.clip(np.random.normal(actio_proto[i][0], self.var[1]), 0, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER - 1)
+            actio_proto[i][2] = np.clip(np.random.normal(actio_proto[i][0], self.var[2]), 0, config.MAP_SIZE - 1)
+            actio_proto[i][3] = np.clip(np.random.normal(actio_proto[i][0], self.var[3]), 0, config.MAP_SIZE - 1)
+        self.var = self.var * 0.995
         action_k = get_action_combination(self.valid_action, actio_proto)
         temp_qs = []
         for i in range(np.power(config.K, self.agents_number)):
