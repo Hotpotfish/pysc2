@@ -15,6 +15,10 @@ from scipy.spatial import KDTree
 def get_all_vaild_action():
     action_tpye_len = len(sa.attack_controller)
     actions = []
+    # action_dicts = []
+    # raw_cmd_action = {}
+    # raw_cmd_pt_action = {}
+    # raw_cmd_unit_action = {}
 
     for i in range(action_tpye_len):
         temp_function = sa.attack_controller[i]
