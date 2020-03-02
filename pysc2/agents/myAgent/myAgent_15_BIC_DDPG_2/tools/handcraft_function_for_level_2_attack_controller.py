@@ -14,46 +14,68 @@ from scipy.spatial import KDTree
 
 def get_all_vaild_action():
     action_tpye_len = len(sa.attack_controller)
-    actions = []
-    # action_dicts = []
-    # raw_cmd_action = {}
-    # raw_cmd_pt_action = {}
-    # raw_cmd_unit_action = {}
+    # actions = []
+    action_dicts = {}
+    # raw_cmd_action = []
+    raw_cmd_pt_action = []
+    raw_cmd_unit_action = []
 
     for i in range(action_tpye_len):
-        temp_function = sa.attack_controller[i]
-        function_id = [i]  #
-        # queued = [0]
-        target = [0]  #
-        x = [0]  #
-        y = [0]  #
+        action = sa.attack_controller[i]
+        # if len(action.args) == 2 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags':
+        #     function_id = [i]
+        #     for item in itertools.product(function_id):
+        #         raw_cmd_action.append(item)
+        if len(action.args) == 3 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags' and action.args[2].name == 'world':
+            function_id = [i]
+            x = range(config.MAP_SIZE)
+            y = range(config.MAP_SIZE)
 
-        for arg in temp_function.args:
-            if arg.name == 'target_unit_tag':
-                target = range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)
-            if arg.name == 'world':
-                x = range(config.MAP_SIZE)
-                y = range(config.MAP_SIZE)
-        for item in itertools.product(function_id, target, x, y):
-            actions.append(list(item))
-    return actions
+            for item in itertools.product(function_id, x, y):
+                raw_cmd_pt_action.append(item)
+        elif len(action.args) == 3 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags' and action.args[2].name == 'target_unit_tag':
+            function_id = [i]
+            target = range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)
+            for item in itertools.product(function_id, target):
+                raw_cmd_unit_action.append(item)
+
+    action_dicts.update({'raw_cmd_pt_action': raw_cmd_pt_action, 'raw_cmd_unit_action': raw_cmd_unit_action})
+    return action_dicts
 
 
 # 找出最接近每个智能体输出的动作
 def get_k_closest_action(vaild_action, proto_action):
-    tree = KDTree(vaild_action)
-    temp_r = tree.query(proto_action, k=config.K)
-    k_closest_action = []
+    raw_cmd_pt_tree = KDTree(vaild_action['raw_cmd_pt_action'])
+    raw_cmd_unit_tree = KDTree(vaild_action['raw_cmd_unit_action'])
+
+    raw_cmd_pt_temp = raw_cmd_pt_tree.query(proto_action[:, [0, 2, 3]], k=config.K)
+    raw_cmd_unit_temp = raw_cmd_unit_tree.query(proto_action[:, [0, 1]], k=config.K)
+
+    actions = []
+
     for i in range(config.MY_UNIT_NUMBER):
         action = []
-        if config.K == 1:
-            action.append(vaild_action[temp_r[1][i]])
-        else:
-            for j in range(config.K):
-                action.append(vaild_action[temp_r[1][i][j]])
-        k_closest_action.append(action)
+        raw_cmd_pt_action = list(zip(raw_cmd_pt_temp[0][i], np.array(vaild_action['raw_cmd_pt_action'])[raw_cmd_pt_temp[1][i]]))
+        raw_cmd_unit_action = list(zip(raw_cmd_unit_temp[0][i], np.array(vaild_action['raw_cmd_unit_action'])[raw_cmd_unit_temp[1][i]]))
+        action += raw_cmd_pt_action
+        action += raw_cmd_unit_action
+        action = sorted(action, key=(lambda x: x[0]))
+        actions.append(np.array(action)[0:config.K, 1])
+    return actions
 
-    return k_closest_action
+    # tree = KDTree(vaild_action)
+    # temp_r = tree.query(proto_action, k=config.K)
+    # k_closest_action = []
+    # for i in range(config.MY_UNIT_NUMBER):
+    #     action = []
+    #     if config.K == 1:
+    #         action.append(vaild_action[temp_r[1][i]])
+    #     else:
+    #         for j in range(config.K):
+    #             action.append(vaild_action[temp_r[1][i][j]])
+    #     k_closest_action.append(action)
+
+    # return k_closest_action
 
 
 def get_action_combination(vaild_action, proto_action):
@@ -61,7 +83,7 @@ def get_action_combination(vaild_action, proto_action):
     action_combination = []
     for item in itertools.product(*k_closest_action):
         action_combination.append(np.array(list(item)))
-    return np.array(action_combination)
+    return action_combination
 
 
 # 十进制转任意进制 用于解析动作列表

@@ -25,11 +25,6 @@ class net1(object):
             self.a = self._build_graph_a(self.agents_local_observation, 'eval', train=True)
             a_ = self._build_graph_a(self.agents_local_observation_next, 'target', train=False)
 
-        # temp_q = []
-        # for i in range(np.power(config.K, self.agents_number)):
-        #     temp_q.append(self._build_graph_c(self.state_input, self.temp_action_input[:, i], 'eval', train=True))
-        # self.temp_q = tf.reshape(temp_q, [-1, np.power(config.K, self.agents_number)])
-
         with tf.variable_scope('Critic'):
             self.q = self._build_graph_c(self.state_input, self.a, 'eval', train=True)
             q_ = self._build_graph_c(self.state_input_next, a_, 'target', train=False)
