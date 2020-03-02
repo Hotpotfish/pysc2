@@ -142,12 +142,12 @@ class net():
     def egreedy_action(self, current_state):  # 输出带随机的动作
 
         actio_proto = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[2][np.newaxis], self.net.bound: current_state[0][np.newaxis]})[0]
-        for i in range(config.MY_UNIT_NUMBER):
-            actio_proto[i][0] = np.clip(np.random.normal(actio_proto[i][0], self.var[0]), 0, len(sa.attack_controller) - 1)
-            actio_proto[i][1] = np.clip(np.random.normal(actio_proto[i][1], self.var[1]), 0, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER - 1)
-            actio_proto[i][2] = np.clip(np.random.normal(actio_proto[i][2], 0), 0, config.MAP_SIZE - 1)
-            actio_proto[i][3] = np.clip(np.random.normal(actio_proto[i][3], 0), 0, config.MAP_SIZE - 1)
-        self.var = self.var * 0.995
+        # for i in range(config.MY_UNIT_NUMBER):
+        #     actio_proto[i][0] = np.clip(np.random.normal(actio_proto[i][0], 0), 0, len(sa.attack_controller) - 1)
+        #     actio_proto[i][1] = np.clip(np.random.normal(actio_proto[i][1], 0), 0, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER - 1)
+        #     actio_proto[i][2] = np.clip(np.random.normal(actio_proto[i][2], 0), 0, config.MAP_SIZE - 1)
+        #     actio_proto[i][3] = np.clip(np.random.normal(actio_proto[i][3], 0), 0, config.MAP_SIZE - 1)
+        # self.var = self.var * 0.995
         action_k = get_action_combination(self.valid_action, actio_proto)
         temp_qs = []
         for i in range(np.power(config.K, self.agents_number)):

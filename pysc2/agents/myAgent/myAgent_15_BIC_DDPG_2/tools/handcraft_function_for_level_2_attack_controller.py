@@ -30,13 +30,17 @@ def get_all_vaild_action():
             function_id = [i]
             x = range(config.MAP_SIZE)
             y = range(config.MAP_SIZE)
-
-            for item in itertools.product(function_id, x, y):
+            function_id_2 = [0]
+            target_2 = [0]
+            for item in itertools.product(function_id, x, y, function_id_2, target_2):
                 raw_cmd_pt_action.append(item)
         elif len(action.args) == 3 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags' and action.args[2].name == 'target_unit_tag':
-            function_id = [i]
-            target = range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)
-            for item in itertools.product(function_id, target):
+            function_id = [0]
+            x = [0]
+            y = [0]
+            function_id_2 = [i]
+            target_2 = range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)
+            for item in itertools.product(function_id, x, y, function_id_2, target_2):
                 raw_cmd_unit_action.append(item)
 
     action_dicts.update({'raw_cmd_pt_action': raw_cmd_pt_action, 'raw_cmd_unit_action': raw_cmd_unit_action})
@@ -45,37 +49,27 @@ def get_all_vaild_action():
 
 # 找出最接近每个智能体输出的动作
 def get_k_closest_action(vaild_action, proto_action):
-    raw_cmd_pt_tree = KDTree(vaild_action['raw_cmd_pt_action'])
-    raw_cmd_unit_tree = KDTree(vaild_action['raw_cmd_unit_action'])
+    raw_cmd_pt_tree = KDTree(np.array(vaild_action['raw_cmd_pt_action'])[:, 0:3])
+    raw_cmd_unit_tree = KDTree(np.array(vaild_action['raw_cmd_unit_action'])[:, 3:5])
 
-    raw_cmd_pt_temp = raw_cmd_pt_tree.query(proto_action[:, [0, 2, 3]], k=config.K)
-    raw_cmd_unit_temp = raw_cmd_unit_tree.query(proto_action[:, [0, 1]], k=config.K)
+    raw_cmd_pt_temp = raw_cmd_pt_tree.query(proto_action[:, 0:3], k=config.K)
+    raw_cmd_unit_temp = raw_cmd_unit_tree.query(proto_action[:, 3:5], k=config.K)
 
     actions = []
 
     for i in range(config.MY_UNIT_NUMBER):
         action = []
-        raw_cmd_pt_action = list(zip(raw_cmd_pt_temp[0][i], np.array(vaild_action['raw_cmd_pt_action'])[raw_cmd_pt_temp[1][i]]))
-        raw_cmd_unit_action = list(zip(raw_cmd_unit_temp[0][i], np.array(vaild_action['raw_cmd_unit_action'])[raw_cmd_unit_temp[1][i]]))
+        if config.K == 1:
+            raw_cmd_pt_action = list(zip([raw_cmd_pt_temp[0][i]], np.array(vaild_action['raw_cmd_pt_action'])[raw_cmd_pt_temp[1][i]][np.newaxis]))
+            raw_cmd_unit_action = list(zip([raw_cmd_unit_temp[0][i]], np.array(vaild_action['raw_cmd_unit_action'])[raw_cmd_unit_temp[1][i]][np.newaxis]))
+        else:
+            raw_cmd_pt_action = list(zip(raw_cmd_pt_temp[0][i], np.array(vaild_action['raw_cmd_pt_action'])[raw_cmd_pt_temp[1][i]]))
+            raw_cmd_unit_action = list(zip(raw_cmd_unit_temp[0][i], np.array(vaild_action['raw_cmd_unit_action'])[raw_cmd_unit_temp[1][i]]))
         action += raw_cmd_pt_action
         action += raw_cmd_unit_action
         action = sorted(action, key=(lambda x: x[0]))
         actions.append(np.array(action)[0:config.K, 1])
     return actions
-
-    # tree = KDTree(vaild_action)
-    # temp_r = tree.query(proto_action, k=config.K)
-    # k_closest_action = []
-    # for i in range(config.MY_UNIT_NUMBER):
-    #     action = []
-    #     if config.K == 1:
-    #         action.append(vaild_action[temp_r[1][i]])
-    #     else:
-    #         for j in range(config.K):
-    #             action.append(vaild_action[temp_r[1][i][j]])
-    #     k_closest_action.append(action)
-
-    # return k_closest_action
 
 
 def get_action_combination(vaild_action, proto_action):
@@ -120,7 +114,7 @@ def computeDistance_center(unit):
 
 
 def get_bound():
-    bound = [len(sa.attack_controller) - 1, config.ENEMY_UNIT_NUMBER + config.MY_UNIT_NUMBER - 1, config.MAP_SIZE - 1, config.MAP_SIZE - 1]
+    bound = [len(sa.attack_controller) - 1, config.MAP_SIZE - 1, config.MAP_SIZE - 1, len(sa.attack_controller) - 1, config.ENEMY_UNIT_NUMBER + config.MY_UNIT_NUMBER - 1]
     return bound
 
 
@@ -146,42 +140,63 @@ def assembly_action(init_obs, obs, action_numbers):
 
     init_my_units_tag = [unit.tag for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
     init_enemy_units_tag = [unit.tag for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
-    # controller = sa.attack_controller
 
     for i in range(config.MY_UNIT_NUMBER):
         my_unit_pos = find_unit_pos(obs, init_my_units_tag[i])
-        if my_unit_pos == None:
+        if my_unit_pos is None:
             continue
         parameter = []
-        function_id = int(sa.attack_controller[action_numbers[i][0]].id)
         queued = 0
-        action = sa.attack_controller[action_numbers[i][0]]
-        for arg in action.args:
-            if arg.name == 'queued':
-                parameter.append([queued])
-                continue
-            if arg.name == 'unit_tags':
-                parameter.append([my_unit_pos])
-                continue
-            if arg.name == 'target_unit_tag':
-                if action_numbers[i][1] < config.MY_UNIT_NUMBER:
-                    target_unit_pos = find_unit_pos(obs, init_my_units_tag[action_numbers[i][1]])
-                else:
-                    target_unit_pos = find_unit_pos(obs, init_enemy_units_tag[action_numbers[i][1] - config.MY_UNIT_NUMBER])
-
-                if target_unit_pos == None:
-                    parameter.clear()
-                    break
-                else:
-                    parameter.append([target_unit_pos])
-                    continue
-            if arg.name == 'world':
-                # coordinate = [action_numbers[i][2],action_numbers[i][3]]
-                parameter.append([action_numbers[i][2], action_numbers[i][3]])
-        if len(parameter) == 0:
-            continue
-        else:
+        parameter.append([queued])
+        if np.all(action_numbers[i][3:5] == 0):
+            function_id = int(sa.attack_controller[action_numbers[i][0]].id)
+            parameter.append([my_unit_pos])
+            parameter.append([action_numbers[i][1], action_numbers[i][2]])
             actions.append(a.FunctionCall(function_id, parameter))
+
+        elif np.all(action_numbers[i][0:3] == 0):
+            function_id = int(sa.attack_controller[action_numbers[i][3]].id)
+            parameter.append([my_unit_pos])
+            if action_numbers[i][4] < config.MY_UNIT_NUMBER:
+                target_unit_pos = find_unit_pos(obs, init_my_units_tag[action_numbers[i][4]])
+            else:
+                target_unit_pos = find_unit_pos(obs, init_enemy_units_tag[action_numbers[i][4] - config.MY_UNIT_NUMBER])
+            if target_unit_pos is None:
+                continue
+            else:
+                parameter.append([target_unit_pos])
+            actions.append(a.FunctionCall(function_id, parameter))
+
+        # parameter = []
+        # function_id = int(sa.attack_controller[action_numbers[i][0]].id)
+        # queued = 0
+        # action = sa.attack_controller[action_numbers[i][0]]
+        # for arg in action.args:
+        #     if arg.name == 'queued':
+        #         parameter.append([queued])
+        #         continue
+        #     if arg.name == 'unit_tags':
+        #         parameter.append([my_unit_pos])
+        #         continue
+        #     if arg.name == 'target_unit_tag':
+        #         if action_numbers[i][1] < config.MY_UNIT_NUMBER:
+        #             target_unit_pos = find_unit_pos(obs, init_my_units_tag[action_numbers[i][1]])
+        #         else:
+        #             target_unit_pos = find_unit_pos(obs, init_enemy_units_tag[action_numbers[i][1] - config.MY_UNIT_NUMBER])
+        #
+        #         if target_unit_pos == None:
+        #             parameter.clear()
+        #             break
+        #         else:
+        #             parameter.append([target_unit_pos])
+        #             continue
+        #     if arg.name == 'world':
+        #         # coordinate = [action_numbers[i][2],action_numbers[i][3]]
+        #         parameter.append([action_numbers[i][2], action_numbers[i][3]])
+        # if len(parameter) == 0:
+        #     continue
+        # else:
+        #     actions.append(a.FunctionCall(function_id, parameter))
     return actions
 
 
