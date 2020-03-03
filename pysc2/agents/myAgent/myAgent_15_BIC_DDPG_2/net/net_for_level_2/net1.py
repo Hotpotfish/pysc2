@@ -59,7 +59,7 @@ class net1(object):
         # self.temp_action_input = tf.placeholder("float", shape=[None, np.power(config.K, self.agents_number), self.agents_number, self.action_dim], name='temp_action_input')
 
         self.reward = tf.placeholder("float", shape=[None], name='reward')
-        self.bound = tf.placeholder("float", shape=[None, 5], name='bound')
+        self.bound = tf.placeholder("float", shape=[None, config.ACTION_DIM], name='bound')
 
     def _build_graph_a(self, agents_local_observation, scope_name, train):
         # 环境和智能体本地的共同观察

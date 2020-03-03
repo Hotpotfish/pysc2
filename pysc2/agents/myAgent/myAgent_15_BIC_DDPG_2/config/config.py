@@ -15,7 +15,7 @@ BATCH_SIZE = 32  # size of minibatch
 MU = 0
 SIGMA = 1
 TAU = 0.1
-K = 2
+K = 1
 
 LEARING_RATE = 1e-1
 # 模型保存轮次
@@ -29,7 +29,7 @@ MY_UNIT_NUMBER = 3
 ENEMY_UNIT_NUMBER = 3  # 选择敌方智能体的空间
 
 
-ACTION_DIM = 5 # （4为上下左右）
+ACTION_DIM = 6 # （4为上下左右）
 
 COOP_AGENT_OBDIM = 8
 COOP_AGENTS_OBDIM = (MY_UNIT_NUMBER + ENEMY_UNIT_NUMBER) * COOP_AGENT_OBDIM
