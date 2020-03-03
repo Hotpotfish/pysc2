@@ -5,7 +5,6 @@ from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.decisionMaker.level_2.level_2 im
 from pysc2.env.environment import StepType
 
 
-
 class hierarchical_learning_structure():
     def __init__(self):
         self.episode = 0
@@ -34,7 +33,6 @@ class hierarchical_learning_structure():
     def test_action(self, obs):
         # controller_number = self.leve1_1.test_action(obs)
         action = self.level_2.test_action(obs, 0)
-        print(action)
         return action
 
     def load_model(self, modelLoadPath):

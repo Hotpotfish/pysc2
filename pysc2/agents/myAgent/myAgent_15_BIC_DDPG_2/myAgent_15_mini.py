@@ -52,7 +52,7 @@ def main(unused_argv):
                 score_index=0,
                 step_mul=8,
                 disable_fog=False,
-                visualize=True,
+                visualize=False,
                 realtime=True,
 
         ) as env:
