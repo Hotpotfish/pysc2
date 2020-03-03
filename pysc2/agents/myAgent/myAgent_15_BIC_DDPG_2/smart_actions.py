@@ -59,7 +59,8 @@ attack_controller = [
 
 
     action.RAW_FUNCTIONS.Move_pt,
-
+    # action.RAW_FUNCTIONS.Load_Medivac_unit,
+    # action.RAW_FUNCTIONS.UnloadAllAt_Medivac_unit,
     action.RAW_FUNCTIONS.Effect_Heal_unit,
     action.RAW_FUNCTIONS.Effect_KD8Charge_unit,
     action.RAW_FUNCTIONS.Attack_unit,

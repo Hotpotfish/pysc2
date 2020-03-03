@@ -173,6 +173,8 @@ def assembly_action(init_obs, obs, action_numbers):
         queued = 0
         parameter.append([queued])
         if np.all(action_numbers[i][1:] == 0):
+            # if action_numbers[i][0] == 0:
+            #     print()
             function_id = int(sa.attack_controller[action_numbers[i][0]].id)
             parameter.append([my_unit_pos])
             # parameter.append([action_numbers[i][1], action_numbers[i][2]])

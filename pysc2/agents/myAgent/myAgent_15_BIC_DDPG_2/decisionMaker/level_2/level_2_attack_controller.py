@@ -60,6 +60,7 @@ class level_2_attack_controller:
             self.init_obs = obs
 
         self.controller.current_state = [np.array(get_bound()), np.array(get_state(self.init_obs, obs)), np.array(get_agents_obs(self.init_obs, obs))]
+        self.current_obs = obs
         action = self.controller.network.action(self.controller.current_state)
         actions = handcraft_function_for_level_2_attack_controller.assembly_action(self.init_obs, obs, action)
         return actions
