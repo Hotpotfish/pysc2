@@ -56,10 +56,12 @@ attack_controller = [
     action.RAW_FUNCTIONS.Effect_Stim_Marine_quick,
     action.RAW_FUNCTIONS.Morph_SiegeMode_quick,
     action.RAW_FUNCTIONS.Morph_Unsiege_quick,
+    action.RAW_FUNCTIONS.Morph_VikingAssaultMode_quick,
+    action.RAW_FUNCTIONS.Morph_VikingFighterMode_quick,
 
-
+    action.RAW_FUNCTIONS.UnloadUnit_Medivac_quick,
     action.RAW_FUNCTIONS.Move_pt,
-    # action.RAW_FUNCTIONS.Load_Medivac_unit,
+    action.RAW_FUNCTIONS.Load_Medivac_unit,
     # action.RAW_FUNCTIONS.UnloadAllAt_Medivac_unit,
     action.RAW_FUNCTIONS.Effect_Heal_unit,
     action.RAW_FUNCTIONS.Effect_KD8Charge_unit,
