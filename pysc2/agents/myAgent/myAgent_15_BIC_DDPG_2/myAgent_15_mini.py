@@ -50,7 +50,7 @@ def main(unused_argv):
                     raw_resolution=config.MAP_SIZE,
                 ),
                 score_index=0,
-                step_mul=8,
+                step_mul=16,
                 disable_fog=False,
                 visualize=False,
                 realtime=False,
