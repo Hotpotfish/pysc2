@@ -230,6 +230,8 @@ def get_state(init_obs, obs):
             state = np.append(state, np.zeros(config.COOP_AGENT_OBDIM))
 
     for i in range(config.ENEMY_UNIT_NUMBER):
+        # if i >= len(init_enemy_units_tag):
+        #     print()
         enemy_unit = find_unit_by_tag(obs, init_enemy_units_tag[i])
         if enemy_unit is not None:
             my_unit_state = get_agent_state(enemy_unit)
