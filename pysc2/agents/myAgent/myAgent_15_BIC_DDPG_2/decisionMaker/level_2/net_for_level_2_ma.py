@@ -161,8 +161,9 @@ class net():
             actio_proto[i][4] = np.clip(np.random.normal(actio_proto[i][4], self.var[4]), 0, len(sa.attack_controller) - 1)
             actio_proto[i][5] = np.clip(np.random.normal(actio_proto[i][5], self.var[5]), 0, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER - 1)
 
-        self.var = self.var * 0.995
-        action_k = get_action_combination( self.vaild_action,self.KDTrees, actio_proto)
+        self.var = self.var * 0.999
+        print(self.var)
+        action_k = get_action_combination(self.vaild_action, self.KDTrees, actio_proto)
         temp_qs = []
         for i in range(np.power(config.K, self.agents_number)):
             temp_q = self.session.run(self.net.q, {self.net.state_input: current_state[1][np.newaxis], self.net.a: action_k[i][np.newaxis]})[0]
@@ -172,7 +173,7 @@ class net():
 
     def action(self, current_state):
         actio_proto = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[2][np.newaxis], self.net.bound: current_state[0][np.newaxis]})[0]
-        action_k = get_action_combination(self.vaild_action,self.KDTrees, actio_proto)
+        action_k = get_action_combination(self.vaild_action, self.KDTrees, actio_proto)
         temp_qs = []
         for i in range(np.power(config.K, self.agents_number)):
             temp_q = self.session.run(self.net.q, {self.net.state_input: current_state[1][np.newaxis], self.net.a: action_k[i][np.newaxis]})[0]

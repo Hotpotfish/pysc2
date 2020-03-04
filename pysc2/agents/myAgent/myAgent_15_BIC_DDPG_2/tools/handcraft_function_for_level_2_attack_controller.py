@@ -80,7 +80,7 @@ def get_k_closest_action(vaild_action, KDTrees, proto_action):
             raw_cmd_pt_action = list(zip([raw_cmd_pt_temp[0][i]], np.array(vaild_action['raw_cmd_pt_action'])[raw_cmd_pt_temp[1][i]][np.newaxis]))
             raw_cmd_unit_action = list(zip([raw_cmd_unit_temp[0][i]], np.array(vaild_action['raw_cmd_unit_action'])[raw_cmd_unit_temp[1][i]][np.newaxis]))
         else:
-            raw_cmd_action = list(zip([raw_cmd_temp[0][i]], np.array(vaild_action['raw_cmd_action'])[raw_cmd_temp[1][i]]))
+            raw_cmd_action = list(zip(raw_cmd_temp[0][i], np.array(vaild_action['raw_cmd_action'])[raw_cmd_temp[1][i]]))
             raw_cmd_pt_action = list(zip(raw_cmd_pt_temp[0][i], np.array(vaild_action['raw_cmd_pt_action'])[raw_cmd_pt_temp[1][i]]))
             raw_cmd_unit_action = list(zip(raw_cmd_unit_temp[0][i], np.array(vaild_action['raw_cmd_unit_action'])[raw_cmd_unit_temp[1][i]]))
         action += raw_cmd_action
@@ -230,8 +230,8 @@ def get_state(init_obs, obs):
             state = np.append(state, np.zeros(config.COOP_AGENT_OBDIM))
 
     for i in range(config.ENEMY_UNIT_NUMBER):
-        # if i >= len(init_enemy_units_tag):
-        #     print()
+        if i >= len(init_enemy_units_tag):
+            print()
         enemy_unit = find_unit_by_tag(obs, init_enemy_units_tag[i])
         if enemy_unit is not None:
             my_unit_state = get_agent_state(enemy_unit)
