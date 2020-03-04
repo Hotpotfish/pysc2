@@ -4,6 +4,8 @@ import random
 
 import numpy as np
 import tensorflow as tf
+from scipy.spatial import KDTree
+
 import pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.config.config as config
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.SqQueue import SqQueue
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.net.net_for_level_2.net1 import net1
@@ -38,7 +40,10 @@ class net():
 
         # 网络结构初始化
         self.name = name
-        self.valid_action = valid_action
+        self.vaild_action = valid_action
+        self.KDTrees = [KDTree(np.array(valid_action['raw_cmd_action'])[:, 0][:, np.newaxis]),
+                        KDTree(np.array(valid_action['raw_cmd_pt_action'])[:, 1:4]),
+                        KDTree(np.array(valid_action['raw_cmd_unit_action'])[:, 4:6])]
 
         self.net = net1(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number, self.enemy_number, self.name + '_net1')
 
@@ -157,7 +162,7 @@ class net():
             actio_proto[i][5] = np.clip(np.random.normal(actio_proto[i][5], self.var[5]), 0, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER - 1)
 
         self.var = self.var * 0.995
-        action_k = get_action_combination(self.valid_action, actio_proto)
+        action_k = get_action_combination( self.vaild_action,self.KDTrees, actio_proto)
         temp_qs = []
         for i in range(np.power(config.K, self.agents_number)):
             temp_q = self.session.run(self.net.q, {self.net.state_input: current_state[1][np.newaxis], self.net.a: action_k[i][np.newaxis]})[0]
@@ -167,7 +172,7 @@ class net():
 
     def action(self, current_state):
         actio_proto = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[2][np.newaxis], self.net.bound: current_state[0][np.newaxis]})[0]
-        action_k = get_action_combination(self.valid_action, actio_proto)
+        action_k = get_action_combination(self.vaild_action,self.KDTrees, actio_proto)
         temp_qs = []
         for i in range(np.power(config.K, self.agents_number)):
             temp_q = self.session.run(self.net.q, {self.net.state_input: current_state[1][np.newaxis], self.net.a: action_k[i][np.newaxis]})[0]

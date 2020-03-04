@@ -62,12 +62,12 @@ def get_all_vaild_action():
 
 
 # 找出最接近每个智能体输出的动作
-def get_k_closest_action(vaild_action, proto_action):
-    raw_cmd_tree = KDTree(np.array(vaild_action['raw_cmd_action'])[:, 0][:,np.newaxis])
-    raw_cmd_pt_tree = KDTree(np.array(vaild_action['raw_cmd_pt_action'])[:, 1:4])
-    raw_cmd_unit_tree = KDTree(np.array(vaild_action['raw_cmd_unit_action'])[:, 4:6])
+def get_k_closest_action(vaild_action, KDTrees, proto_action):
+    raw_cmd_tree = KDTrees[0]
+    raw_cmd_pt_tree = KDTrees[1]
+    raw_cmd_unit_tree = KDTrees[2]
 
-    raw_cmd_temp = raw_cmd_tree.query(proto_action[:, 0][:,np.newaxis], k=config.K)
+    raw_cmd_temp = raw_cmd_tree.query(proto_action[:, 0][:, np.newaxis], k=config.K)
     raw_cmd_pt_temp = raw_cmd_pt_tree.query(proto_action[:, 1:4], k=config.K)
     raw_cmd_unit_temp = raw_cmd_unit_tree.query(proto_action[:, 4:6], k=config.K)
 
@@ -91,8 +91,8 @@ def get_k_closest_action(vaild_action, proto_action):
     return actions
 
 
-def get_action_combination(vaild_action, proto_action):
-    k_closest_action = get_k_closest_action(vaild_action, proto_action)
+def get_action_combination(vaild_action, KDTrees, proto_action):
+    k_closest_action = get_k_closest_action(vaild_action, KDTrees, proto_action)
     action_combination = []
     for item in itertools.product(*k_closest_action):
         action_combination.append(np.array(list(item)))
