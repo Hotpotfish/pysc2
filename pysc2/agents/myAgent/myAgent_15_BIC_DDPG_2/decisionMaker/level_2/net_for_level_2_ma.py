@@ -161,7 +161,7 @@ class net():
             actio_proto[i][4] = np.clip(np.random.normal(actio_proto[i][4], self.var[4]), 0, len(sa.attack_controller) - 1)
             actio_proto[i][5] = np.clip(np.random.normal(actio_proto[i][5], self.var[5]), 0, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER - 1)
 
-        self.var = self.var * 0.999
+        self.var = self.var * 0.999999
         print(self.var)
         action_k = get_action_combination(self.vaild_action, self.KDTrees, actio_proto)
         temp_qs = []

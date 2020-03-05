@@ -79,7 +79,7 @@ class net1(object):
         with tf.variable_scope(scope_name):
             encoder = []
             for i in range(agents_number):
-                fc1 = slim.fully_connected(agents_local_observation[:, i, :], 10, scope='full_connected1')
+                fc1 = slim.fully_connected(agents_local_observation[:, i, :], 100, scope='full_connected1')
                 encoder.append(fc1)
             encoder = tf.transpose(encoder, [1, 0, 2])
             encoder = tf.unstack(encoder, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
@@ -119,9 +119,9 @@ class net1(object):
     def _observation_encoder_c(self, state_input, action_input, agents_number, scope_name):
         with tf.variable_scope(scope_name):
             encoder = []
-            fc1_s = slim.fully_connected(state_input, 10, scope='full_connected_s1')
+            fc1_s = slim.fully_connected(state_input, 100, scope='full_connected_s1')
             for i in range(agents_number):
-                fc1_a = slim.fully_connected(action_input[:, i], 10, scope='full_connected_a1')
+                fc1_a = slim.fully_connected(action_input[:, i], 100, scope='full_connected_a1')
                 data = fc1_s + fc1_a
                 encoder.append(data)
             encoder = tf.transpose(encoder, [1, 0, 2])
