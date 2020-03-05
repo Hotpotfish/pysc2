@@ -14,10 +14,10 @@ BATCH_SIZE = 32  # size of minibatch
 # 神经网络初始化参数
 MU = 0
 SIGMA = 1
-TAU = 0.01
+TAU = 0.1
 K = 1
 
-LEARING_RATE = 1e-3
+LEARING_RATE = 1e-1
 # 模型保存轮次
 MODEL_SAVE_EPISODE = 1000
 
