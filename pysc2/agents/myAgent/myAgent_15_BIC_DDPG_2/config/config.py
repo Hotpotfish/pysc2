@@ -8,7 +8,7 @@ EPISODES = 50000
 GAMMA = 0.9  # discount factor for target Q
 INITIAL_EPSILON = 0.6  # starting value of epsilon
 FINAL_EPSILON = 0.01  # final value of epsilon
-REPLAY_SIZE = 600000  # experience replay buffer size
+REPLAY_SIZE = 60000  # experience replay buffer size
 BATCH_SIZE = 32  # size of minibatch
 
 # 神经网络初始化参数

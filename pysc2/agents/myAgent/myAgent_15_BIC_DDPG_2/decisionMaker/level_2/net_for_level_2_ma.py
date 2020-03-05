@@ -130,7 +130,7 @@ class net():
             minibatch = random.sample(self.replay_buffer.queue, config.BATCH_SIZE)
             agents_local_observation = np.array([data[0][2] for data in minibatch])
             state = np.array([data[0][1] for data in minibatch])
-            bound = np.array([data[0][0] for data in minibatch])
+            # bound = np.array([data[0][0] for data in minibatch])
 
             action_batch = np.array([data[1] for data in minibatch])
             reward_batch = np.array([data[2] for data in minibatch])
@@ -138,12 +138,10 @@ class net():
             state_next = np.array([data[3][1] for data in minibatch])
 
             _ = self.session.run(self.net.atrain, {self.net.state_input: state,
-                                                   self.net.agents_local_observation: agents_local_observation,
-                                                   self.net.bound: bound})
+                                                   self.net.agents_local_observation: agents_local_observation})
 
             __, self.td_error = self.session.run([self.net.ctrain, self.net.td_error],
                                                  {self.net.state_input: state,
-                                                  self.net.bound: bound,
                                                   self.net.a: action_batch,
                                                   self.net.reward: reward_batch,
                                                   self.net.state_input_next: state_next,
@@ -152,7 +150,8 @@ class net():
 
     def egreedy_action(self, current_state):  # 输出带随机的动作
 
-        actio_proto = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[2][np.newaxis], self.net.bound: current_state[0][np.newaxis]})[0]
+        actio_out = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[2][np.newaxis]})[0]
+        actio_proto =actio_out * current_state[0]
         for i in range(config.MY_UNIT_NUMBER):
             actio_proto[i][0] = np.clip(np.random.normal(actio_proto[i][0], self.var[0]), 0, len(sa.attack_controller) - 1)
             actio_proto[i][1] = np.clip(np.random.normal(actio_proto[i][1], self.var[1]), 0, len(sa.attack_controller) - 1)
@@ -169,10 +168,11 @@ class net():
             temp_q = self.session.run(self.net.q, {self.net.state_input: current_state[1][np.newaxis], self.net.a: action_k[i][np.newaxis]})[0]
             temp_qs.append(temp_q)
         action = action_k[np.argmax(temp_qs)]
-        return actio_proto, action
+        return actio_out, action
 
     def action(self, current_state):
-        actio_proto = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[2][np.newaxis], self.net.bound: current_state[0][np.newaxis]})[0]
+        actio_out = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[2][np.newaxis]})[0]
+        actio_proto = actio_out * current_state[0]
         action_k = get_action_combination(self.vaild_action, self.KDTrees, actio_proto)
         temp_qs = []
         for i in range(np.power(config.K, self.agents_number)):

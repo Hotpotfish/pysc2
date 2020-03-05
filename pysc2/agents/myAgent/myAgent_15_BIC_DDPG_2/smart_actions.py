@@ -77,7 +77,7 @@ attack_controller = [
 
     # action.RAW_FUNCTIONS.Load_unit,  # ‘ÿ»À
     # action.RAW_FUNCTIONS.UnloadAllAt_pt,  # –∂»À
-    # action.RAW_FUNCTIONS.Effect_Heal_unit,
+    action.RAW_FUNCTIONS.Effect_Heal_unit,
 
     # action.RAW_FUNCTIONS.Effect_NukeCalldown_pt,  # Ω–∫ÀµØ
 

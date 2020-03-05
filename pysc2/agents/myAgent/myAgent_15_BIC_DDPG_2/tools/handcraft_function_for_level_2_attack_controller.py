@@ -302,10 +302,10 @@ def get_reward(obs, pre_obs):
 
     if len(enemy_units_health) == 0:
         reward = sum(my_units_health) + 200
-        return reward / 20
+        return reward / 200
     if len(my_units_health) == 0:
         reward = -sum(my_units_health) - 200
-        return reward / 20
+        return reward / 200
 
     if len(my_units_health) < len(my_units_health_pre):
         reward -= (len(my_units_health_pre) - len(my_units_health)) * 10
@@ -315,7 +315,7 @@ def get_reward(obs, pre_obs):
 
     reward += (sum(my_units_health) - sum(my_units_health_pre)) / 2 - (sum(enemy_units_health) - sum(enemy_units_health_pre))
 
-    return float(reward) / 20
+    return float(reward) / 200
     # if len(enemy_units_health) == 0:
     #     reward = 1
     #     return reward
