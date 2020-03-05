@@ -38,7 +38,7 @@ def main(unused_argv):
 
     try:
         with sc2_env.SC2Env(
-                map_name="mix_vs_mix_2",
+                map_name="mix_vs_mix_3",
                 players=[sc2_env.Agent(sc2_env.Race.terran), ],
                 agent_interface_format=features.AgentInterfaceFormat(
                     feature_dimensions=features.Dimensions(screen=config.MAP_SIZE,
@@ -50,7 +50,7 @@ def main(unused_argv):
                     raw_resolution=config.MAP_SIZE,
                 ),
                 score_index=0,
-                step_mul=8,
+                step_mul=16,
                 disable_fog=False,
                 visualize=False,
                 realtime=False,

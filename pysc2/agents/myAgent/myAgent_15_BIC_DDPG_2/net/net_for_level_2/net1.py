@@ -142,6 +142,6 @@ class net1(object):
             outputs = slim.flatten(outputs)
 
             fc2 = slim.fully_connected(outputs, 1, activation_fn=None, scope='full_connected2')
-            fc2 = tf.Print(fc2, [fc2])
+            # fc2 = tf.Print(fc2, [fc2])
 
             return fc2

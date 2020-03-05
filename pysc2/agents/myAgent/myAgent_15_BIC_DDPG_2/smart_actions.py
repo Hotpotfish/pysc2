@@ -52,21 +52,22 @@ harvest_controller = [
 ]
 
 attack_controller = [
-    # action.RAW_FUNCTIONS.Morph_Hellion_quick,  # 恶火变身
-    # action.RAW_FUNCTIONS.Morph_Hellbat_quick,
-    # action.RAW_FUNCTIONS.Morph_SiegeMode_quick,  # 坦克展开
-    # action.RAW_FUNCTIONS.Morph_Unsiege_quick,  # 坦克收束
+    action.RAW_FUNCTIONS.Morph_Hellion_quick,  # 恶火变身
+    action.RAW_FUNCTIONS.Morph_Hellbat_quick,
+    action.RAW_FUNCTIONS.Morph_SiegeMode_quick,  # 坦克展开
+    action.RAW_FUNCTIONS.Morph_Unsiege_quick,  # 坦克收束
 
     action.RAW_FUNCTIONS.Effect_Stim_quick,  # 兴奋剂
-    # action.RAW_FUNCTIONS.Morph_ThorExplosiveMode_quick,  # 雷神爆破模式
-    # action.RAW_FUNCTIONS.Morph_ThorHighImpactMode_quick,  # 雷神冲击模式
-    #
-    # action.RAW_FUNCTIONS.Behavior_CloakOff_quick,  # 影身模式
-    # action.RAW_FUNCTIONS.Behavior_CloakOn_quick,  # 解除隐身
+    action.RAW_FUNCTIONS.Morph_ThorExplosiveMode_quick,  # 雷神爆破模式
+    action.RAW_FUNCTIONS.Morph_ThorHighImpactMode_quick,  # 雷神冲击模式
+
+    action.RAW_FUNCTIONS.Behavior_CloakOff_quick,  # 影身模式
+    action.RAW_FUNCTIONS.Behavior_CloakOn_quick,  # 解除隐身
+    action.RAW_FUNCTIONS.Effect_EMP_unit,
 
     action.RAW_FUNCTIONS.Effect_KD8Charge_unit,
 
-    # action.RAW_FUNCTIONS.Effect_EMP_unit,
+
 
     # action.RAW_FUNCTIONS.Effect_InterferenceMatrix_unit,  # 干扰矩阵
     # action.RAW_FUNCTIONS.Effect_AutoTurret_pt,  # 自动炮台
