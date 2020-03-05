@@ -154,15 +154,8 @@ class net():
         actio_out = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[2][np.newaxis]})[0]
         actio_out = np.clip(np.random.normal(actio_out, self.var), 0, 1)
         actio_proto = actio_out * current_state[0]
-        # for i in range(config.MY_UNIT_NUMBER):
-        #     actio_proto[i][0] = np.clip(np.random.normal(actio_proto[i][0], self.var[0]), 0, len(sa.attack_controller) - 1)
-        #     actio_proto[i][1] = np.clip(np.random.normal(actio_proto[i][1], self.var[1]), 0, len(sa.attack_controller) - 1)
-        #     actio_proto[i][2] = np.clip(np.random.normal(actio_proto[i][2], self.var[2]), 0, config.MAP_SIZE - 1)
-        #     actio_proto[i][3] = np.clip(np.random.normal(actio_proto[i][3], self.var[3]), 0, config.MAP_SIZE - 1)
-        #     actio_proto[i][4] = np.clip(np.random.normal(actio_proto[i][4], self.var[4]), 0, len(sa.attack_controller) - 1)
-        #     actio_proto[i][5] = np.clip(np.random.normal(actio_proto[i][5], self.var[5]), 0, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER - 1)
-        self.var = self.var * 0.99999
-        print(self.var)
+        self.var = self.var * 0.995
+        # print(self.var)
         action_k = get_action_combination(self.vaild_action, self.KDTrees, actio_proto)
         temp_qs = []
         for i in range(np.power(config.K, self.agents_number)):
