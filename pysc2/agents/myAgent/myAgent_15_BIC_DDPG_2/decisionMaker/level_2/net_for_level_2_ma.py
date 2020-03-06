@@ -154,8 +154,8 @@ class net():
         actio_out = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[2][np.newaxis]})[0]
         actio_out = np.clip(np.random.normal(actio_out, self.var), 0, 1)
         actio_proto = actio_out * current_state[0]
-        self.var = self.var * 0.995
-        # print(self.var)
+        self.var = self.var * 0.9995
+        print(self.var)
         action_k = get_action_combination(self.vaild_action, self.KDTrees, actio_proto)
         temp_qs = []
         for i in range(np.power(config.K, self.agents_number)):
