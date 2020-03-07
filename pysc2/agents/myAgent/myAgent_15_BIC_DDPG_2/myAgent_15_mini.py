@@ -26,9 +26,9 @@ class myAgent(base_agent.BaseAgent):
         # self.add_or_plt(obs, self.steps)
 
         super(myAgent, self).step(obs)
-        action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'd:/model/', None)
+        # action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'd:/model/', None)
         # action = self.hierarchical_learning_structure.execute(obs, 'TRAIN', 'e:/model/',  'D:/model/20191230172144/episode_300')
-        # action = self.hierarchical_learning_structure.execute(obs, 'TEST', None, 'D:/model/Bic-DDPG_mix_2/episode_1400')
+        action = self.hierarchical_learning_structure.execute(obs, 'TEST', None, 'D:/model/20200306143555/episode_52000')
         # print(action)
         return action
 
@@ -38,7 +38,7 @@ def main(unused_argv):
 
     try:
         with sc2_env.SC2Env(
-                map_name="8t_vs_7z",
+                map_name="mix_vs_mix_3",
                 players=[sc2_env.Agent(sc2_env.Race.terran), ],
                 agent_interface_format=features.AgentInterfaceFormat(
                     feature_dimensions=features.Dimensions(screen=config.MAP_SIZE,
@@ -53,7 +53,7 @@ def main(unused_argv):
                 step_mul=8,
                 disable_fog=False,
                 visualize=False,
-                realtime=False,
+                realtime=True,
 
         ) as env:
             # env=available_actions_printer.AvailableActionsPrinter(env)

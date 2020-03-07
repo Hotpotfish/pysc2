@@ -29,7 +29,7 @@ class net():
         #                                 len(sa.attack_controller) - 1,
         #                                 config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER - 1
         #                                 ])
-        self.var = 1
+        self.var = 0.5
         self.learning_rate = learning_rate
 
         # 动作维度数，动作参数维度数（默认为6）,状态维度数
@@ -154,7 +154,7 @@ class net():
         actio_out = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[2][np.newaxis]})[0]
         actio_out = np.clip(np.random.normal(actio_out, self.var), 0, 1)
         actio_proto = actio_out * current_state[0]
-        self.var = self.var * 0.9995
+        self.var = self.var * 0.999995
         print(self.var)
         action_k = get_action_combination(self.vaild_action, self.KDTrees, actio_proto)
         temp_qs = []
