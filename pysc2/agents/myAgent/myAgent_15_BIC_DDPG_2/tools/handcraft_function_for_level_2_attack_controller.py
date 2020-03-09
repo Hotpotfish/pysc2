@@ -9,21 +9,23 @@ from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.config import config
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools import unit_list
 from pysc2.lib import features
 from pysc2.lib import actions as a
-from scipy.spatial import KDTree
 
 
 def get_all_vaild_action():
     action_tpye_len = len(sa.attack_controller)
-    # actions = []
     action_dicts = {}
     raw_cmd_action = []
     raw_cmd_pt_action = []
     raw_cmd_unit_action = []
-
+    raw_cmd_action_real = []
+    raw_cmd_pt_action_real = []
+    raw_cmd_unit_action_real = []
+    i1, i2, i3 = 0, 0, 0
     for i in range(action_tpye_len):
         action = sa.attack_controller[i]
+
         if len(action.args) == 2 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags':
-            function_id_1 = [i]
+            function_id_1 = [i1]
 
             function_id_2 = [0]
             x_2 = [0]
@@ -34,10 +36,12 @@ def get_all_vaild_action():
 
             for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
                 raw_cmd_action.append(item)
+            raw_cmd_action_real.append(action)
+            i1 += 1
         elif len(action.args) == 3 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags' and action.args[2].name == 'world':
             function_id_1 = [0]
 
-            function_id_2 = [i]
+            function_id_2 = [i2]
             x_2 = range(config.MAP_SIZE)
             y_2 = range(config.MAP_SIZE)
 
@@ -45,24 +49,40 @@ def get_all_vaild_action():
             target_3 = [0]
             for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
                 raw_cmd_pt_action.append(item)
+            raw_cmd_pt_action_real.append(action)
+            i2 += 1
+
         elif len(action.args) == 3 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags' and action.args[2].name == 'target_unit_tag':
             function_id_1 = [0]
-
             function_id_2 = [0]
             x_2 = [0]
             y_2 = [0]
 
-            function_id_3 = [i]
+            function_id_3 = [i3]
             target_3 = range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)
             for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
                 raw_cmd_unit_action.append(item)
+            raw_cmd_unit_action_real.append(action)
+            i3 += 1
 
-    action_dicts.update({'raw_cmd_action': raw_cmd_action, 'raw_cmd_pt_action': raw_cmd_pt_action, 'raw_cmd_unit_action': raw_cmd_unit_action})
+    action_dicts.update({'raw_cmd_action': raw_cmd_action, 'raw_cmd_pt_action': raw_cmd_pt_action, 'raw_cmd_unit_action': raw_cmd_unit_action,
+                         'raw_cmd_action_real': raw_cmd_action_real, 'raw_cmd_pt_action_real': raw_cmd_pt_action_real, 'raw_cmd_unit_action_real': raw_cmd_unit_action_real})
     return action_dicts
 
 
-# 找出最接近每个智能体输出的动作
-def get_k_closest_action(vaild_action, KDTrees, proto_action):
+def get_max_vaild_action_distance(vaild_action):
+    raw_cmd_action_len = len(vaild_action['raw_cmd_action'])
+    raw_cmd_pt_action_len = len(vaild_action['raw_cmd_pt_action'])
+    raw_cmd_unit_action_len = len(vaild_action['raw_cmd_unit_action'])
+    max_distance = [raw_cmd_action_len - 1,
+                    np.sqrt(np.power(raw_cmd_pt_action_len - 1, 2) + np.power(config.MAP_SIZE - 1, 2) + np.power(config.MAP_SIZE - 1, 2)),
+                    np.sqrt(np.power(raw_cmd_unit_action_len - 1, 2) + np.power(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER - 1, 2))]
+    return max_distance
+
+    # 找出最接近每个智能体输出的动作
+
+
+def get_k_closest_action(vaild_action, max_vaild_action_distance, KDTrees, proto_action):
     raw_cmd_tree = KDTrees[0]
     raw_cmd_pt_tree = KDTrees[1]
     raw_cmd_unit_tree = KDTrees[2]
@@ -76,13 +96,13 @@ def get_k_closest_action(vaild_action, KDTrees, proto_action):
     for i in range(config.MY_UNIT_NUMBER):
         action = []
         if config.K == 1:
-            raw_cmd_action = list(zip([raw_cmd_temp[0][i]], np.array(vaild_action['raw_cmd_action'])[raw_cmd_temp[1][i]][np.newaxis]))
-            raw_cmd_pt_action = list(zip([raw_cmd_pt_temp[0][i]], np.array(vaild_action['raw_cmd_pt_action'])[raw_cmd_pt_temp[1][i]][np.newaxis]))
-            raw_cmd_unit_action = list(zip([raw_cmd_unit_temp[0][i]], np.array(vaild_action['raw_cmd_unit_action'])[raw_cmd_unit_temp[1][i]][np.newaxis]))
+            raw_cmd_action = list(zip([raw_cmd_temp[0][i] / max_vaild_action_distance[0]], np.array(vaild_action['raw_cmd_action'])[raw_cmd_temp[1][i]][np.newaxis]))
+            raw_cmd_pt_action = list(zip([raw_cmd_pt_temp[0][i] / max_vaild_action_distance[1]], np.array(vaild_action['raw_cmd_pt_action'])[raw_cmd_pt_temp[1][i]][np.newaxis]))
+            raw_cmd_unit_action = list(zip([raw_cmd_unit_temp[0][i] / max_vaild_action_distance[2]], np.array(vaild_action['raw_cmd_unit_action'])[raw_cmd_unit_temp[1][i]][np.newaxis]))
         else:
-            raw_cmd_action = list(zip(raw_cmd_temp[0][i], np.array(vaild_action['raw_cmd_action'])[raw_cmd_temp[1][i]]))
-            raw_cmd_pt_action = list(zip(raw_cmd_pt_temp[0][i], np.array(vaild_action['raw_cmd_pt_action'])[raw_cmd_pt_temp[1][i]]))
-            raw_cmd_unit_action = list(zip(raw_cmd_unit_temp[0][i], np.array(vaild_action['raw_cmd_unit_action'])[raw_cmd_unit_temp[1][i]]))
+            raw_cmd_action = list(zip(raw_cmd_temp[0][i] / max_vaild_action_distance[0], np.array(vaild_action['raw_cmd_action'])[raw_cmd_temp[1][i]]))
+            raw_cmd_pt_action = list(zip(raw_cmd_pt_temp[0][i] / max_vaild_action_distance[1], np.array(vaild_action['raw_cmd_pt_action'])[raw_cmd_pt_temp[1][i]]))
+            raw_cmd_unit_action = list(zip(raw_cmd_unit_temp[0][i] / max_vaild_action_distance[2], np.array(vaild_action['raw_cmd_unit_action'])[raw_cmd_unit_temp[1][i]]))
         action += raw_cmd_action
         action += raw_cmd_pt_action
         action += raw_cmd_unit_action
@@ -91,8 +111,8 @@ def get_k_closest_action(vaild_action, KDTrees, proto_action):
     return actions
 
 
-def get_action_combination(vaild_action, KDTrees, proto_action):
-    k_closest_action = get_k_closest_action(vaild_action, KDTrees, proto_action)
+def get_action_combination(vaild_action, max_vaild_action_distance, KDTrees, proto_action):
+    k_closest_action = get_k_closest_action(vaild_action, max_vaild_action_distance, KDTrees, proto_action)
     action_combination = []
     for item in itertools.product(*k_closest_action):
         action_combination.append(np.array(list(item)))
@@ -132,13 +152,14 @@ def computeDistance_center(unit):
     return distance
 
 
-def get_bound():
-    bound = [len(sa.attack_controller) - 1,
-             len(sa.attack_controller) - 1,
+def get_bound(vaild_action):
+    bound = [len(vaild_action['raw_cmd_action']) - 1,
+             len(vaild_action['raw_cmd_pt_action']) - 1,
              config.MAP_SIZE - 1,
              config.MAP_SIZE - 1,
-             len(sa.attack_controller) - 1,
-             config.ENEMY_UNIT_NUMBER + config.MY_UNIT_NUMBER - 1]
+             len(vaild_action['raw_cmd_unit_action']) - 1,
+             config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER - 1
+             ]
     return bound
 
 
@@ -159,7 +180,7 @@ def find_unit_pos(obs, tag):
 
 ############################################
 
-def assembly_action(init_obs, obs, action_numbers):
+def assembly_action(init_obs, obs, action_numbers, vaild_action):
     actions = []
 
     init_my_units_tag = [unit.tag for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
@@ -173,21 +194,20 @@ def assembly_action(init_obs, obs, action_numbers):
         queued = 0
         parameter.append([queued])
         if np.all(action_numbers[i][1:] == 0):
-            # if action_numbers[i][0] == 0:
-            #     print()
-            function_id = int(sa.attack_controller[action_numbers[i][0]].id)
+
+            function_id = int(vaild_action['raw_cmd_action_real'][action_numbers[i][0]].id)
             parameter.append([my_unit_pos])
             # parameter.append([action_numbers[i][1], action_numbers[i][2]])
             actions.append(a.FunctionCall(function_id, parameter))
 
         elif np.all(action_numbers[i][[0, 4, 5]] == 0):
-            function_id = int(sa.attack_controller[action_numbers[i][1]].id)
+            function_id = int(vaild_action['raw_cmd_pt_action_real'][action_numbers[i][1]].id)
             parameter.append([my_unit_pos])
             parameter.append([action_numbers[i][2], action_numbers[i][3]])
             actions.append(a.FunctionCall(function_id, parameter))
 
         elif np.all(action_numbers[i][0:4] == 0):
-            function_id = int(sa.attack_controller[action_numbers[i][4]].id)
+            function_id = int(vaild_action['raw_cmd_unit_action_real'][action_numbers[i][4]].id)
             parameter.append([my_unit_pos])
             if action_numbers[i][5] < config.MY_UNIT_NUMBER:
                 target_unit_pos = find_unit_pos(obs, init_my_units_tag[action_numbers[i][5]])

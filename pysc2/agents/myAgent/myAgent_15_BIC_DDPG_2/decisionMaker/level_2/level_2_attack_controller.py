@@ -13,10 +13,12 @@ from pysc2.lib.actions import RAW_FUNCTIONS
 class level_2_attack_controller:
     def __init__(self):
         self.state_data_shape = (None, config.COOP_AGENTS_OBDIM)
+        self.vaild_action = get_all_vaild_action()
         self.controller = decision_maker(
             net(config.MU, config.SIGMA, config.LEARING_RATE, config.ACTION_DIM,
                 self.state_data_shape, config.MY_UNIT_NUMBER,
-                config.ENEMY_UNIT_NUMBER, get_all_vaild_action(), 'attack_controller'))
+                config.ENEMY_UNIT_NUMBER, self.vaild_action, 'attack_controller'))
+
         self.index = handcraft_function.find_controller_index(sa.attack_controller)
         self.init_obs = None
         self.pre_obs = None
@@ -26,7 +28,7 @@ class level_2_attack_controller:
         if obs.first():
             self.init_obs = obs
 
-        self.controller.current_state = [np.array(get_bound()), np.array(get_state(self.init_obs, obs)), np.array(get_agents_obs(self.init_obs, obs))]
+        self.controller.current_state = [np.array(get_state(self.init_obs, obs)), np.array(get_agents_obs(self.init_obs, obs))]
         self.current_obs = obs
 
         if self.controller.previous_action is not None:
@@ -48,7 +50,7 @@ class level_2_attack_controller:
             return RAW_FUNCTIONS.no_op()
         else:
             action_out, action = self.controller.network.egreedy_action(self.controller.current_state)
-            actions = handcraft_function_for_level_2_attack_controller.assembly_action(self.init_obs, obs, action)
+            actions = handcraft_function_for_level_2_attack_controller.assembly_action(self.init_obs, obs, action, self.vaild_action)
             self.controller.previous_state = self.controller.current_state
             self.controller.previous_action = action_out
             self.pre_obs = self.current_obs
@@ -59,7 +61,7 @@ class level_2_attack_controller:
         if obs.first():
             self.init_obs = obs
 
-        self.controller.current_state = [np.array(get_bound()), np.array(get_state(self.init_obs, obs)), np.array(get_agents_obs(self.init_obs, obs))]
+        self.controller.current_state = [np.array(get_state(self.init_obs, obs)), np.array(get_agents_obs(self.init_obs, obs))]
         self.current_obs = obs
         action = self.controller.network.action(self.controller.current_state)
         actions = handcraft_function_for_level_2_attack_controller.assembly_action(self.init_obs, obs, action)
