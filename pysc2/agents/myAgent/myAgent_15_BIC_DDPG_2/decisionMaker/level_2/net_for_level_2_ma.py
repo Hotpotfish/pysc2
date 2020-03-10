@@ -22,14 +22,7 @@ class net():
         # 神经网络参数
         self.mu = mu
         self.sigma = sigma
-        # self.var = self.var = np.array([len(sa.attack_controller) - 1,
-        #                                 len(sa.attack_controller) - 1,
-        #                                 config.MAP_SIZE - 1,
-        #                                 config.MAP_SIZE - 1,
-        #                                 len(sa.attack_controller) - 1,
-        #                                 config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER - 1
-        #                                 ])
-        self.var = 0.5
+        self.var = 0.6
         self.learning_rate = learning_rate
 
         # 动作维度数，动作参数维度数（默认为6）,状态维度数

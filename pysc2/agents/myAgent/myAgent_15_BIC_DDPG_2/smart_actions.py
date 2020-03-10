@@ -58,7 +58,7 @@ attack_controller = [
     # action.RAW_FUNCTIONS.Morph_Unsiege_quick,  # 坦克收束
 
     action.RAW_FUNCTIONS.Effect_Stim_quick,  # 兴奋剂
-    action.RAW_FUNCTIONS.Morph_ThorExplosiveMode_quick,  # 雷神爆破模式
+    # action.RAW_FUNCTIONS.Morph_ThorExplosiveMode_quick,  # 雷神爆破模式
     # action.RAW_FUNCTIONS.Morph_ThorHighImpactMode_quick,  # 雷神冲击模式
 
     # action.RAW_FUNCTIONS.Behavior_CloakOff_quick,  # 影身模式

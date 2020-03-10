@@ -74,9 +74,9 @@ def get_max_vaild_action_distance(vaild_action):
     raw_cmd_action_len = len(vaild_action['raw_cmd_action'])
     raw_cmd_pt_action_len = len(vaild_action['raw_cmd_pt_action'])
     raw_cmd_unit_action_len = len(vaild_action['raw_cmd_unit_action'])
-    max_distance = [raw_cmd_action_len - 1,
-                    np.sqrt(np.power(raw_cmd_pt_action_len - 1, 2) + np.power(config.MAP_SIZE - 1, 2) + np.power(config.MAP_SIZE - 1, 2)),
-                    np.sqrt(np.power(raw_cmd_unit_action_len - 1, 2) + np.power(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER - 1, 2))]
+    max_distance = [raw_cmd_action_len,
+                    np.sqrt(np.power(raw_cmd_pt_action_len, 2) + np.power(config.MAP_SIZE, 2) + np.power(config.MAP_SIZE, 2)),
+                    np.sqrt(np.power(raw_cmd_unit_action_len, 2) + np.power(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER, 2))]
     return max_distance
 
     # 找出最接近每个智能体输出的动作
@@ -153,12 +153,12 @@ def computeDistance_center(unit):
 
 
 def get_bound(vaild_action):
-    bound = [len(vaild_action['raw_cmd_action']) - 1,
-             len(vaild_action['raw_cmd_pt_action']) - 1,
-             config.MAP_SIZE - 1,
-             config.MAP_SIZE - 1,
-             len(vaild_action['raw_cmd_unit_action']) - 1,
-             config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER - 1
+    bound = [len(vaild_action['raw_cmd_action']),
+             len(vaild_action['raw_cmd_pt_action']),
+             config.MAP_SIZE ,
+             config.MAP_SIZE ,
+             len(vaild_action['raw_cmd_unit_action']),
+             config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER
              ]
     return bound
 
@@ -227,7 +227,7 @@ def get_agent_state(unit):
 
     states = np.append(states, computeDistance_center(unit) / (config.MAP_SIZE * 1.41))
     states = np.append(states, unit.alliance / 4)
-    states = np.append(states, unit.unit_type / 10000)
+    states = np.append(states, unit.unit_type / 2000)
     states = np.append(states, unit.x / config.MAP_SIZE)
     states = np.append(states, unit.y / config.MAP_SIZE)
     states = np.append(states, unit.health / 100)
@@ -286,7 +286,7 @@ def get_agents_obs(init_obs, obs):
             else:
                 agent_obs = np.append(agent_obs, computeDistance(my_unit, my_target_unit) / (config.MAP_SIZE * 1.41))
                 agent_obs = np.append(agent_obs, my_target_unit.alliance / 4)
-                agent_obs = np.append(agent_obs, my_target_unit.unit_type / 10000)
+                agent_obs = np.append(agent_obs, my_target_unit.unit_type / 2000)
                 agent_obs = np.append(agent_obs, my_target_unit.x / config.MAP_SIZE)
                 agent_obs = np.append(agent_obs, my_target_unit.y / config.MAP_SIZE)
                 agent_obs = np.append(agent_obs, my_target_unit.health / 100)
@@ -300,7 +300,7 @@ def get_agents_obs(init_obs, obs):
             else:
                 agent_obs = np.append(agent_obs, computeDistance(my_unit, enemy_target_unit) / (config.MAP_SIZE * 1.41))
                 agent_obs = np.append(agent_obs, enemy_target_unit.alliance / 4)
-                agent_obs = np.append(agent_obs, enemy_target_unit.unit_type / 10000)
+                agent_obs = np.append(agent_obs, enemy_target_unit.unit_type / 2000)
                 agent_obs = np.append(agent_obs, enemy_target_unit.x / config.MAP_SIZE)
                 agent_obs = np.append(agent_obs, enemy_target_unit.y / config.MAP_SIZE)
                 agent_obs = np.append(agent_obs, enemy_target_unit.health / 100)
@@ -312,7 +312,7 @@ def get_agents_obs(init_obs, obs):
 
 
 def get_reward(obs, pre_obs):
-    reward = 0
+    reward = -10
     my_units_health = [unit.health for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
     enemy_units_health = [unit.health for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
     # # reward = len(my_units_health) / (len(my_units_health) + len(enemy_units_health))
