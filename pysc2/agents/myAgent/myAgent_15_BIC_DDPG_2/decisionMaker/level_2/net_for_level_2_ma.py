@@ -9,8 +9,8 @@ from scipy.spatial import KDTree
 import pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.config.config as config
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.SqQueue import SqQueue
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.net.net_for_level_2.net1 import net1
-from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.handcraft_function_for_level_2_attack_controller import get_k_closest_action, get_action_combination
-import pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.smart_actions as sa
+from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.handcraft_function_for_level_2_attack_controller import  get_action_combination
+
 
 
 class net():
@@ -22,7 +22,7 @@ class net():
         # 神经网络参数
         self.mu = mu
         self.sigma = sigma
-        self.var =0
+        self.var =0.1
         self.learning_rate = learning_rate
 
         # 动作维度数，动作参数维度数（默认为6）,状态维度数
@@ -149,7 +149,7 @@ class net():
         # print(self.var)
         action_k = get_action_combination(self.KDTree, actio_proto)
         if config.K == 1:
-            return action_k[0]
+            return actio_out,action_k[0]
         else:
             state_input = np.repeat(current_state[0][np.newaxis], np.power(config.K, self.agents_number), axis=0)
             temp_qs = self.session.run(self.net.q, {self.net.state_input: state_input, self.net.a: np.array(action_k)[:, np.newaxis]})
