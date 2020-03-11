@@ -22,7 +22,7 @@ class net():
         # 神经网络参数
         self.mu = mu
         self.sigma = sigma
-        self.var = 0.6
+        self.var =0
         self.learning_rate = learning_rate
 
         # 动作维度数，动作参数维度数（默认为6）,状态维度数
@@ -146,14 +146,15 @@ class net():
         actio_out = np.clip(np.random.normal(actio_out, self.var), 0, 1)
         actio_proto = actio_out * self.bound
         self.var = self.var * 0.995
-        print(self.var)
+        # print(self.var)
         action_k = get_action_combination(self.KDTree, actio_proto)
-        temp_qs = []
-        for i in range(np.power(config.K, self.agents_number)):
-            temp_q = self.session.run(self.net.q, {self.net.state_input: current_state[0][np.newaxis], self.net.a: action_k[i][np.newaxis, :, np.newaxis]})[0]
-            temp_qs.append(temp_q)
-        action = action_k[np.argmax(temp_qs)]
-        return actio_out, action
+        if config.K == 1:
+            return action_k[0]
+        else:
+            state_input = np.repeat(current_state[0][np.newaxis], np.power(config.K, self.agents_number), axis=0)
+            temp_qs = self.session.run(self.net.q, {self.net.state_input: state_input, self.net.a: np.array(action_k)[:, np.newaxis]})
+            action = action_k[np.argmax(temp_qs)]
+            return actio_out, action
 
     def action(self, current_state):
         actio_out = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[1][np.newaxis]})[0]

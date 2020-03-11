@@ -19,32 +19,32 @@ def get_all_vaild_action():
         if len(action.args) == 2 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags':
             function_id_1 = [i]
 
-            function_id_2 = [0]
-            x_2 = [0]
-            y_2 = [0]
+            function_id_2 = [-1]
+            x_2 = [-1]
+            y_2 = [-1]
 
-            function_id_3 = [0]
-            target_3 = [0]
+            function_id_3 = [-1]
+            target_3 = [-1]
 
             for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
                 actions.append(item)
         elif len(action.args) == 3 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags' and action.args[2].name == 'world':
-            function_id_1 = [0]
+            function_id_1 = [-1]
 
             function_id_2 = [i]
             x_2 = range(config.MAP_SIZE)
             y_2 = range(config.MAP_SIZE)
 
-            function_id_3 = [0]
-            target_3 = [0]
+            function_id_3 = [-1]
+            target_3 = [-1]
             for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
                 actions.append(item)
 
         elif len(action.args) == 3 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags' and action.args[2].name == 'target_unit_tag':
-            function_id_1 = [0]
-            function_id_2 = [0]
-            x_2 = [0]
-            y_2 = [0]
+            function_id_1 = [-1]
+            function_id_2 = [-1]
+            x_2 = [-1]
+            y_2 = [-1]
 
             function_id_3 = [i]
             target_3 = range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)
@@ -138,20 +138,20 @@ def assembly_action(init_obs, obs, action_numbers, vaild_action):
         parameter = []
         queued = 0
         parameter.append([queued])
-        if np.all(np.array(vaild_action[action_numbers[i]])[1:] == 0):
+        if np.all(np.array(vaild_action[action_numbers[i]])[1:] == -1):
 
             function_id = int(sa.attack_controller[vaild_action[action_numbers[i]][0]].id)
             parameter.append([my_unit_pos])
             # parameter.append([action_numbers[i][1], action_numbers[i][2]])
             actions.append(a.FunctionCall(function_id, parameter))
 
-        elif np.all(np.array(vaild_action[action_numbers[i]])[[0, 4, 5]] == 0):
+        elif np.all(np.array(vaild_action[action_numbers[i]])[[0, 4, 5]] == -1):
             function_id = int(sa.attack_controller[vaild_action[action_numbers[i]][1]].id)
             parameter.append([my_unit_pos])
             parameter.append([vaild_action[action_numbers[i]][2], vaild_action[action_numbers[i]][3]])
             actions.append(a.FunctionCall(function_id, parameter))
 
-        elif np.all(np.array(vaild_action[action_numbers[i]])[0:4] == 0):
+        elif np.all(np.array(vaild_action[action_numbers[i]])[0:4] == -1):
             function_id = int(sa.attack_controller[vaild_action[action_numbers[i]][4]].id)
             parameter.append([my_unit_pos])
             if np.array(vaild_action[action_numbers[i]])[5] < config.MY_UNIT_NUMBER:
@@ -265,13 +265,6 @@ def get_reward(obs, pre_obs):
     my_units_health_pre = [unit.health for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
     enemy_units_health_pre = [unit.health for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
 
-    if len(enemy_units_health) == 0:
-        reward = sum(my_units_health) + 200
-        return reward / 200
-    if len(my_units_health) == 0:
-        reward = -sum(my_units_health) - 200
-        return reward / 200
-
     if len(my_units_health) < len(my_units_health_pre):
         reward -= (len(my_units_health_pre) - len(my_units_health)) * 10
 
@@ -279,6 +272,12 @@ def get_reward(obs, pre_obs):
         reward += (len(enemy_units_health_pre) - len(enemy_units_health)) * 10
 
     reward += (sum(my_units_health) - sum(my_units_health_pre)) / 2 - (sum(enemy_units_health) - sum(enemy_units_health_pre))
+
+    if len(enemy_units_health) == 0:
+        reward = sum(my_units_health) + 200
+
+    if len(my_units_health) == 0:
+        reward = -sum(my_units_health) - 200
 
     return float(reward) / 200
     # if len(enemy_units_health) == 0:

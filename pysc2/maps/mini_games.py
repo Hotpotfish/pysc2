@@ -47,6 +47,7 @@ mini_games = [
     'mix_vs_mix_2',
     'mix_vs_mix_3',
     '8t_vs_7z',
+    '1r_vs_1z'
 
 ]
 

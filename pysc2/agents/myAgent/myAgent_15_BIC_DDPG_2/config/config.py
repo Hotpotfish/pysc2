@@ -15,9 +15,9 @@ BATCH_SIZE = 32  # size of minibatch
 MU = 0
 SIGMA = 1
 TAU = 0.1
-K = 1
+K = 1000
 
-LEARING_RATE = 1e-1
+LEARING_RATE = 1e-4
 # 模型保存轮次
 MODEL_SAVE_EPISODE = 1000
 
@@ -25,8 +25,8 @@ MODEL_SAVE_EPISODE = 1000
 ROW = 4
 COLUMN = 4
 
-MY_UNIT_NUMBER = 8
-ENEMY_UNIT_NUMBER = 7  # 选择敌方智能体的空间
+MY_UNIT_NUMBER = 1
+ENEMY_UNIT_NUMBER = 1  # 选择敌方智能体的空间
 
 ACTION_DIM = 1  # （4为上下左右）
 
