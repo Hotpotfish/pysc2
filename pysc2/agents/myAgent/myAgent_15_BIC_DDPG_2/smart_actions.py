@@ -67,7 +67,7 @@ attack_controller = [
     # action.RAW_FUNCTIONS.Effect_GhostSnipe_unit,
     # action.RAW_FUNCTIONS.Effect_EMP_unit,
 
-    action.RAW_FUNCTIONS.Effect_KD8Charge_unit,
+    # action.RAW_FUNCTIONS.Effect_KD8Charge_unit,
 
 
 
