@@ -90,8 +90,8 @@ class net1(object):
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             for i in range(agents_number):
                 fc1 = slim.fully_connected(bicnet_outputs[i], 50, scope='full_connected1')
-                fc1 = fc1 * 0.1
-                fc1 = tf.Print(fc1, [fc1])
+                # fc1 = fc1 * 0.1
+                # fc1 = tf.Print(fc1, [fc1])
                 fc2 = slim.fully_connected(fc1, self.action_dim, activation_fn=tf.sigmoid, scope='full_connected2')
 
                 outputs.append(fc2)
