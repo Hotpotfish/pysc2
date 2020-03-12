@@ -262,16 +262,16 @@ def get_reward(obs, pre_obs):
     reward = 0
     my_units = np.array([unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF])
     enemy_units = np.array([unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY])
-    # # reward = len(my_units_health) / (len(my_units_health) + len(enemy_units_health))
 
     my_units_health_pre = np.array([unit for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF])
     enemy_units_health_pre = np.array([unit for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY])
-    if len(enemy_units) == 0:
+
+    if len(my_units) != 0:
         reward = sum(my_units[:, 2]) + sum(my_units[:, 3]) + 200
         return float(reward) / 200
     elif len(my_units) == 0:
-        reward = -sum(enemy_units[:, 2]) - sum(enemy_units[:, 3]) - 200
-        return float(reward) / 200
+        # reward = -sum(enemy_units[:, 2]) - sum(enemy_units[:, 3]) - 200
+        return -1
 
     # 距离变化
     my_coord = np.array(list(zip(my_units[:, 12], my_units[:, 13])))
@@ -279,16 +279,16 @@ def get_reward(obs, pre_obs):
     kdtree = KDTree(emey_coord)
     distance_avg = kdtree.query(my_coord)
     reward -= (abs(sum(distance_avg[0]) / len(my_units) - 3) / (config.MAP_SIZE * 1.41)) * 10
-
-    # 人数变化
-    if len(my_units) < len(my_units_health_pre):
-        reward -= ((len(my_units_health_pre) - len(my_units)) * 10) / 200
-    elif len(enemy_units) < len(enemy_units_health_pre):
-        reward += ((len(enemy_units_health_pre) - len(enemy_units)) * 10) / 200
-
-    # 血量与护盾变化
-    reward += ((sum(my_units[:, 2]) - sum(my_units_health_pre[:, 2])) / 2 - (sum(enemy_units[:, 2]) - sum(enemy_units_health_pre[:, 2]))) / 200
-    reward += ((sum(my_units[:, 3]) - sum(my_units_health_pre[:, 3])) / 2 - (sum(enemy_units[:, 3]) - sum(enemy_units_health_pre[:, 3]))) / 200
+    #
+    # # 人数变化
+    # if len(my_units) < len(my_units_health_pre):
+    #     reward -= ((len(my_units_health_pre) - len(my_units)) * 10) / 200
+    # elif len(enemy_units) < len(enemy_units_health_pre):
+    #     reward += ((len(enemy_units_health_pre) - len(enemy_units)) * 10) / 200
+    #
+    # # 血量与护盾变化
+    # reward += ((sum(my_units[:, 2]) - sum(my_units_health_pre[:, 2])) / 2 - (sum(enemy_units[:, 2]) - sum(enemy_units_health_pre[:, 2]))) / 200
+    # reward += ((sum(my_units[:, 3]) - sum(my_units_health_pre[:, 3])) / 2 - (sum(enemy_units[:, 3]) - sum(enemy_units_health_pre[:, 3]))) / 200
 
     # 是否胜利
 
