@@ -294,7 +294,6 @@ def get_reward(obs, pre_obs):
 
     return reward
 
-
 def win_or_loss(obs):
     if obs.last():
 

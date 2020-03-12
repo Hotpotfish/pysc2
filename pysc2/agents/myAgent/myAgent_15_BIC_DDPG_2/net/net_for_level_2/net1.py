@@ -90,14 +90,16 @@ class net1(object):
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             for i in range(agents_number):
                 fc1 = slim.fully_connected(bicnet_outputs[i], 50, scope='full_connected1')
-                fc2 = slim.fully_connected(fc1, self.action_dim, activation_fn=tf.nn.sigmoid, scope='full_connected2')
-                # action = tf.multiply(fc1, self.bound)
+                fc1 = fc1 * 0.1
+                fc1 = tf.Print(fc1, [fc1])
+                fc2 = slim.fully_connected(fc1, self.action_dim, activation_fn=tf.sigmoid, scope='full_connected2')
+
                 outputs.append(fc2)
 
             outputs = tf.unstack(outputs, self.agents_number)  # (agents_number, batch_size, action_dim)
             outputs = tf.transpose(outputs, [1, 0, 2])
             # outputs = tf.clip_by_value(outputs, 0, 1)
-            # outputs = tf.Print(outputs,[outputs])
+            # outputs = tf.Print(outputs, [outputs])
             return outputs  # (batch_size,agents_number,action_dim)
 
         #################################### critic_net  ####################################
@@ -143,7 +145,7 @@ class net1(object):
             outputs = slim.flatten(outputs)
 
             fc3 = slim.fully_connected(outputs, 1, activation_fn=None, scope='full_connected3')
-            # fc3 = tf.clip_by_value(fc3, 0, 3)
+            # fc3 = tf.clip_by_value(fc3, 0, 1)
             # fc2 = tf.Print(fc2, [fc2])
 
             return fc3
