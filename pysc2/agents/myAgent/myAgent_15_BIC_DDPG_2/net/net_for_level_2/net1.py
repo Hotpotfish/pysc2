@@ -23,11 +23,11 @@ class net1(object):
         self._setup_placeholders_graph()
         with tf.variable_scope('Actor'):
             self.a = self._build_graph_a(self.agents_local_observation, 'eval', train=True)
-            a_ = self._build_graph_a(self.agents_local_observation_next, 'target', train=False)
+            self.a_ = self._build_graph_a(self.agents_local_observation_next, 'target', train=False)
 
         with tf.variable_scope('Critic'):
             self.q = self._build_graph_c(self.state_input, self.a, 'eval', train=True)
-            q_ = self._build_graph_c(self.state_input_next, a_, 'target', train=False)
+            self.q_ = self._build_graph_c(self.state_input_next, self.a_, 'target', train=False)
 
         # networks parameters
         self.ae_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/eval')
@@ -39,9 +39,9 @@ class net1(object):
         self.soft_replace = [tf.assign(t, (1 - config.TAU) * t + config.TAU * e)
                              for t, e in zip(self.at_params + self.ct_params, self.ae_params + self.ce_params)]
 
-        q_target = self.reward + config.GAMMA * q_
+        self.q_target = self.reward + config.GAMMA * self.q_
 
-        self.td_error = tf.losses.mean_squared_error(labels=q_target, predictions=self.q)
+        self.td_error = tf.losses.mean_squared_error(labels=self.q_target, predictions=self.q)
         self.ctrain = tf.train.AdamOptimizer(self.learning_rate).minimize(self.td_error, var_list=self.ce_params)
 
         self.a_loss = - tf.reduce_mean(self.q)  # maximize the q
@@ -65,7 +65,6 @@ class net1(object):
                                 trainable=train,
                                 activation_fn=tf.nn.selu,
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
-                                # normalizer_fn=slim.batch_norm,
                                 weights_regularizer=slim.l2_regularizer(0.05)
                                 ):
                 encoder_outputs = self._observation_encoder_a(agents_local_observation, self.agents_number, '_observation_encoder')
@@ -76,9 +75,9 @@ class net1(object):
         with tf.variable_scope(scope_name):
             encoder = []
             for i in range(agents_number):
-                fc1 = slim.fully_connected(agents_local_observation[:, i, :], 200, scope='full_connected1')
-                fc2 = slim.fully_connected(fc1, 100, scope='full_connected2')
-                encoder.append(fc2)
+                fc1 = slim.fully_connected(agents_local_observation[:, i, :], 20, scope='full_connected1')
+                # fc2 = slim.fully_connected(fc1, 100, scope='full_connected2')
+                encoder.append(fc1)
             encoder = tf.transpose(encoder, [1, 0, 2])
             encoder = tf.unstack(encoder, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
             return encoder
@@ -86,14 +85,15 @@ class net1(object):
     def _bicnet_build_a(self, encoder_outputs, agents_number, scope_name):
         with tf.variable_scope(scope_name):
             outputs = []
-            lstm_fw_cell = tf.nn.rnn_cell.GRUCell(40, name="lstm_fw_cell")
-            lstm_bw_cell = tf.nn.rnn_cell.GRUCell(40, name="lstm_bw_cell")
+            lstm_fw_cell = tf.nn.rnn_cell.GRUCell(10, name="lstm_fw_cell")
+            lstm_bw_cell = tf.nn.rnn_cell.GRUCell(10, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             for i in range(agents_number):
-                fc1 = slim.fully_connected(bicnet_outputs[i], 50, scope='full_connected1')
-                # fc1 = fc1 * 0.1
+                fc1 = slim.fully_connected(bicnet_outputs[i], 5, scope='full_connected1')
+                fc1 = fc1 * 0.01
                 # fc1 = tf.Print(fc1, [fc1])
-                fc2 = slim.fully_connected(fc1, self.action_dim, activation_fn=tf.sigmoid, scope='full_connected2')
+                fc2 = slim.fully_connected(fc1, self.action_dim, activation_fn=tf.nn.sigmoid, scope='full_connected2')
+                fc2 = tf.Print(fc2, [fc2])
 
                 outputs.append(fc2)
 
@@ -119,9 +119,9 @@ class net1(object):
     def _observation_encoder_c(self, state_input, action_input, agents_number, scope_name):
         with tf.variable_scope(scope_name):
             encoder = []
-            fc1_s = slim.fully_connected(state_input, 100, scope='full_connected_s1')
+            fc1_s = slim.fully_connected(state_input, 20, scope='full_connected_s1')
             for i in range(agents_number):
-                fc1_a = slim.fully_connected(action_input[:, i], 100, scope='full_connected_a1')
+                fc1_a = slim.fully_connected(action_input[:, i], 20, scope='full_connected_a1')
                 # fc2_a = slim.fully_connected(fc1_a, 200, scope='full_connected_a2')
                 data = fc1_s + fc1_a
                 encoder.append(data)
@@ -132,18 +132,17 @@ class net1(object):
     def _bicnet_build_c(self, encoder_outputs, agents_number, scope_name):
         with tf.variable_scope(scope_name):
             outputs = []
-            lstm_fw_cell = tf.nn.rnn_cell.GRUCell(40, name="lstm_fw_cell")
-            lstm_bw_cell = tf.nn.rnn_cell.GRUCell(40, name="lstm_bw_cell")
+            lstm_fw_cell = tf.nn.rnn_cell.GRUCell(10, name="lstm_fw_cell")
+            lstm_bw_cell = tf.nn.rnn_cell.GRUCell(10, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             for i in range(agents_number):
-                fc1 = slim.fully_connected(bicnet_outputs[i], 40, scope='full_connected1')
-                fc2 = slim.fully_connected(fc1, 1, scope='full_connected2')
-                outputs.append(fc2)
+                # fc1 = slim.fully_connected(bicnet_outputs[i], 40, scope='full_connected1')
+                fc1 = slim.fully_connected(bicnet_outputs[i], 1, scope='full_connected1')
+                outputs.append(fc1)
             outputs = tf.unstack(outputs, self.agents_number)  # (agents_number, batch_size,1)
             outputs = tf.transpose(outputs, [1, 0, 2])  # (batch_size,agents_number,1)
             outputs = slim.flatten(outputs)
             # outputs =  outputs * 0.1
-            fc3 = slim.fully_connected(outputs, 1, activation_fn=None, scope='full_connected3')
-
+            fc3 = slim.fully_connected(outputs, 1, activation_fn=None, scope='full_connected2')
 
             return fc3

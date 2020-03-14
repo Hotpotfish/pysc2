@@ -4,7 +4,7 @@ import tensorflow.contrib.slim as slim
 import numpy as np
 
 
-class net1(object):
+class net2(object):
 
     def __init__(self, mu, sigma, learning_rate, action_dim, statedim, agents_number, enemy_number, name):  # 初始化
         # 神经网络参数
@@ -23,17 +23,23 @@ class net1(object):
         self._setup_placeholders_graph()
 
         self.actions = []
-        actions_ = []
+        self.actions_ = []
         with tf.variable_scope('Actor'):
             for i in range(self.agents_number):
                 self.actions.append(self._build_graph_a(self.agents_local_observation[:, i], 'eval_' + str(i), train=True))
-                actions_.append(self._build_graph_a(self.agents_local_observation_next[:, i], 'target' + str(i), train=False))
+                self.actions_.append(self._build_graph_a(self.agents_local_observation_next[:, i], 'target_' + str(i), train=False))
+        self.actions = tf.reshape(self.actions, (-1, self.agents_number, self.action_dim))
+        self.actions_ = tf.reshape(self.actions_, (-1, self.agents_number, self.action_dim))
+
         self.qs = []
-        qs_ = []
+        self.qs_ = []
         with tf.variable_scope('Critic'):
             for i in range(self.agents_number):
-                self.qs.append(self._build_graph_c(self.agents_local_observation[:, i], self.actions[:, i], 'eval' + str(i), train=True))
-                qs_.append(self._build_graph_c(self.agents_local_observation_next[:, i], actions_[:, i], 'target' + str(i), train=False))
+                self.qs.append(self._build_graph_c(self.agents_local_observation[:, i], self.actions, 'eval_' + str(i), train=True))
+                self.qs_.append(self._build_graph_c(self.agents_local_observation_next[:, i], self.actions_, 'target_' + str(i), train=False))
+
+        self.qs = tf.reshape(self.qs, (-1, self.agents_number))
+        self.qs_ = tf.reshape(self.qs_, (-1, self.agents_number))
 
         self.ae_params = []
         self.at_params = []
@@ -46,47 +52,23 @@ class net1(object):
             self.ce_params.append(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/eval_' + str(i)))
             self.ct_params.append(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/target_' + str(i)))
 
-        self.soft_replace = [tf.assign(t, (1 - config.TAU) * t + config.TAU * e)
-                             for t, e in zip(self.at_params + self.ct_params, self.ae_params + self.ce_params)]
+        self.soft_replace = self._soft_replace()
 
-        q_target = self.reward + config.GAMMA * qs_
+        self.qs_targets = self.reward + config.GAMMA * self.qs_
 
-        # with tf.variable_scope('Actor'):
-        #     self.a = self._build_graph_a(self.agents_local_observation, 'eval', train=True)
-        #     a_ = self._build_graph_a(self.agents_local_observation_next, 'target', train=False)
-        #
-        # with tf.variable_scope('Critic'):
-        #     self.q = self._build_graph_c(self.state_input, self.a, 'eval', train=True)
-        #     q_ = self._build_graph_c(self.state_input_next, a_, 'target', train=False)
-        #
-        # # networks parameters
-        # self.ae_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/eval')
-        # self.at_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/target')
-        # self.ce_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/eval')
-        # self.ct_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/target')
-        #
-        # # target net replacement
-        # self.soft_replace = [tf.assign(t, (1 - config.TAU) * t + config.TAU * e)
-        #                      for t, e in zip(self.at_params + self.ct_params, self.ae_params + self.ce_params)]
-        #
-        # q_target = self.reward + config.GAMMA * q_
-        #
-        # self.td_error = tf.losses.mean_squared_error(labels=q_target, predictions=self.q)
-        # self.ctrain = tf.train.AdamOptimizer(self.learning_rate).minimize(self.td_error, var_list=self.ce_params)
-        #
-        # self.a_loss = - tf.reduce_mean(self.q)  # maximize the q
-        # self.atrain = tf.train.AdamOptimizer(self.learning_rate).minimize(self.a_loss, var_list=self.ae_params)
+        self.atrains = self._build_atrains()
+        self.ctrains = self._build_ctrains()
 
     def _setup_placeholders_graph(self):
         # s
-        self.state_input = tf.placeholder("float", shape=self.state_dim, name='state_input')  # 全局状态
+
         self.agents_local_observation = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation')
 
         # s_
-        self.state_input_next = tf.placeholder("float", shape=self.state_dim, name='state_input_next')  # 全局状态
+
         self.agents_local_observation_next = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation_next')
 
-        self.reward = tf.placeholder("float", shape=[None], name='reward')
+        self.reward = tf.placeholder("float", shape=[None, 1], name='reward')
 
     def _build_graph_a(self, agents_local_observation, scope_name, train):
         # 环境和智能体本地的共同观察
@@ -94,83 +76,49 @@ class net1(object):
             with slim.arg_scope([slim.fully_connected],
                                 trainable=train,
                                 activation_fn=tf.nn.selu,
-                                weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
-                                weights_regularizer=slim.l2_regularizer(0.05)
+                                # weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
+                                # weights_regularizer=slim.l2_regularizer(0.05)
                                 ):
-                encoder_outputs = self._observation_encoder_a(agents_local_observation, self.agents_number, '_observation_encoder')
-                bicnet_outputs = self._bicnet_build_a(encoder_outputs, self.agents_number, '_bicnet_build')
-                return bicnet_outputs
-
-    def _observation_encoder_a(self, agents_local_observation, agents_number, scope_name):
-        with tf.variable_scope(scope_name):
-            encoder = []
-            for i in range(agents_number):
-                fc1 = slim.fully_connected(agents_local_observation[:, i, :], 200, scope='full_connected1')
-                fc2 = slim.fully_connected(fc1, 100, scope='full_connected2')
-                encoder.append(fc2)
-            encoder = tf.transpose(encoder, [1, 0, 2])
-            encoder = tf.unstack(encoder, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
-            return encoder
-
-    def _bicnet_build_a(self, encoder_outputs, agents_number, scope_name):
-        with tf.variable_scope(scope_name):
-            outputs = []
-            lstm_fw_cell = tf.nn.rnn_cell.GRUCell(40, name="lstm_fw_cell")
-            lstm_bw_cell = tf.nn.rnn_cell.GRUCell(40, name="lstm_bw_cell")
-            bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
-            for i in range(agents_number):
-                fc1 = slim.fully_connected(bicnet_outputs[i], 50, scope='full_connected1')
-                # fc1 = fc1 * 0.1
-                # fc1 = tf.Print(fc1, [fc1])
+                fc1 = slim.fully_connected(agents_local_observation, 30, scope='full_connected1')
+                fc1 = fc1 * 1/4096
                 fc2 = slim.fully_connected(fc1, self.action_dim, activation_fn=tf.sigmoid, scope='full_connected2')
-
-                outputs.append(fc2)
-
-            outputs = tf.unstack(outputs, self.agents_number)  # (agents_number, batch_size, action_dim)
-            outputs = tf.transpose(outputs, [1, 0, 2])
-            return outputs  # (batch_size,agents_number,action_dim)
+                return fc2
 
         #################################### critic_net  ####################################
 
-    def _build_graph_c(self, state_input, action_input, scope_name, train):
+    def _build_graph_c(self, agents_local_observation, union_action, scope_name, train):
         # 环境和智能体本地的共同观察
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             with slim.arg_scope([slim.fully_connected],
                                 trainable=train,
                                 activation_fn=tf.nn.selu,
-                                weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
-                                weights_regularizer=slim.l2_regularizer(0.05)):
-                encoder_outputs = self._observation_encoder_c(state_input, action_input, self.agents_number,
-                                                              '_observation_encoder')
-                bicnet_outputs = self._bicnet_build_c(encoder_outputs, self.agents_number, '_bicnet_build')
-                return bicnet_outputs
+                                ):
+                union_action = slim.flatten(union_action)
+                fc_a_1 = slim.fully_connected(agents_local_observation, 30, scope='full_connected_a_1')
+                fc_s_1 = slim.fully_connected(union_action, 30, scope='full_connected_s_1')
+                h1 = fc_a_1 + fc_s_1
+                q = slim.fully_connected(h1, 1, activation_fn=tf.sigmoid, scope='q')
+                return q
 
-    def _observation_encoder_c(self, state_input, action_input, agents_number, scope_name):
-        with tf.variable_scope(scope_name):
-            encoder = []
-            fc1_s = slim.fully_connected(state_input, 100, scope='full_connected_s1')
-            for i in range(agents_number):
-                fc1_a = slim.fully_connected(action_input[:, i], 100, scope='full_connected_a1')
-                # fc2_a = slim.fully_connected(fc1_a, 200, scope='full_connected_a2')
-                data = fc1_s + fc1_a
-                encoder.append(data)
-            encoder = tf.transpose(encoder, [1, 0, 2])
-            encoder = tf.unstack(encoder, agents_number, 1)  # (self.agents_number,batch_size,obs_add_dim)
-            return encoder
+    def _build_atrains(self):
+        atrains = []
+        for i in range(self.agents_number):
+            loss = -tf.reduce_mean(self.qs[:, i])
+            atrain = tf.train.AdamOptimizer(self.learning_rate).minimize(loss, var_list=self.ae_params[i])
+            atrains.append(atrain)
+        return atrains
 
-    def _bicnet_build_c(self, encoder_outputs, agents_number, scope_name):
-        with tf.variable_scope(scope_name):
-            outputs = []
-            lstm_fw_cell = tf.nn.rnn_cell.GRUCell(40, name="lstm_fw_cell")
-            lstm_bw_cell = tf.nn.rnn_cell.GRUCell(40, name="lstm_bw_cell")
-            bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
-            for i in range(agents_number):
-                fc1 = slim.fully_connected(bicnet_outputs[i], 40, scope='full_connected1')
-                fc2 = slim.fully_connected(fc1, 1, scope='full_connected2')
-                outputs.append(fc2)
-            outputs = tf.unstack(outputs, self.agents_number)  # (agents_number, batch_size,1)
-            outputs = tf.transpose(outputs, [1, 0, 2])  # (batch_size,agents_number,1)
-            outputs = slim.flatten(outputs)
-            fc3 = slim.fully_connected(outputs, 1, activation_fn=None, scope='full_connected3')
+    def _build_ctrains(self):
+        ctrains = []
+        for i in range(self.agents_number):
+            td_error = tf.losses.mean_squared_error(labels=self.qs_targets, predictions=self.qs)
+            ctrain = tf.train.AdamOptimizer(self.learning_rate).minimize(td_error, var_list=self.ce_params[i])
+            ctrains.append(ctrain)
+        return ctrains
 
-            return fc3
+    def _soft_replace(self):
+        t = None
+        for i in range(self.agents_number):
+            # temp = zip(self.at_params[i] + self.ct_params[i], self.ae_params[i] + self.ce_params[i])
+            t = [tf.assign(t, (1 - config.TAU) * t + config.TAU * e) for t, e in zip(self.at_params[i] + self.ct_params[i], self.ae_params[i] + self.ce_params[i])]
+        return t
