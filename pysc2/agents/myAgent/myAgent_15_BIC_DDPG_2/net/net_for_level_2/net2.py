@@ -21,31 +21,61 @@ class net1(object):
         self.name = name
 
         self._setup_placeholders_graph()
+
+        self.actions = []
+        actions_ = []
         with tf.variable_scope('Actor'):
-            self.a = self._build_graph_a(self.agents_local_observation, 'eval', train=True)
-            a_ = self._build_graph_a(self.agents_local_observation_next, 'target', train=False)
-
+            for i in range(self.agents_number):
+                self.actions.append(self._build_graph_a(self.agents_local_observation[:, i], 'eval_' + str(i), train=True))
+                actions_.append(self._build_graph_a(self.agents_local_observation_next[:, i], 'target' + str(i), train=False))
+        self.qs = []
+        qs_ = []
         with tf.variable_scope('Critic'):
-            self.q = self._build_graph_c(self.state_input, self.a, 'eval', train=True)
-            q_ = self._build_graph_c(self.state_input_next, a_, 'target', train=False)
+            for i in range(self.agents_number):
+                self.qs.append(self._build_graph_c(self.agents_local_observation[:, i], self.actions[:, i], 'eval' + str(i), train=True))
+                qs_.append(self._build_graph_c(self.agents_local_observation_next[:, i], actions_[:, i], 'target' + str(i), train=False))
 
-        # networks parameters
-        self.ae_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/eval')
-        self.at_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/target')
-        self.ce_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/eval')
-        self.ct_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/target')
+        self.ae_params = []
+        self.at_params = []
+        self.ce_params = []
+        self.ct_params = []
 
-        # target net replacement
+        for i in range(self.agents_number):
+            self.ae_params.append(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/eval_' + str(i)))
+            self.at_params.append(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/target_' + str(i)))
+            self.ce_params.append(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/eval_' + str(i)))
+            self.ct_params.append(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/target_' + str(i)))
+
         self.soft_replace = [tf.assign(t, (1 - config.TAU) * t + config.TAU * e)
                              for t, e in zip(self.at_params + self.ct_params, self.ae_params + self.ce_params)]
 
-        q_target = self.reward + config.GAMMA * q_
+        q_target = self.reward + config.GAMMA * qs_
 
-        self.td_error = tf.losses.mean_squared_error(labels=q_target, predictions=self.q)
-        self.ctrain = tf.train.AdamOptimizer(self.learning_rate).minimize(self.td_error, var_list=self.ce_params)
-
-        self.a_loss = - tf.reduce_mean(self.q)  # maximize the q
-        self.atrain = tf.train.AdamOptimizer(self.learning_rate).minimize(self.a_loss, var_list=self.ae_params)
+        # with tf.variable_scope('Actor'):
+        #     self.a = self._build_graph_a(self.agents_local_observation, 'eval', train=True)
+        #     a_ = self._build_graph_a(self.agents_local_observation_next, 'target', train=False)
+        #
+        # with tf.variable_scope('Critic'):
+        #     self.q = self._build_graph_c(self.state_input, self.a, 'eval', train=True)
+        #     q_ = self._build_graph_c(self.state_input_next, a_, 'target', train=False)
+        #
+        # # networks parameters
+        # self.ae_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/eval')
+        # self.at_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/target')
+        # self.ce_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/eval')
+        # self.ct_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/target')
+        #
+        # # target net replacement
+        # self.soft_replace = [tf.assign(t, (1 - config.TAU) * t + config.TAU * e)
+        #                      for t, e in zip(self.at_params + self.ct_params, self.ae_params + self.ce_params)]
+        #
+        # q_target = self.reward + config.GAMMA * q_
+        #
+        # self.td_error = tf.losses.mean_squared_error(labels=q_target, predictions=self.q)
+        # self.ctrain = tf.train.AdamOptimizer(self.learning_rate).minimize(self.td_error, var_list=self.ce_params)
+        #
+        # self.a_loss = - tf.reduce_mean(self.q)  # maximize the q
+        # self.atrain = tf.train.AdamOptimizer(self.learning_rate).minimize(self.a_loss, var_list=self.ae_params)
 
     def _setup_placeholders_graph(self):
         # s
@@ -65,7 +95,6 @@ class net1(object):
                                 trainable=train,
                                 activation_fn=tf.nn.selu,
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
-                                # normalizer_fn=slim.batch_norm,
                                 weights_regularizer=slim.l2_regularizer(0.05)
                                 ):
                 encoder_outputs = self._observation_encoder_a(agents_local_observation, self.agents_number, '_observation_encoder')
@@ -142,8 +171,6 @@ class net1(object):
             outputs = tf.unstack(outputs, self.agents_number)  # (agents_number, batch_size,1)
             outputs = tf.transpose(outputs, [1, 0, 2])  # (batch_size,agents_number,1)
             outputs = slim.flatten(outputs)
-            # outputs =  outputs * 0.1
             fc3 = slim.fully_connected(outputs, 1, activation_fn=None, scope='full_connected3')
-
 
             return fc3

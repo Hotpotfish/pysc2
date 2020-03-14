@@ -21,7 +21,7 @@ class net():
         # 神经网络参数
         self.mu = mu
         self.sigma = sigma
-        self.var = 0.1
+        self.var = 0.5
         self.learning_rate = learning_rate
 
         # 动作维度数，动作参数维度数（默认为6）,状态维度数
@@ -127,6 +127,8 @@ class net():
             reward_batch = np.array([data[2] for data in minibatch])
             agents_local_observation_next = np.array([data[3][1] for data in minibatch])
             state_next = np.array([data[3][0] for data in minibatch])
+
+            self.session.run(self.net.soft_replace)
 
             _ = self.session.run(self.net.atrain, {self.net.state_input: state,
                                                    self.net.agents_local_observation: agents_local_observation})
