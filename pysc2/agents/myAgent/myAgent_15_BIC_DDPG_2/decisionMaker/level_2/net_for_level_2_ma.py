@@ -128,6 +128,8 @@ class net():
             agents_local_observation_next = np.array([data[3][1] for data in minibatch])
             state_next = np.array([data[3][0] for data in minibatch])
 
+            self.session.run(self.net.soft_replace)
+
             _ = self.session.run(self.net.atrain, {self.net.state_input: state,
                                                    self.net.agents_local_observation: agents_local_observation})
 
