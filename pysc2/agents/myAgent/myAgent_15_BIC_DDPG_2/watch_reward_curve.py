@@ -55,7 +55,7 @@ def plot_all(path):
 
 
 if __name__ == "__main__":
-    plot_all('d:/model/20200311174733')
+    plot_all('d:/model/20200316224448')
 
 # import matplotlib.pyplot as plt
 # import numpy as np

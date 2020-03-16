@@ -21,7 +21,7 @@ class net():
         # 神经网络参数
         self.mu = mu
         self.sigma = sigma
-        self.var = 0.1
+        self.var = 0.5
         self.learning_rate = learning_rate
 
         # 动作维度数，动作参数维度数（默认为6）,状态维度数
@@ -128,6 +128,8 @@ class net():
             agents_local_observation_next = np.array([data[3][1] for data in minibatch])
             state_next = np.array([data[3][0] for data in minibatch])
 
+            self.session.run(self.net.soft_replace)
+
             _ = self.session.run(self.net.atrain, {self.net.state_input: state,
                                                    self.net.agents_local_observation: agents_local_observation})
 
@@ -151,15 +153,14 @@ class net():
             return actio_out, action_k[0]
         else:
             state_input = np.repeat(current_state[0][np.newaxis], np.power(config.K, self.agents_number), axis=0)
-            temp_qs = self.session.run(self.net.q, {self.net.state_input: state_input, self.net.a: np.array(action_k)[:, np.newaxis]})
+            temp_qs = self.session.run(self.net.q, {self.net.state_input: state_input, self.net.a: np.array(action_k)[:, :, np.newaxis]})
             action = action_k[np.argmax(temp_qs)]
             return actio_out, action
 
     def action(self, current_state):
         actio_out = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[1][np.newaxis]})[0]
-        actio_out = np.clip(np.random.normal(actio_out, self.var), 0, 1)
+        actio_out = np.clip(np.random.normal(actio_out, 0), 0, 1)
         actio_proto = actio_out * self.bound
-
 
         action_k = get_action_combination(self.KDTree, actio_proto)
         if config.K == 1:
