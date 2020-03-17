@@ -22,7 +22,7 @@ class net():
         # 神经网络参数
         self.mu = mu
         self.sigma = sigma
-        self.var =0.5
+        self.var = 0.5
         self.learning_rate = learning_rate
 
         # 动作维度数，动作参数维度数（默认为6）,状态维度数
@@ -120,43 +120,49 @@ class net():
 
     def train_Q_network(self):  # 训练网络
         if self.replay_buffer.real_size > config.BATCH_SIZE:
-            minibatch = random.sample(self.replay_buffer.queue, config.BATCH_SIZE)
-            agents_local_observation = np.array([data[0][1] for data in minibatch])
-            state = np.array([data[0][0] for data in minibatch])
 
-            action_batch = np.array([data[1] for data in minibatch])
-            reward_batch = np.array([data[2] for data in minibatch])
-            agents_local_observation_next = np.array([data[3][1] for data in minibatch])
-            state_next = np.array([data[3][0] for data in minibatch])
+            for i in range(config.MY_UNIT_NUMBER):
+                self.net.i = i
+                minibatch = random.sample(self.replay_buffer.queue, config.BATCH_SIZE)
+                agents_local_observation = np.array([data[0][1] for data in minibatch])
+                state = np.array([data[0][0] for data in minibatch])
 
-            self.session.run(self.net.soft_replace)
+                action_batch = np.array([data[1] for data in minibatch])
+                reward_batch = np.array([data[2] for data in minibatch])
+                agents_local_observation_next = np.array([data[3][1] for data in minibatch])
+                state_next = np.array([data[3][0] for data in minibatch])
 
-            _ = self.session.run(self.net.atrains,
-                                 {self.net.agents_local_observation: agents_local_observation})
+                # self.session.run(self.net.soft_replace)
 
-            __ = self.session.run(self.net.ctrains,
-                                  {self.net.actions: action_batch,
-                                   self.net.reward: reward_batch[:, np.newaxis],
-                                   self.net.agents_local_observation: agents_local_observation,
-                                   self.net.agents_local_observation_next: agents_local_observation_next
-                                   })
+                _ = self.session.run(self.net.agent_i_atrain(),
+                                     {self.net.agents_local_observation: agents_local_observation,
+                                      self.net.state_input: state})
+
+                # __ = self.session.run(self.net.agent_i_ctrain(i),
+                #                       {self.net.union_a: action_batch,
+                #                        self.net.reward: reward_batch,
+                #                        self.net.state_input_next: state_next,
+                #                        self.net.agents_local_observation: agents_local_observation,
+                #                        self.net.agents_local_observation_next: agents_local_observation_next})
+                #
+                # ___ = self.session.run(self.net.agent_i_soft_replace(i))
 
     def egreedy_action(self, current_state):  # 输出带随机的动作
 
-        action_out = self.session.run(self.net.actions, {self.net.agents_local_observation: current_state[1][np.newaxis]})[0]
-        print(action_out)
+        action_out = self.session.run(self.net.union_a, {self.net.agents_local_observation: current_state[1][np.newaxis]})[0]
+        # print(action_out)
         actio_out = np.clip(np.random.normal(action_out, self.var), 0, 1)
         actio_proto = actio_out * self.bound
-        self.var = self.var * 0.999995
+        self.var = self.var * 0.995
         # print(self.var)
         action_k = get_action_combination(self.KDTree, actio_proto)
         if config.K == 1:
             return actio_out, action_k[0]
-        # else:
-        #     state_input = np.repeat(current_state[0][np.newaxis], np.power(config.K, self.agents_number), axis=0)
-        #     temp_qs = self.session.run(self.net.q, {self.net.state_input: state_input, self.net.a: np.array(action_k)[:, np.newaxis]})
-        #     action = action_k[np.argmax(temp_qs)]
-        #     return actio_out, action
+        else:
+            state_input = np.repeat(current_state[0][np.newaxis], np.power(config.K, self.agents_number), axis=0)
+            temp_qs = self.session.run(self.net.union_q, {self.net.state_input: state_input, self.net.union_a: np.array(action_k)[:, np.newaxis]})
+            action = action_k[np.argmax(temp_qs)]
+            return actio_out, action
 
     def action(self, current_state):
         actio_out = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[1][np.newaxis]})[0]
