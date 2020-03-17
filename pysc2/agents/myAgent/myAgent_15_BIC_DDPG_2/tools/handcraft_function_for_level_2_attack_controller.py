@@ -273,12 +273,12 @@ def get_reward(obs, pre_obs):
         reward = -sum(enemy_units[:, 2]) - sum(enemy_units[:, 3]) - 200
         return float(reward) / 200
 
-    # # 距离变化
-    # my_coord = np.array(list(zip(my_units[:, 12], my_units[:, 13])))
-    # emey_coord = np.array(list(zip(enemy_units[:, 12], enemy_units[:, 13])))
-    # kdtree = KDTree(emey_coord)
-    # distance_avg = kdtree.query(my_coord)
-    # reward -= (abs(sum(distance_avg[0]) / len(my_units) - 3) / (config.MAP_SIZE * 1.41)) * 5
+    # 距离变化
+    my_coord = np.array(list(zip(my_units[:, 12], my_units[:, 13])))
+    emey_coord = np.array(list(zip(enemy_units[:, 12], enemy_units[:, 13])))
+    kdtree = KDTree(emey_coord)
+    distance_avg = kdtree.query(my_coord)
+    reward -= (abs(sum(distance_avg[0]) / len(my_units) - 4) / (config.MAP_SIZE * 1.41)) * 5
 
     # 人数变化
     if len(my_units) < len(my_units_health_pre):
