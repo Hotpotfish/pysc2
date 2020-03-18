@@ -151,12 +151,14 @@ class net():
         self.var = self.var * 0.995
         print(self.var)
         action_k = get_action_combination(self.valid_action, self.max_vaild_action_distance, self.KDTrees, actio_proto)
-        temp_qs = []
-        for i in range(np.power(config.K, self.agents_number)):
-            temp_q = self.session.run(self.net.q, {self.net.state_input: current_state[0][np.newaxis], self.net.a: action_k[i][np.newaxis]})[0]
-            temp_qs.append(temp_q)
-        action = action_k[np.argmax(temp_qs)]
-        return actio_out, action
+
+        if config.K == 1:
+            return actio_out, action_k[0]
+        else:
+            state_input = np.repeat(current_state[0][np.newaxis], np.power(config.K, self.agents_number), axis=0)
+            temp_qs = self.session.run(self.net.q, {self.net.state_input: state_input, self.net.a: action_k})
+            action = action_k[np.argmax(temp_qs)]
+            return actio_out, action
 
     def action(self, current_state):
         actio_out = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[1][np.newaxis]})[0]

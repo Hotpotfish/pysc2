@@ -27,36 +27,36 @@ def get_all_vaild_action():
         if len(action.args) == 2 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags':
             function_id_1 = [i1]
 
-            function_id_2 = [0]
-            x_2 = [0]
-            y_2 = [0]
+            function_id_2 = [1e-10]
+            x_2 = [1e-10]
+            y_2 = [1e-10]
 
-            function_id_3 = [0]
-            target_3 = [0]
+            function_id_3 = [1e-10]
+            target_3 = [1e-10]
 
             for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
                 raw_cmd_action.append(item)
             raw_cmd_action_real.append(action)
             i1 += 1
         elif len(action.args) == 3 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags' and action.args[2].name == 'world':
-            function_id_1 = [0]
+            function_id_1 = [1e-10]
 
             function_id_2 = [i2]
             x_2 = range(config.MAP_SIZE)
             y_2 = range(config.MAP_SIZE)
 
-            function_id_3 = [0]
-            target_3 = [0]
+            function_id_3 = [1e-10]
+            target_3 = [1e-10]
             for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
                 raw_cmd_pt_action.append(item)
             raw_cmd_pt_action_real.append(action)
             i2 += 1
 
         elif len(action.args) == 3 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags' and action.args[2].name == 'target_unit_tag':
-            function_id_1 = [0]
-            function_id_2 = [0]
-            x_2 = [0]
-            y_2 = [0]
+            function_id_1 = [1e-10]
+            function_id_2 = [1e-10]
+            x_2 = [1e-10]
+            y_2 = [1e-10]
 
             function_id_3 = [i3]
             target_3 = range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)
@@ -86,28 +86,52 @@ def get_k_closest_action(vaild_action, max_vaild_action_distance, KDTrees, proto
     raw_cmd_tree = KDTrees[0]
     raw_cmd_pt_tree = KDTrees[1]
     raw_cmd_unit_tree = KDTrees[2]
+    if config.K > len(vaild_action['raw_cmd_action']):
+        raw_cmd_temp = raw_cmd_tree.query(proto_action[:, 0][:, np.newaxis], k=len(vaild_action['raw_cmd_action']))
+    else:
+        raw_cmd_temp = raw_cmd_tree.query(proto_action[:, 0][:, np.newaxis], k=config.K)
+    if config.K > len(vaild_action['raw_cmd_pt_action']):
+        raw_cmd_pt_temp = raw_cmd_pt_tree.query(proto_action[:, 1:4], k=len(vaild_action['raw_cmd_pt_action']))
+    else:
+        raw_cmd_pt_temp = raw_cmd_pt_tree.query(proto_action[:, 1:4], k=config.K)
 
-    raw_cmd_temp = raw_cmd_tree.query(proto_action[:, 0][:, np.newaxis], k=config.K)
-    raw_cmd_pt_temp = raw_cmd_pt_tree.query(proto_action[:, 1:4], k=config.K)
-    raw_cmd_unit_temp = raw_cmd_unit_tree.query(proto_action[:, 4:6], k=config.K)
+    if config.K > len(vaild_action['raw_cmd_unit_action']):
+        raw_cmd_unit_temp = raw_cmd_unit_tree.query(proto_action[:, 4:6], k=len(vaild_action['raw_cmd_unit_action']))
+    else:
+        raw_cmd_unit_temp = raw_cmd_unit_tree.query(proto_action[:, 4:6], k=config.K)
 
     actions = []
 
     for i in range(config.MY_UNIT_NUMBER):
         action = []
-        if config.K == 1:
+
+        if len(vaild_action['raw_cmd_action']) == 1:
             raw_cmd_action = list(zip([raw_cmd_temp[0][i] / max_vaild_action_distance[0]], np.array(vaild_action['raw_cmd_action'])[raw_cmd_temp[1][i]][np.newaxis]))
-            raw_cmd_pt_action = list(zip([raw_cmd_pt_temp[0][i] / max_vaild_action_distance[1]], np.array(vaild_action['raw_cmd_pt_action'])[raw_cmd_pt_temp[1][i]][np.newaxis]))
-            raw_cmd_unit_action = list(zip([raw_cmd_unit_temp[0][i] / max_vaild_action_distance[2]], np.array(vaild_action['raw_cmd_unit_action'])[raw_cmd_unit_temp[1][i]][np.newaxis]))
         else:
             raw_cmd_action = list(zip(raw_cmd_temp[0][i] / max_vaild_action_distance[0], np.array(vaild_action['raw_cmd_action'])[raw_cmd_temp[1][i]]))
+        if len(vaild_action['raw_cmd_pt_action']) == 1:
+            raw_cmd_pt_action = list(zip([raw_cmd_pt_temp[0][i] / max_vaild_action_distance[1]], np.array(vaild_action['raw_cmd_pt_action'])[raw_cmd_pt_temp[1][i]][np.newaxis]))
+        else:
             raw_cmd_pt_action = list(zip(raw_cmd_pt_temp[0][i] / max_vaild_action_distance[1], np.array(vaild_action['raw_cmd_pt_action'])[raw_cmd_pt_temp[1][i]]))
+        if len(vaild_action['raw_cmd_unit_action']) == 1:
+            raw_cmd_unit_action = list(zip([raw_cmd_unit_temp[0][i] / max_vaild_action_distance[2]], np.array(vaild_action['raw_cmd_unit_action'])[raw_cmd_unit_temp[1][i]][np.newaxis]))
+        else:
             raw_cmd_unit_action = list(zip(raw_cmd_unit_temp[0][i] / max_vaild_action_distance[2], np.array(vaild_action['raw_cmd_unit_action'])[raw_cmd_unit_temp[1][i]]))
+
+        # if config.K == 1:
+        #     raw_cmd_action = list(zip([raw_cmd_temp[0][i] / max_vaild_action_distance[0]], np.array(vaild_action['raw_cmd_action'])[raw_cmd_temp[1][i]][np.newaxis]))
+        #     raw_cmd_pt_action = list(zip([raw_cmd_pt_temp[0][i] / max_vaild_action_distance[1]], np.array(vaild_action['raw_cmd_pt_action'])[raw_cmd_pt_temp[1][i]][np.newaxis]))
+        #     raw_cmd_unit_action = list(zip([raw_cmd_unit_temp[0][i] / max_vaild_action_distance[2]], np.array(vaild_action['raw_cmd_unit_action'])[raw_cmd_unit_temp[1][i]][np.newaxis]))
+        # else:
+        #     raw_cmd_action = list(zip(raw_cmd_temp[0][i] / max_vaild_action_distance[0], np.array(vaild_action['raw_cmd_action'])[raw_cmd_temp[1][i]]))
+        #     raw_cmd_pt_action = list(zip(raw_cmd_pt_temp[0][i] / max_vaild_action_distance[1], np.array(vaild_action['raw_cmd_pt_action'])[raw_cmd_pt_temp[1][i]]))
+        #     raw_cmd_unit_action = list(zip(raw_cmd_unit_temp[0][i] / max_vaild_action_distance[2], np.array(vaild_action['raw_cmd_unit_action'])[raw_cmd_unit_temp[1][i]]))
         action += raw_cmd_action
         action += raw_cmd_pt_action
         action += raw_cmd_unit_action
         action = sorted(action, key=(lambda x: x[0]))
         actions.append(np.array(action)[0:config.K, 1])
+
     return actions
 
 
@@ -155,8 +179,8 @@ def computeDistance_center(unit):
 def get_bound(vaild_action):
     bound = [len(vaild_action['raw_cmd_action']),
              len(vaild_action['raw_cmd_pt_action']),
-             config.MAP_SIZE ,
-             config.MAP_SIZE ,
+             config.MAP_SIZE,
+             config.MAP_SIZE,
              len(vaild_action['raw_cmd_unit_action']),
              config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER
              ]
@@ -193,26 +217,26 @@ def assembly_action(init_obs, obs, action_numbers, vaild_action):
         parameter = []
         queued = 0
         parameter.append([queued])
-        if np.all(action_numbers[i][1:] == 0):
+        if np.all(action_numbers[i][1:] == 1e-10):
 
-            function_id = int(vaild_action['raw_cmd_action_real'][action_numbers[i][0]].id)
+            function_id = int(vaild_action['raw_cmd_action_real'][int(action_numbers[i][0])].id)
             parameter.append([my_unit_pos])
             # parameter.append([action_numbers[i][1], action_numbers[i][2]])
             actions.append(a.FunctionCall(function_id, parameter))
 
-        elif np.all(action_numbers[i][[0, 4, 5]] == 0):
-            function_id = int(vaild_action['raw_cmd_pt_action_real'][action_numbers[i][1]].id)
+        elif np.all(action_numbers[i][[0, 4, 5]] == 1e-10):
+            function_id = int(vaild_action['raw_cmd_pt_action_real'][int(action_numbers[i][1])].id)
             parameter.append([my_unit_pos])
-            parameter.append([action_numbers[i][2], action_numbers[i][3]])
+            parameter.append([int(action_numbers[i][2]), int(action_numbers[i][3])])
             actions.append(a.FunctionCall(function_id, parameter))
 
-        elif np.all(action_numbers[i][0:4] == 0):
-            function_id = int(vaild_action['raw_cmd_unit_action_real'][action_numbers[i][4]].id)
+        elif np.all(action_numbers[i][0:4] == 1e-10):
+            function_id = int(vaild_action['raw_cmd_unit_action_real'][int(action_numbers[i][4])].id)
             parameter.append([my_unit_pos])
-            if action_numbers[i][5] < config.MY_UNIT_NUMBER:
-                target_unit_pos = find_unit_pos(obs, init_my_units_tag[action_numbers[i][5]])
+            if int(action_numbers[i][5]) < config.MY_UNIT_NUMBER:
+                target_unit_pos = find_unit_pos(obs, init_my_units_tag[int(action_numbers[i][5])])
             else:
-                target_unit_pos = find_unit_pos(obs, init_enemy_units_tag[action_numbers[i][5] - config.MY_UNIT_NUMBER])
+                target_unit_pos = find_unit_pos(obs, init_enemy_units_tag[int(action_numbers[i][5]) - config.MY_UNIT_NUMBER])
             if target_unit_pos is None:
                 continue
             else:
