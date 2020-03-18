@@ -86,9 +86,9 @@ attack_controller = [
 
     # action.RAW_FUNCTIONS.Effect_YamatoGun_unit,
     # action.RAW_FUNCTIONS.Effect_TacticalJump_pt,
-
-    action.RAW_FUNCTIONS.Move_pt,
     action.RAW_FUNCTIONS.Attack_unit,
+    action.RAW_FUNCTIONS.Move_pt,
+
 
 ]
 

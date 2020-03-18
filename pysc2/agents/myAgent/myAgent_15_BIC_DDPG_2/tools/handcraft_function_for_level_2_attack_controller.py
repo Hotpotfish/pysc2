@@ -270,20 +270,20 @@ def get_reward(obs, pre_obs):
         reward = sum(my_units[:, 2]) + sum(my_units[:, 3]) + 200
         return float(reward) / 200
     elif len(my_units) == 0:
-        reward = -sum(enemy_units[:, 2]) - sum(enemy_units[:, 3]) - 200
-        return float(reward) / 200
+        # reward = -sum(enemy_units[:, 2]) - sum(enemy_units[:, 3]) - 200
+        return 0
 
     # 距离变化
-    my_coord = np.array(list(zip(my_units[:, 12], my_units[:, 13])))
-    emey_coord = np.array(list(zip(enemy_units[:, 12], enemy_units[:, 13])))
-    kdtree = KDTree(emey_coord)
-    distance_avg = kdtree.query(my_coord)
-    reward -= (abs(sum(distance_avg[0]) / len(my_units) - 4) / (config.MAP_SIZE * 1.41)) * 5
+    # my_coord = np.array(list(zip(my_units[:, 12], my_units[:, 13])))
+    # emey_coord = np.array(list(zip(enemy_units[:, 12], enemy_units[:, 13])))
+    # kdtree = KDTree(emey_coord)
+    # distance_avg = kdtree.query(my_coord)
+    # reward -= (abs(sum(distance_avg[0]) / len(my_units) - 4) / (config.MAP_SIZE * 1.41)) * 5
 
     # 人数变化
-    if len(my_units) < len(my_units_health_pre):
-        reward -= ((len(my_units_health_pre) - len(my_units)) * 10) / 200
-    elif len(enemy_units) < len(enemy_units_health_pre):
+    # if len(my_units) < len(my_units_health_pre):
+    #     reward -= ((len(my_units_health_pre) - len(my_units)) * 10) / 200
+    if len(enemy_units) < len(enemy_units_health_pre):
         reward += ((len(enemy_units_health_pre) - len(enemy_units)) * 10) / 200
 
     # 血量与护盾变化
