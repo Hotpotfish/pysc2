@@ -63,7 +63,7 @@ class net1(object):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             with slim.arg_scope([slim.fully_connected],
                                 trainable=train,
-                                activation_fn=tf.nn.selu,
+                                activation_fn=None,
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
                                 weights_regularizer=slim.l2_regularizer(0.05)
                                 ):
@@ -105,7 +105,7 @@ class net1(object):
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             with slim.arg_scope([slim.fully_connected],
                                 trainable=train,
-                                activation_fn=tf.nn.selu,
+                                activation_fn=None,
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
                                 weights_regularizer=slim.l2_regularizer(0.05)):
                 encoder_outputs = self._observation_encoder_c(state_input, action_input, self.agents_number,
@@ -141,6 +141,6 @@ class net1(object):
             outputs = slim.flatten(outputs)
 
             fc3 = slim.fully_connected(outputs, 1, activation_fn=None, scope='full_connected3')
-            # fc2 = tf.Print(fc2, [fc2])
+            # fc3 = tf.Print(fc3, [fc3])
 
             return fc3

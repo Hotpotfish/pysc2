@@ -142,14 +142,15 @@ class net():
                                                   self.net.state_input_next: state_next,
                                                   self.net.agents_local_observation_next: agents_local_observation_next
                                                   })
+            self.session.run(self.net.soft_replace)
 
     def egreedy_action(self, current_state):  # 输出带随机的动作
 
         actio_out = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[1][np.newaxis]})[0]
-        actio_out = np.clip(np.random.normal(actio_out, self.var), 0, 1)
+        actio_out = np.clip(np.random.normal(actio_out, 0), 0, 1)
         actio_proto = actio_out * self.bound
         self.var = self.var * 0.995
-        print(self.var)
+        # print(self.var)
         action_k = get_action_combination(self.valid_action, self.max_vaild_action_distance, self.KDTrees, actio_proto)
 
         if config.K == 1:
