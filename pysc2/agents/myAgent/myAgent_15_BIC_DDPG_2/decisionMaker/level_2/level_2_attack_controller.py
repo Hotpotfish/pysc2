@@ -5,7 +5,7 @@ import pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.smart_actions as sa
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.decisionMaker.level_2.net_for_level_2_ma import net
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools import handcraft_function, handcraft_function_for_level_2_attack_controller
 
-from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.handcraft_function_for_level_2_attack_controller import get_reward, get_bound, get_state, win_or_loss, get_clusters_test, get_bounds_and_states, assembly_action_test, get_agents_obs, \
+from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.handcraft_function_for_level_2_attack_controller import get_reward,get_state, win_or_loss, get_clusters_test, get_bounds_and_states, assembly_action_test, get_agents_obs, \
     get_all_vaild_action
 from pysc2.lib.actions import RAW_FUNCTIONS
 
@@ -63,6 +63,6 @@ class level_2_attack_controller:
 
         self.controller.current_state = [np.array(get_state(self.init_obs, obs)), np.array(get_agents_obs(self.init_obs, obs))]
         self.current_obs = obs
-        action = self.controller.network.action(self.controller.current_state)
-        actions = handcraft_function_for_level_2_attack_controller.assembly_action(self.init_obs, obs, action)
+        action_out, action = self.controller.network.action(self.controller.current_state)
+        actions = handcraft_function_for_level_2_attack_controller.assembly_action(self.init_obs, obs, action, self.vaild_action)
         return actions
