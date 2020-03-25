@@ -52,6 +52,8 @@ class MoveToBeacon(base_agent.BaseAgent):
     if FUNCTIONS.Move_screen.id in obs.observation.available_actions:
       player_relative = obs.observation.feature_screen.player_relative
       beacon = _xy_locs(player_relative == _PLAYER_NEUTRAL)
+      info = numpy.zeros([1, 10000], dtype=numpy.float32)
+      info[0, obs.observation['available_actions']] = 1
       if not beacon:
         return FUNCTIONS.no_op()
       beacon_center = numpy.mean(beacon, axis=0).round()
@@ -218,6 +220,7 @@ class DefeatRoachesRaw(base_agent.BaseAgent):
                if unit.alliance == _PLAYER_SELF]
     roaches = [unit for unit in obs.observation.raw_units
                if unit.alliance == _PLAYER_ENEMY]
+
 
     if marines and roaches:
       # Find the roach with max y coord.

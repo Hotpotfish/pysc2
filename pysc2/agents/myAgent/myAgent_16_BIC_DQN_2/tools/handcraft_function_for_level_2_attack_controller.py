@@ -1,86 +1,13 @@
 import math
 
 import itertools
-
-from scipy.spatial import KDTree
 from sklearn.cluster import DBSCAN
 import numpy as np
-import pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.smart_actions as sa
+import pysc2.agents.myAgent.myAgent_16_BIC_DQN_2.smart_actions as sa
 
-from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.config import config
-from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools import unit_list
+from pysc2.agents.myAgent.myAgent_16_BIC_DQN_2.config import config
+from pysc2.agents.myAgent.myAgent_16_BIC_DQN_2.tools import unit_list
 from pysc2.lib import features
-from pysc2.lib import actions as a
-
-
-def get_all_vaild_action():
-    actions = []
-    action_tpye_len = len(sa.attack_controller)
-    for i in range(action_tpye_len):
-        action = sa.attack_controller[i]
-        if len(action.args) == 2 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags':
-            function_id_1 = [i]
-
-            function_id_2 = [1e-10]
-            x_2 = [1e-10]
-            y_2 = [1e-10]
-
-            function_id_3 = [1e-10]
-            target_3 = [1e-10]
-
-            for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
-                actions.append(item)
-        elif len(action.args) == 3 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags' and action.args[2].name == 'world':
-            function_id_1 = [1e-10]
-
-            function_id_2 = [i]
-            x_2 = [-1, 1]
-            y_2 = [-1, 1]
-
-            function_id_3 = [1e-10]
-            target_3 = [1e-10]
-            for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
-                actions.append(item)
-
-        elif len(action.args) == 3 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags' and action.args[2].name == 'target_unit_tag':
-            function_id_1 = [1e-10]
-            function_id_2 = [1e-10]
-            x_2 = [1e-10]
-            y_2 = [1e-10]
-
-            function_id_3 = [i]
-            target_3 = range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)
-            for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
-                actions.append(item)
-    return actions
-
-
-def get_k_closest_action(KDTree, proto_action):
-    actions = []
-
-    for i in range(config.MY_UNIT_NUMBER):
-        action = []
-        if config.K >= KDTree.n:
-
-            temp_r = KDTree.query(proto_action[i], k=KDTree.n)
-        else:
-            temp_r = KDTree.query(proto_action[i], k=config.K)
-        if config.K == 1:
-            action.append(temp_r[1])
-        else:
-            action = temp_r[1]
-        actions.append(action)
-    return actions
-
-
-def get_action_combination(KDTree, proto_action):
-    proto_action = proto_action + (KDTree.n - 1) / 2
-    # print(proto_action)
-    k_closest_action = get_k_closest_action(KDTree, proto_action)
-    action_combination = []
-    for item in itertools.product(*k_closest_action):
-        action_combination.append(np.array(list(item)))
-    return action_combination
 
 
 # 十进制转任意进制 用于解析动作列表
@@ -116,6 +43,36 @@ def computeDistance_center(unit):
     return distance
 
 
+def get_bound(init_obs, obs):
+    bounds = []
+    init_my_units_tag = [unit.tag for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
+    init_enemy_units_tag = [unit.tag for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
+
+    for i in range(config.MY_UNIT_NUMBER):
+        bound = []
+        my_unit = find_unit_by_tag(obs, init_my_units_tag[i])
+        if my_unit is None:
+            bound.append(1)
+            for j in range(config.ATTACT_CONTROLLER_ACTIONDIM - config.DEATH_ACTION_DIM):
+                bound.append(0)
+            bounds.append(bound)
+            continue
+        else:
+            bound.append(0)
+            for j in range(config.STATIC_ACTION_DIM):
+                bound.append(1)
+            for j in range(config.ENEMY_UNIT_NUMBER):
+                enemy = find_unit_by_tag(obs, init_enemy_units_tag[j])
+                if enemy is None:
+                    bound.append(0)
+                elif computeDistance(my_unit, enemy) >= config.ATTACK_RANGE:
+                    bound.append(0)
+                else:
+                    bound.append(1)
+        bounds.append(bound)
+    return bounds
+
+
 def find_unit_by_tag(obs, tag):
     for unit in obs.observation['raw_units']:
         if unit.tag == tag:
@@ -123,59 +80,50 @@ def find_unit_by_tag(obs, tag):
     return None
 
 
-def find_unit_pos(obs, tag):
-    for i in range(len(obs.observation['raw_units'])):
-        if obs.observation['raw_units'][i].tag == tag:
-            return i
-    else:
-        return None
-
-
 ############################################
 
-def assembly_action(init_obs, obs, action_numbers, vaild_action):
+
+def assembly_action(init_obs, obs, action_numbers):
     actions = []
 
     init_my_units = [unit for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
     init_enemy_units = [unit for unit in init_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
+    controller = sa.attack_controller
+
+    # action_nmbers = transport(action_number, config.ATTACT_CONTROLLER_ACTIONDIM)
 
     for i in range(config.MY_UNIT_NUMBER):
-        my_unit_pos = find_unit_pos(obs, init_my_units[i].tag)
-        if my_unit_pos is None:
-            continue
-        my_unit = find_unit_by_tag(obs, init_my_units[i].tag)
         parameter = []
-        queued = 0
-        parameter.append([queued])
-        # print(action_numbers[i])
-        if np.all(np.array(vaild_action[action_numbers[i]])[1:] == 1e-10):
+        if action_numbers[i] == 0:
 
-            function_id = int(sa.attack_controller[vaild_action[action_numbers[i]][0]].id)
-            parameter.append([my_unit_pos])
-            # parameter.append([action_numbers[i][1], action_numbers[i][2]])
-            actions.append(a.FunctionCall(function_id, parameter))
+            continue
+        elif 0 < action_numbers[i] <= 4:
+            my_unit = find_unit_by_tag(obs, init_my_units[i].tag)
+            a = controller[1]
+            dir = action_numbers[i] - config.DEATH_ACTION_DIM
 
-        elif np.all(np.array(vaild_action[action_numbers[i]])[[0, 4, 5]] == 1e-10):
-            function_id = int(sa.attack_controller[vaild_action[action_numbers[i]][1]].id)
-            parameter.append([my_unit_pos])
+            parameter.append(0)
+            parameter.append(init_my_units[i].tag)
+            if dir == 0:
+                parameter.append((min([my_unit.x + 2, config.MAP_SIZE]), min([my_unit.y + 2, config.MAP_SIZE])))
+            elif dir == 1:
+                parameter.append((max([my_unit.x - 2, 0]), max([my_unit.y - 2, 0])))
+            elif dir == 2:
+                parameter.append((min([my_unit.x + 2, config.MAP_SIZE]), max([my_unit.y - 2, 0])))
+            elif dir == 3:
+                parameter.append((max([my_unit.x - 2, 0]), min([my_unit.y + 2, config.MAP_SIZE])))
 
-            parameter.append([vaild_action[action_numbers[i]][2] + my_unit.x, vaild_action[action_numbers[i]][3] + my_unit.y])
-            actions.append(a.FunctionCall(function_id, parameter))
-
-        elif np.all(np.array(vaild_action[action_numbers[i]])[0:4] == 1e-10):
-            function_id = int(sa.attack_controller[vaild_action[action_numbers[i]][4]].id)
-            parameter.append([my_unit_pos])
-            if np.array(vaild_action[action_numbers[i]])[5] < config.MY_UNIT_NUMBER:
-                target_unit_pos = find_unit_pos(obs, init_my_units[vaild_action[action_numbers[i]][5]].tag)
-            else:
-                target_unit_pos = find_unit_pos(obs, init_enemy_units[vaild_action[action_numbers[i]][5] - config.MY_UNIT_NUMBER].tag)
-            if target_unit_pos is None:
-                continue
-            else:
-                parameter.append([target_unit_pos])
-
-            actions.append(a.FunctionCall(function_id, parameter))
-    # print(actions)
+            parameter = tuple(parameter)
+            actions.append(a(*parameter))
+        elif 4 < action_numbers[i] <= 4 + config.ENEMY_UNIT_NUMBER:
+            my_unit = find_unit_by_tag(obs, init_my_units[i].tag)
+            a = controller[2]
+            enemy = int(action_numbers[i] - config.DEATH_ACTION_DIM - config.STATIC_ACTION_DIM)
+            parameter.append(0)
+            parameter.append(my_unit.tag)
+            parameter.append(init_enemy_units[enemy].tag)
+            parameter = tuple(parameter)
+            actions.append(a(*parameter))
 
     return actions
 
@@ -183,14 +131,14 @@ def assembly_action(init_obs, obs, action_numbers, vaild_action):
 def get_agent_state(unit):
     states = np.array([])
 
-    states = np.append(states, computeDistance_center(unit) / (config.MAP_SIZE * 1.41))
-    states = np.append(states, unit.alliance / 4)
-    states = np.append(states, unit.unit_type / 2000)
-    states = np.append(states, unit.x / config.MAP_SIZE)
-    states = np.append(states, unit.y / config.MAP_SIZE)
-    states = np.append(states, unit.health / 100)
-    states = np.append(states, unit.shield / 100)
-    states = np.append(states, unit.weapon_cooldown / 10)
+    states = np.append(states, computeDistance_center(unit))
+    states = np.append(states, unit.alliance)
+    states = np.append(states, unit.unit_type)
+    states = np.append(states, unit.x)
+    states = np.append(states, unit.y)
+    states = np.append(states, unit.health)
+    states = np.append(states, unit.shield)
+    states = np.append(states, unit.weapon_cooldown)
     return states
 
 
@@ -208,8 +156,6 @@ def get_state(init_obs, obs):
             state = np.append(state, np.zeros(config.COOP_AGENT_OBDIM))
 
     for i in range(config.ENEMY_UNIT_NUMBER):
-        if i >= len(init_enemy_units_tag):
-            print()
         enemy_unit = find_unit_by_tag(obs, init_enemy_units_tag[i])
         if enemy_unit is not None:
             my_unit_state = get_agent_state(enemy_unit)
@@ -242,28 +188,28 @@ def get_agents_obs(init_obs, obs):
             if my_target_unit is None or computeDistance(my_unit, my_target_unit) >= config.OB_RANGE:
                 agent_obs = np.append(agent_obs, np.zeros(8))
             else:
-                agent_obs = np.append(agent_obs, computeDistance(my_unit, my_target_unit) / (config.MAP_SIZE * 1.41))
-                agent_obs = np.append(agent_obs, my_target_unit.alliance / 4)
-                agent_obs = np.append(agent_obs, my_target_unit.unit_type / 2000)
-                agent_obs = np.append(agent_obs, my_target_unit.x / config.MAP_SIZE)
-                agent_obs = np.append(agent_obs, my_target_unit.y / config.MAP_SIZE)
-                agent_obs = np.append(agent_obs, my_target_unit.health / 100)
-                agent_obs = np.append(agent_obs, my_target_unit.shield / 100)
-                agent_obs = np.append(agent_obs, my_target_unit.weapon_cooldown / 10)
+                agent_obs = np.append(agent_obs, computeDistance(my_unit, my_target_unit))
+                agent_obs = np.append(agent_obs, my_target_unit.alliance)
+                agent_obs = np.append(agent_obs, my_target_unit.unit_type)
+                agent_obs = np.append(agent_obs, my_target_unit.x)
+                agent_obs = np.append(agent_obs, my_target_unit.y)
+                agent_obs = np.append(agent_obs, my_target_unit.health)
+                agent_obs = np.append(agent_obs, my_target_unit.shield)
+                agent_obs = np.append(agent_obs,  my_target_unit.weapon_cooldown)
         for j in range(config.ENEMY_UNIT_NUMBER):
             enemy_target_unit = find_unit_by_tag(obs, init_enemy_units_tag[j])
             # 按顺序遍历每个己方单位的信息
             if enemy_target_unit is None or computeDistance(my_unit, enemy_target_unit) >= config.OB_RANGE:
                 agent_obs = np.append(agent_obs, np.zeros(8))
             else:
-                agent_obs = np.append(agent_obs, computeDistance(my_unit, enemy_target_unit) / (config.MAP_SIZE * 1.41))
-                agent_obs = np.append(agent_obs, enemy_target_unit.alliance / 4)
-                agent_obs = np.append(agent_obs, enemy_target_unit.unit_type / 2000)
-                agent_obs = np.append(agent_obs, enemy_target_unit.x / config.MAP_SIZE)
-                agent_obs = np.append(agent_obs, enemy_target_unit.y / config.MAP_SIZE)
-                agent_obs = np.append(agent_obs, enemy_target_unit.health / 100)
-                agent_obs = np.append(agent_obs, enemy_target_unit.shield / 100)
-                agent_obs = np.append(agent_obs, enemy_target_unit.weapon_cooldown / 10)
+                agent_obs = np.append(agent_obs, computeDistance(my_unit, enemy_target_unit))
+                agent_obs = np.append(agent_obs, enemy_target_unit.alliance)
+                agent_obs = np.append(agent_obs, enemy_target_unit.unit_type)
+                agent_obs = np.append(agent_obs, enemy_target_unit.x)
+                agent_obs = np.append(agent_obs, enemy_target_unit.y)
+                agent_obs = np.append(agent_obs, enemy_target_unit.health)
+                agent_obs = np.append(agent_obs, enemy_target_unit.shield)
+                agent_obs = np.append(agent_obs,  enemy_target_unit.weapon_cooldown)
 
         agents_obs.append(agent_obs)
     return agents_obs
@@ -271,37 +217,30 @@ def get_agents_obs(init_obs, obs):
 
 def get_reward(obs, pre_obs):
     reward = 0
-    my_units = np.array([unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF])
-    enemy_units = np.array([unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY])
+    my_units_health = [unit.health for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
+    enemy_units_health = [unit.health for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
+    # reward = len(my_units_health) / (len(my_units_health) + len(enemy_units_health))
 
-    my_units_health_pre = np.array([unit for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF])
-    enemy_units_health_pre = np.array([unit for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY])
-    # 是否胜利
-    if len(enemy_units) == 0:
-        reward += sum(my_units[:, 2]) + sum(my_units[:, 3]) + 200
-        return float(reward) / 200
-    elif len(my_units) == 0:
-        # reward = -sum(enemy_units[:, 2]) - sum(enemy_units[:, 3]) - 200
-        return 0
+    my_units_health_pre = [unit.health for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
+    enemy_units_health_pre = [unit.health for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
 
-    # 距离变化
-    # my_coord = np.array(list(zip(my_units[:, 12], my_units[:, 13])))
-    # emey_coord = np.array(list(zip(enemy_units[:, 12], enemy_units[:, 13])))
-    # kdtree = KDTree(emey_coord)
-    # distance_avg = kdtree.query(my_coord)
-    # reward -= (abs(sum(distance_avg[0]) / len(my_units) - 4) / (config.MAP_SIZE * 1.41)) * 5
+    if len(enemy_units_health) == 0:
+        reward = sum(my_units_health) + 200
+        return reward / 200
+    if len(my_units_health) == 0:
+        reward = -sum(my_units_health) - 200
+        return reward / 200
 
-    # 人数变化
-    # if len(my_units) < len(my_units_health_pre):
-    #     reward -= ((len(my_units_health_pre) - len(my_units)) * 10) / 200
-    if len(enemy_units) < len(enemy_units_health_pre):
-        reward += ((len(enemy_units_health_pre) - len(enemy_units)) * 10) / 200
+    if len(my_units_health) < len(my_units_health_pre):
+        reward -= (len(my_units_health_pre) - len(my_units_health)) * 10
 
-    # 血量与护盾变化
-    reward += ((sum(my_units[:, 2]) - sum(my_units_health_pre[:, 2])) / 2 - (sum(enemy_units[:, 2]) - sum(enemy_units_health_pre[:, 2]))) / 200
-    reward += ((sum(my_units[:, 3]) - sum(my_units_health_pre[:, 3])) / 2 - (sum(enemy_units[:, 3]) - sum(enemy_units_health_pre[:, 3]))) / 200
+    if len(enemy_units_health) < len(enemy_units_health_pre):
+        reward += (len(enemy_units_health_pre) - len(enemy_units_health)) * 10
 
-    return reward
+    reward += (sum(my_units_health) - sum(my_units_health_pre)) / 2 - (sum(enemy_units_health) - sum(enemy_units_health_pre))
+
+    return float(reward) / 200
+
 
 
 def win_or_loss(obs):
@@ -319,6 +258,7 @@ def win_or_loss(obs):
 
 
 ############test############
+
 
 def get_bound_test(my_units, enemy_units):
     bound = np.zeros(np.power(config.ATTACT_CONTROLLER_ACTIONDIM, config.MY_UNIT_NUMBER))
