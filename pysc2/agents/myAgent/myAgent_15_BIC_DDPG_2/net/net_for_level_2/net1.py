@@ -23,11 +23,11 @@ class net1(object):
         self._setup_placeholders_graph()
         with tf.variable_scope('Actor'):
             self.a = self._build_graph_a(self.agents_local_observation, 'eval', train=True)
-            a_ = self._build_graph_a(self.agents_local_observation_next, 'target', train=False)
+            self.a_ = self._build_graph_a(self.agents_local_observation_next, 'target', train=False)
 
         with tf.variable_scope('Critic'):
             self.q = self._build_graph_c(self.agents_local_observation, self.a, 'eval', train=True)
-            q_ = self._build_graph_c(self.agents_local_observation_next, a_, 'target', train=False)
+            self.q_ = self._build_graph_c(self.agents_local_observation_next, self.a_, 'target', train=False)
 
         # networks parameters
         self.ae_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/eval')
@@ -39,7 +39,7 @@ class net1(object):
         self.soft_replace = [tf.assign(t, (1 - config.TAU) * t + config.TAU * e)
                              for t, e in zip(self.at_params + self.ct_params, self.ae_params + self.ce_params)]
 
-        q_target = self.reward + config.GAMMA * q_
+        q_target = self.reward + config.GAMMA * self.q_
 
         self.td_error = tf.losses.mean_squared_error(labels=q_target, predictions=self.q)
         self.ctrain = tf.train.AdamOptimizer(self.learning_rate).minimize(self.td_error, var_list=self.ce_params)
@@ -49,11 +49,11 @@ class net1(object):
 
     def _setup_placeholders_graph(self):
         # s
-        self.state_input = tf.placeholder("float", shape=self.state_dim, name='state_input')  # 全局状态
+        # self.state_input = tf.placeholder("float", shape=self.state_dim, name='state_input')  # 全局状态
         self.agents_local_observation = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation')
 
         # s_
-        self.state_input_next = tf.placeholder("float", shape=self.state_dim, name='state_input_next')  # 全局状态
+        # self.state_input_next = tf.placeholder("float", shape=self.state_dim, name='state_input_next')  # 全局状态
         self.agents_local_observation_next = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation_next')
 
         self.reward = tf.placeholder("float", shape=[None, self.agents_number, 1], name='reward')
@@ -98,7 +98,7 @@ class net1(object):
 
                 fc2 = slim.fully_connected(fc1, self.action_dim, activation_fn=tf.nn.tanh, scope='full_connected2'+ '_agent_' + str(i))
                 # fc2 = fc2 / 2 + 1
-                # fc2 = tf.Print(fc2, [fc2])
+                fc2 = tf.Print(fc2, [fc2])
 
                 outputs.append(fc2)
 
