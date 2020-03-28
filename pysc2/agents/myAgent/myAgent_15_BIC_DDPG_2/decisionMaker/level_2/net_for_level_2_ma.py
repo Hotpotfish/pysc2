@@ -10,6 +10,7 @@ import pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.config.config as config
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.SqQueue import SqQueue
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.net.net_for_level_2.net1 import net1
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.handcraft_function_for_level_2_attack_controller import get_action_combination
+import pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.smart_actions as sa
 
 
 class net():
@@ -34,10 +35,15 @@ class net():
         # 网络结构初始化
         self.name = name
         self.valid_action = valid_action
-        self.KDTree = KDTree(np.array(range(len(valid_action)))[:, np.newaxis])
-        self.bound = (len(valid_action) - 1) / 2
+        self.KDTree = KDTree(np.array(valid_action))
+        # self.bound = (len(valid_action) - 1) / 2
+        self.bound = [(len(sa.attack_controller)) / 2,
+                      (self.enemy_number) / 2,
+                      (config.MAP_SIZE) / 2,
+                      (config.MAP_SIZE) / 2,
+                      ]
 
-        self.net = net1(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number, self.enemy_number,len(valid_action), self.name + '_net1')
+        self.net = net1(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number, self.enemy_number, len(valid_action), self.name + '_net1')
 
         # Init session
         self.session = tf.Session()
@@ -115,7 +121,7 @@ class net():
             self.saveRewardAvg(save_path)
             self.saveWinRate(save_path)
 
-        action = (np.array(action) - self.bound) / self.bound
+        # action = (np.array(action) - self.bound) / self.bound
         self.replay_buffer.inQueue([state, action, np.repeat(reward, config.MY_UNIT_NUMBER), next_state, done])
 
     def train_Q_network(self):  # 训练网络
@@ -133,12 +139,13 @@ class net():
             # a_ = np.reshape(a_, (config.BATCH_SIZE, self.agents_number))
 
             for i in range(config.BATCH_SIZE):
-                actio_out = np.clip(np.random.normal(a_[i], 0), -1, 1)
-                actio_proto = actio_out * self.bound
+                # actio_out = np.clip(np.random.normal(a_[i], 0), -1, 1)
+                actio_proto = a_[i] * self.bound
+                actio_proto += self.bound
                 action_k = get_action_combination(self.KDTree, actio_proto)
                 # action = None
                 if config.K == 1:
-                    a_[i] = action_k[0][:, np.newaxis]
+                    a_[i] = np.array(self.valid_action)[action_k[0]]
                 else:
                     ob_input = np.repeat(agents_local_observation_next, len(action_k), axis=0)
                     action_k_input = (np.array(action_k) - self.bound) / self.bound
@@ -147,12 +154,13 @@ class net():
                     a_[i] = action_k[np.argmax(temp_qs)][:, np.newaxis]
 
             a_ = (np.array(a_) - self.bound) / self.bound
+            action_batch = (np.array(action_batch) - self.bound) / self.bound
 
             _ = self.session.run(self.net.atrain, {self.net.agents_local_observation: agents_local_observation})
 
             __, self.td_error = self.session.run([self.net.ctrain, self.net.td_error],
                                                  {self.net.agents_local_observation: agents_local_observation,
-                                                  self.net.a: action_batch[:, :, np.newaxis],
+                                                  self.net.a: action_batch,
                                                   self.net.reward: np.reshape(reward_batch, (config.BATCH_SIZE, config.MY_UNIT_NUMBER, 1)),
                                                   self.net.agents_local_observation_next: agents_local_observation_next,
                                                   self.net.a_: a_})
@@ -164,10 +172,12 @@ class net():
 
         actio_out = np.clip(np.random.normal(actio_out, 0), -1, 1)
         actio_proto = actio_out * self.bound
+        actio_proto += self.bound
         self.var = self.var * 0.995
         # print(self.var)
         action_k = get_action_combination(self.KDTree, actio_proto)
         if config.K == 1:
+
             return action_k[0]
         else:
             ob_input = np.repeat(current_state[1][np.newaxis], len(action_k), axis=0)

@@ -19,38 +19,31 @@ def get_all_vaild_action():
     for i in range(action_tpye_len):
         action = sa.attack_controller[i]
         if len(action.args) == 2 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags':
-            function_id_1 = [i]
+            function_id = [i]
 
-            function_id_2 = [1e-10]
-            x_2 = [1e-10]
-            y_2 = [1e-10]
+            target = [1e-10]
+            x = [1e-10]
+            y = [1e-10]
 
-            function_id_3 = [1e-10]
-            target_3 = [1e-10]
-
-            for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
+            for item in itertools.product(function_id, target, x, y):
                 actions.append(item)
         elif len(action.args) == 3 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags' and action.args[2].name == 'world':
-            function_id_1 = [1e-10]
+            function_id = [i]
 
-            function_id_2 = [i]
-            x_2 = range(config.MAP_SIZE)
-            y_2 = range(config.MAP_SIZE)
-
-            function_id_3 = [1e-10]
-            target_3 = [1e-10]
-            for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
+            target = [1e-10]
+            x = range(config.MAP_SIZE)
+            y = range(config.MAP_SIZE)
+            for item in itertools.product(function_id, target, x, y):
                 actions.append(item)
 
         elif len(action.args) == 3 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags' and action.args[2].name == 'target_unit_tag':
-            function_id_1 = [1e-10]
-            function_id_2 = [1e-10]
-            x_2 = [1e-10]
-            y_2 = [1e-10]
+            function_id = [i]
 
-            function_id_3 = [i]
-            target_3 = range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)
-            for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
+            target = range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)
+            x = [1e-10]
+            y = [1e-10]
+
+            for item in itertools.product(function_id, target, x, y):
                 actions.append(item)
     return actions
 
@@ -74,7 +67,7 @@ def get_k_closest_action(KDTree, proto_action):
 
 
 def get_action_combination(KDTree, proto_action):
-    proto_action = proto_action + (KDTree.n - 1) / 2
+    # proto_action = proto_action + (KDTree.n - 1) / 2
     # print(proto_action)
     k_closest_action = get_k_closest_action(KDTree, proto_action)
     action_combination = []
@@ -155,20 +148,20 @@ def assembly_action(init_obs, obs, action_numbers, vaild_action):
             # parameter.append([action_numbers[i][1], action_numbers[i][2]])
             actions.append(a.FunctionCall(function_id, parameter))
 
-        elif np.all(np.array(vaild_action[action_numbers[i]])[[0, 4, 5]] == 1e-10):
-            function_id = int(sa.attack_controller[vaild_action[action_numbers[i]][1]].id)
+        elif np.all(np.array(vaild_action[action_numbers[i]])[[1]] == 1e-10):
+            function_id = int(sa.attack_controller[vaild_action[action_numbers[i]][0]].id)
             parameter.append([my_unit_pos])
 
             parameter.append([vaild_action[action_numbers[i]][2], vaild_action[action_numbers[i]][3]])
             actions.append(a.FunctionCall(function_id, parameter))
 
-        elif np.all(np.array(vaild_action[action_numbers[i]])[0:4] == 1e-10):
-            function_id = int(sa.attack_controller[vaild_action[action_numbers[i]][4]].id)
+        elif np.all(np.array(vaild_action[action_numbers[i]])[2:3] == 1e-10):
+            function_id = int(sa.attack_controller[vaild_action[action_numbers[i]][0]].id)
             parameter.append([my_unit_pos])
-            if np.array(vaild_action[action_numbers[i]])[5] < config.MY_UNIT_NUMBER:
-                target_unit_pos = find_unit_pos(obs, init_my_units[vaild_action[action_numbers[i]][5]].tag)
+            if np.array(vaild_action[action_numbers[i]])[1] < config.MY_UNIT_NUMBER:
+                target_unit_pos = find_unit_pos(obs, init_my_units[vaild_action[action_numbers[i]][1]].tag)
             else:
-                target_unit_pos = find_unit_pos(obs, init_enemy_units[vaild_action[action_numbers[i]][5] - config.MY_UNIT_NUMBER].tag)
+                target_unit_pos = find_unit_pos(obs, init_enemy_units[vaild_action[action_numbers[i]][1] - config.MY_UNIT_NUMBER].tag)
             if target_unit_pos is None:
                 continue
             else:
