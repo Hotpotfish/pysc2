@@ -1,12 +1,12 @@
 import tensorflow as tf
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.config import config
 import tensorflow.contrib.slim as slim
-import numpy as np
+import tensorflow.contrib.layers.embed_sequence as embed_sequence
 
 
 class net1(object):
 
-    def __init__(self, mu, sigma, learning_rate, action_dim, statedim, agents_number, enemy_number, name):  # 初始化
+    def __init__(self, mu, sigma, learning_rate, action_dim, statedim, agents_number, enemy_number, valid_action_len, name):  # 初始化
         # 神经网络参数
         self.mu = mu
         self.sigma = sigma
@@ -17,6 +17,8 @@ class net1(object):
         self.state_dim = statedim
         self.agents_number = agents_number
         self.enemy_number = enemy_number
+
+        self.valid_action_len = valid_action_len
 
         self.name = name
 
@@ -58,6 +60,14 @@ class net1(object):
 
         self.reward = tf.placeholder("float", shape=[None, self.agents_number, 1], name='reward')
 
+    def _build_graph_action_embedding(self, a, scope_name='action_embedding'):
+        with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
+            e_ss = []
+            for i in range(self.agents_number):
+                e_s = embed_sequence(a[:, i], vocab_size=self.valid_action_len, embed_dim=10)
+                e_ss.append(e_s)
+        return e_ss
+
     def _build_graph_a(self, agents_local_observation, scope_name, train):
         # 环境和智能体本地的共同观察
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
@@ -87,7 +97,7 @@ class net1(object):
             lstm_bw_cell = tf.nn.rnn_cell.GRUCell(50, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             for i in range(agents_number):
-                fc1 = slim.fully_connected(bicnet_outputs[i], 25, scope='full_connected1'+ '_agent_' + str(i))
+                fc1 = slim.fully_connected(bicnet_outputs[i], 25, scope='full_connected1' + '_agent_' + str(i))
                 # fc1 = fc1 * 0.1
                 # fc1 = tf.Print(fc1, [fc1])
                 # bicnet_outputs[i] = bicnet_outputs[i] * 0.1
@@ -96,9 +106,9 @@ class net1(object):
                 # fc1 = fc1 * 1 / 4096
                 # fc1 = fc1 * 0.1
 
-                fc2 = slim.fully_connected(fc1, self.action_dim, activation_fn=tf.nn.tanh, scope='full_connected2'+ '_agent_' + str(i))
+                fc2 = slim.fully_connected(fc1, self.action_dim, activation_fn=tf.nn.tanh, scope='full_connected2' + '_agent_' + str(i))
                 # fc2 = fc2 / 2 + 1
-                fc2 = tf.Print(fc2, [fc2])
+                # fc2 = tf.Print(fc2, [fc2])
 
                 outputs.append(fc2)
 
@@ -129,7 +139,7 @@ class net1(object):
                 # state_input = tf.Print( state_input, [ state_input])
                 input_data = tf.concat([state_input[:, i], action_input[:, i]], 1)
                 # input_data = tf.Print(input_data, [input_data])
-                fc1 = slim.fully_connected(input_data, 100, scope='full_connected1'+ '_agent_' + str(i))
+                fc1 = slim.fully_connected(input_data, 100, scope='full_connected1' + '_agent_' + str(i))
                 # fc2 = slim.fully_connected(fc1, 50, scope='full_connected2')
                 # fc1_s = slim.fully_connected(state_input, 100, scope='full_connected_s1')
                 # fc1_a = slim.fully_connected(action_input[:, i], 100, scope='full_connected_a1')
@@ -147,7 +157,7 @@ class net1(object):
             lstm_bw_cell = tf.nn.rnn_cell.GRUCell(50, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             for i in range(agents_number):
-                fc1 = slim.fully_connected(bicnet_outputs[i], 1, scope='full_connected1'+ '_agent_' + str(i))
+                fc1 = slim.fully_connected(bicnet_outputs[i], 1, scope='full_connected1' + '_agent_' + str(i))
                 # fc2 = slim.fully_connected(fc1, 1, scope='full_connected2')
                 outputs.append(fc1)
             outputs = tf.unstack(outputs, self.agents_number)  # (agents_number, batch_size,1)
