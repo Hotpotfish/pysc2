@@ -9,7 +9,7 @@ GAMMA = 0.99  # discount factor for target Q
 INITIAL_EPSILON = 0.6  # starting value of epsilon
 FINAL_EPSILON = 0.01  # final value of epsilon
 REPLAY_SIZE = 600000  # experience replay buffer size
-BATCH_SIZE = 64# size of minibatch
+BATCH_SIZE = 32# size of minibatch
 
 # 神经网络初始化参数
 MU = 0
@@ -17,7 +17,7 @@ SIGMA = 1
 TAU = 0.1
 K = 1
 
-LEARING_RATE = 1e-5
+LEARING_RATE = 1e-6
 # 模型保存轮次
 MODEL_SAVE_EPISODE = 1000
 
@@ -28,7 +28,7 @@ COLUMN = 4
 MY_UNIT_NUMBER = 3
 ENEMY_UNIT_NUMBER = 3 # 选择敌方智能体的空间
 
-ACTION_DIM = 4  # （4为上下左右）
+ACTION_DIM = 4
 
 COOP_AGENT_OBDIM = 8
 COOP_AGENTS_OBDIM = (MY_UNIT_NUMBER + ENEMY_UNIT_NUMBER) * COOP_AGENT_OBDIM

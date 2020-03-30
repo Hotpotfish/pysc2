@@ -3,7 +3,6 @@ from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.config import config
 import tensorflow.contrib.slim as slim
 
 
-
 class net1(object):
 
     def __init__(self, mu, sigma, learning_rate, action_dim, statedim, agents_number, enemy_number, valid_action_len, name):  # 初始化
@@ -97,7 +96,7 @@ class net1(object):
             lstm_bw_cell = tf.nn.rnn_cell.GRUCell(50, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             for i in range(agents_number):
-                fc1 = slim.fully_connected(bicnet_outputs[i], 25, scope='full_connected1' + '_agent_' + str(i))
+                fc1 = slim.fully_connected(bicnet_outputs[i], 4, scope='full_connected1' + '_agent_' + str(i))
                 # fc1 = fc1 * 0.1
                 # fc1 = tf.Print(fc1, [fc1])
                 # bicnet_outputs[i] = bicnet_outputs[i] * 0.1
@@ -106,11 +105,21 @@ class net1(object):
                 # fc1 = fc1 * 1 / 4096
                 # fc1 = fc1 * 0.1
 
-                fc2 = slim.fully_connected(fc1, self.action_dim, activation_fn=tf.nn.tanh, scope='full_connected2' + '_agent_' + str(i))
-                # fc2 = fc2 / 2 + 1
-                # fc2 = tf.Print(fc2, [fc2])
+                function_id = slim.fully_connected(fc1, 1, scope='function_id' + '_agent_' + str(i))
+                function_id_at = tf.nn.tanh(function_id)
 
-                outputs.append(fc2)
+                target = slim.fully_connected(tf.concat([fc1, function_id], axis=1), 1, scope='target' + '_agent_' + str(i))
+                target_at = tf.nn.tanh(target)
+                x = slim.fully_connected(tf.concat([fc1, function_id, target], axis=1), 1, scope='x' + '_agent_' + str(i))
+                x_at = tf.nn.tanh(x)
+                y = slim.fully_connected(tf.concat([fc1, function_id, target, x], axis=1), 1, scope='y' + '_agent_' + str(i))
+                y_at = tf.nn.tanh(y)
+                r = tf.concat([function_id_at, target_at, x_at, y_at], axis=1)
+
+                # fc2 = fc2 / 2 + 1
+                r = tf.Print(r, [r])
+
+                outputs.append(r)
 
             outputs = tf.unstack(outputs, self.agents_number)  # (agents_number, batch_size, action_dim)
             outputs = tf.transpose(outputs, [1, 0, 2])
