@@ -52,7 +52,7 @@ class level_2_attack_controller:
             action = self.controller.network.egreedy_action(self.controller.current_state)
             actions = handcraft_function_for_level_2_attack_controller.assembly_action(self.init_obs, obs, action, self.vaild_action)
             self.controller.previous_state = self.controller.current_state
-            self.controller.previous_action = action
+            self.controller.previous_action = np.array(self.vaild_action)[action]
             self.pre_obs = self.current_obs
 
         return actions

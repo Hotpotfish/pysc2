@@ -49,7 +49,7 @@ mini_games = [
     '8t_vs_7z',
     '1r_vs_1z',
     '8m_vs_8m',
-    '4m_vs_4m'
+    '3m_vs_3m'
 
 ]
 
