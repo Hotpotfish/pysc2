@@ -34,8 +34,8 @@ def get_all_vaild_action():
             function_id_1 = [1e-10]
 
             function_id_2 = [i]
-            x_2 = range(config.MAP_SIZE)
-            y_2 = range(config.MAP_SIZE)
+            x_2 = [-1, 1]
+            y_2 = [-1, 1]
 
             function_id_3 = [1e-10]
             target_3 = [1e-10]
@@ -159,7 +159,7 @@ def assembly_action(init_obs, obs, action_numbers, vaild_action):
             function_id = int(sa.attack_controller[vaild_action[action_numbers[i]][1]].id)
             parameter.append([my_unit_pos])
 
-            parameter.append([vaild_action[action_numbers[i]][2], vaild_action[action_numbers[i]][3]])
+            parameter.append([vaild_action[action_numbers[i]][2]+my_unit.x, vaild_action[action_numbers[i]][3]+my_unit.y])
             actions.append(a.FunctionCall(function_id, parameter))
 
         elif np.all(np.array(vaild_action[action_numbers[i]])[0:4] == 1e-10):

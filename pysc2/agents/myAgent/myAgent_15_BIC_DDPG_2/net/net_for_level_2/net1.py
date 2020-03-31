@@ -1,7 +1,7 @@
 import tensorflow as tf
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.config import config
 import tensorflow.contrib.slim as slim
-import tensorflow.contrib.layers.embed_sequence as embed_sequence
+
 
 
 class net1(object):
@@ -60,13 +60,7 @@ class net1(object):
 
         self.reward = tf.placeholder("float", shape=[None, self.agents_number, 1], name='reward')
 
-    def _build_graph_action_embedding(self, a, scope_name='action_embedding'):
-        with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
-            e_ss = []
-            for i in range(self.agents_number):
-                e_s = embed_sequence(a[:, i], vocab_size=self.valid_action_len, embed_dim=10)
-                e_ss.append(e_s)
-        return e_ss
+
 
     def _build_graph_a(self, agents_local_observation, scope_name, train):
         # 环境和智能体本地的共同观察
