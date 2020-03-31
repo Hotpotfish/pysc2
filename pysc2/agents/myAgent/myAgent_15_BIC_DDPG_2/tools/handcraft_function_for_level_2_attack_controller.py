@@ -74,7 +74,7 @@ def get_k_closest_action(KDTree, proto_action):
 
 
 def get_action_combination(KDTree, proto_action):
-    proto_action = proto_action + (KDTree.n - 1) / 2
+    # proto_action = proto_action + (KDTree.n - 1) / 2
     # print(proto_action)
     k_closest_action = get_k_closest_action(KDTree, proto_action)
     action_combination = []
