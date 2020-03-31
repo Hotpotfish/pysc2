@@ -145,7 +145,7 @@ class net():
                 action_k = get_action_combination(self.KDTree, actio_proto)
                 # action = None
                 if config.K == 1:
-                    a_[i] = np.array(self.valid_action)[action_k[0]]
+                    a_[i] = action_k[0][:, np.newaxis]
                 else:
                     ob_input = np.repeat(agents_local_observation_next, len(action_k), axis=0)
                     action_k_input = (np.array(action_k) - self.bound) / self.bound
@@ -160,7 +160,7 @@ class net():
 
             __, self.td_error = self.session.run([self.net.ctrain, self.net.td_error],
                                                  {self.net.agents_local_observation: agents_local_observation,
-                                                  self.net.a: action_batch,
+                                                  self.net.a: action_batch[:, :, np.newaxis],
                                                   self.net.reward: np.reshape(reward_batch, (config.BATCH_SIZE, config.MY_UNIT_NUMBER, 1)),
                                                   self.net.agents_local_observation_next: agents_local_observation_next,
                                                   self.net.a_: a_})
