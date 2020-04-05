@@ -26,7 +26,7 @@ ROW = 4
 COLUMN = 4
 
 MY_UNIT_NUMBER = 8
-ENEMY_UNIT_NUMBER = 8 # 选择敌方智能体的空间
+ENEMY_UNIT_NUMBER = 7 # 选择敌方智能体的空间
 
 ACTION_DIM = 1  # （4为上下左右）
 

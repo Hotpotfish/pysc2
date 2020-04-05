@@ -2,7 +2,7 @@ import math
 
 import itertools
 
-from scipy.spatial import KDTree
+
 from sklearn.cluster import DBSCAN
 import numpy as np
 import pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.smart_actions as sa

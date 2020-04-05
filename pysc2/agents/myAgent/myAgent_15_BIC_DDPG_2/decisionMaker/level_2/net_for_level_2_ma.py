@@ -10,7 +10,7 @@ import pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.config.config as config
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.SqQueue import SqQueue
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.net.net_for_level_2.net1 import net1
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.handcraft_function_for_level_2_attack_controller import get_action_combination
-import pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.smart_actions as sa
+
 
 
 class net():
@@ -37,11 +37,7 @@ class net():
         self.valid_action = valid_action
         self.KDTree = KDTree(np.array(range(len(valid_action)))[:, np.newaxis])
         self.bound = (len(valid_action) - 1) / 2
-        # self.bound = [(len(sa.attack_controller)) / 2,
-        #               (self.enemy_number) / 2,
-        #               (config.MAP_SIZE) / 2,
-        #               (config.MAP_SIZE) / 2,
-        #               ]
+
 
         self.net = net1(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number, self.enemy_number, len(valid_action), self.name + '_net1')
 
