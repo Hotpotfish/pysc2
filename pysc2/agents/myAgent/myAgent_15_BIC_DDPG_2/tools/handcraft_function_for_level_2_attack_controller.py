@@ -2,7 +2,7 @@ import math
 
 import itertools
 
-
+from scipy.spatial import KDTree
 from sklearn.cluster import DBSCAN
 import numpy as np
 import pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.smart_actions as sa
@@ -11,6 +11,108 @@ from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.config import config
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools import unit_list
 from pysc2.lib import features
 from pysc2.lib import actions as a
+from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.unit_actions import inquire_action as inquire_action
+
+
+def get_single_agent_closest_action(agent_number, agent_local_observation, all_valid_action):
+    # all_valid_action = np.array(all_valid_action)
+    if np.all(agent_local_observation[(agent_number * 8):(agent_number * 8 + 8)] == 0):
+        actions =np.array([0])
+        return actions
+    agent_tpye = int(agent_local_observation[8 * agent_number + 2] * 2000)
+    agent_valid_actions = inquire_action(agent_tpye)
+    # if  agent_valid_actions is None:
+    #     print()
+    actions = []
+    action_tpye_len = len(agent_valid_actions)
+
+    for i in range(action_tpye_len):
+        action = agent_valid_actions[i]
+        if len(action.args) == 0:
+            function_id_1 = [int(action.id)]
+
+            function_id_2 = [1e-10]
+            x_2 = [1e-10]
+            y_2 = [1e-10]
+
+            function_id_3 = [1e-10]
+            target_3 = [1e-10]
+
+            for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
+                actions.append(all_valid_action.index(item))
+            continue
+        if len(action.args) == 2 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags':
+            function_id_1 = [int(action.id)]
+
+            function_id_2 = [1e-10]
+            x_2 = [1e-10]
+            y_2 = [1e-10]
+
+            function_id_3 = [1e-10]
+            target_3 = [1e-10]
+
+            for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
+                actions.append(all_valid_action.index(item))
+            continue
+        elif len(action.args) == 3 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags' and action.args[2].name == 'world':
+            function_id_1 = [1e-10]
+
+            function_id_2 = [int(action.id)]
+            x_2 = [-1, 1]
+            y_2 = [-1, 1]
+
+            function_id_3 = [1e-10]
+            target_3 = [1e-10]
+            for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
+                actions.append(all_valid_action.index(item))
+            continue
+
+        elif len(action.args) == 3 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags' and action.args[2].name == 'target_unit_tag':
+            function_id_1 = [1e-10]
+            function_id_2 = [1e-10]
+            x_2 = [1e-10]
+            y_2 = [1e-10]
+
+            function_id_3 = [int(action.id)]
+            target_3 = []
+            for j in range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER):
+                if j == agent_number or np.all(agent_local_observation[(j * 8):(j * 8 + 8)] == 0):
+                    continue
+                else:
+                    target_3.append(j)
+            if len(target_3) == 0:
+                continue
+
+            # target_3 = range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)
+            for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
+                actions.append(all_valid_action.index(item))
+            continue
+
+    actions = np.array(actions)
+    # agent_valid_actions_number = np.where((all_valid_action == actions[None]).all(-1))[1]
+    # kdtree = KDTree(range(len(actions))[:, np.newaxis])
+
+    # print()
+
+    return actions
+
+
+def agent_k_closest_action(agent_valid_actions, proto_action):
+    kdtree = KDTree(agent_valid_actions[:, np.newaxis])
+    action = []
+    if config.K >= kdtree.n:
+
+        temp_r = kdtree.query(proto_action, k=kdtree.n)
+    else:
+        temp_r = kdtree.query(proto_action, k=config.K)
+    if config.K == 1:
+        action.append(agent_valid_actions[kdtree.query(proto_action, k=config.K)[1]])
+    else:
+        action = temp_r[1]
+    # if len(action) > 1:
+    #     print()
+
+    return action
 
 
 def get_all_vaild_action():
@@ -18,8 +120,20 @@ def get_all_vaild_action():
     action_tpye_len = len(sa.attack_controller)
     for i in range(action_tpye_len):
         action = sa.attack_controller[i]
+        if len(action.args) == 0:
+            function_id_1 = [int(action.id)]
+
+            function_id_2 = [1e-10]
+            x_2 = [1e-10]
+            y_2 = [1e-10]
+
+            function_id_3 = [1e-10]
+            target_3 = [1e-10]
+
+            for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
+                actions.append(item)
         if len(action.args) == 2 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags':
-            function_id_1 = [i]
+            function_id_1 = [int(action.id)]
 
             function_id_2 = [1e-10]
             x_2 = [1e-10]
@@ -33,7 +147,7 @@ def get_all_vaild_action():
         elif len(action.args) == 3 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags' and action.args[2].name == 'world':
             function_id_1 = [1e-10]
 
-            function_id_2 = [i]
+            function_id_2 = [int(action.id)]
             x_2 = [-1, 1]
             y_2 = [-1, 1]
 
@@ -48,7 +162,7 @@ def get_all_vaild_action():
             x_2 = [1e-10]
             y_2 = [1e-10]
 
-            function_id_3 = [i]
+            function_id_3 = [int(int(action.id))]
             target_3 = range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)
             for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
                 actions.append(item)
@@ -150,20 +264,20 @@ def assembly_action(init_obs, obs, action_numbers, vaild_action):
         # print(action_numbers[i])
         if np.all(np.array(vaild_action[action_numbers[i]])[1:] == 1e-10):
 
-            function_id = int(sa.attack_controller[vaild_action[action_numbers[i]][0]].id)
+            function_id = int(vaild_action[action_numbers[i]][0])
             parameter.append([my_unit_pos])
             # parameter.append([action_numbers[i][1], action_numbers[i][2]])
             actions.append(a.FunctionCall(function_id, parameter))
 
         elif np.all(np.array(vaild_action[action_numbers[i]])[[0, 4, 5]] == 1e-10):
-            function_id = int(sa.attack_controller[vaild_action[action_numbers[i]][1]].id)
+            function_id = int(vaild_action[action_numbers[i]][1])
             parameter.append([my_unit_pos])
 
-            parameter.append([vaild_action[action_numbers[i]][2]+my_unit.x, vaild_action[action_numbers[i]][3]+my_unit.y])
+            parameter.append([vaild_action[action_numbers[i]][2] + my_unit.x, vaild_action[action_numbers[i]][3] + my_unit.y])
             actions.append(a.FunctionCall(function_id, parameter))
 
         elif np.all(np.array(vaild_action[action_numbers[i]])[0:4] == 1e-10):
-            function_id = int(sa.attack_controller[vaild_action[action_numbers[i]][4]].id)
+            function_id = int(vaild_action[action_numbers[i]][4])
             parameter.append([my_unit_pos])
             if np.array(vaild_action[action_numbers[i]])[5] < config.MY_UNIT_NUMBER:
                 target_unit_pos = find_unit_pos(obs, init_my_units[vaild_action[action_numbers[i]][5]].tag)
