@@ -401,8 +401,13 @@ def get_reward(obs, pre_obs):
     enemy_units_health_pre = np.array([unit for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY])
     # 是否胜利
     if len(enemy_units) == 0:
-        reward += sum(my_units[:, 2]) + sum(my_units[:, 3]) + 200
-        return float(reward) / 200
+        if len(my_units) == 0:
+            reward += 0
+            return reward
+        else:
+
+            reward += sum(my_units[:, 2]) + sum(my_units[:, 3]) + 200
+            return float(reward) / 200
     elif len(my_units) == 0:
         # reward = -sum(enemy_units[:, 2]) - sum(enemy_units[:, 3]) - 200
         return 0
