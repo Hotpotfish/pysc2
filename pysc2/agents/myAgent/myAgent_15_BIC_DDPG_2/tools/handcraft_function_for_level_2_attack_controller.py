@@ -17,7 +17,7 @@ from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.unit_actions import inquir
 def get_single_agent_closest_action(agent_number, agent_local_observation, all_valid_action):
     # all_valid_action = np.array(all_valid_action)
     if np.all(agent_local_observation[(agent_number * 8):(agent_number * 8 + 8)] == 0):
-        actions =np.array([0])
+        actions = np.array([0])
         return actions
     agent_tpye = int(agent_local_observation[8 * agent_number + 2] * 2000)
     agent_valid_actions = inquire_action(agent_tpye)
@@ -132,7 +132,9 @@ def get_all_vaild_action():
 
             for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
                 actions.append(item)
-        if len(action.args) == 2 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags':
+            continue
+
+        elif len(action.args) == 2 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags':
             function_id_1 = [int(action.id)]
 
             function_id_2 = [1e-10]
@@ -144,6 +146,7 @@ def get_all_vaild_action():
 
             for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
                 actions.append(item)
+            continue
         elif len(action.args) == 3 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags' and action.args[2].name == 'world':
             function_id_1 = [1e-10]
 
@@ -155,6 +158,7 @@ def get_all_vaild_action():
             target_3 = [1e-10]
             for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
                 actions.append(item)
+            continue
 
         elif len(action.args) == 3 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags' and action.args[2].name == 'target_unit_tag':
             function_id_1 = [1e-10]
@@ -166,6 +170,7 @@ def get_all_vaild_action():
             target_3 = range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)
             for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
                 actions.append(item)
+            continue
     return actions
 
 
@@ -267,7 +272,11 @@ def assembly_action(init_obs, obs, action_numbers, vaild_action):
             function_id = int(vaild_action[action_numbers[i]][0])
             parameter.append([my_unit_pos])
             # parameter.append([action_numbers[i][1], action_numbers[i][2]])
-            actions.append(a.FunctionCall(function_id, parameter))
+
+            if function_id == 0:
+                actions.append(a.FunctionCall(function_id, []))
+            else:
+                actions.append(a.FunctionCall(function_id, parameter))
 
         elif np.all(np.array(vaild_action[action_numbers[i]])[[0, 4, 5]] == 1e-10):
             function_id = int(vaild_action[action_numbers[i]][1])
