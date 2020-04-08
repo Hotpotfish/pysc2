@@ -16,7 +16,6 @@ reaper_action = [
 
 medivac_action = [
     action.RAW_FUNCTIONS.no_op,
-    action.RAW_FUNCTIONS.Attack_unit,
     action.RAW_FUNCTIONS.Effect_Heal_unit,
     action.RAW_FUNCTIONS.Move_pt,
 ]
@@ -25,6 +24,7 @@ marauder_action = [
     action.RAW_FUNCTIONS.no_op,
     action.RAW_FUNCTIONS.Attack_unit,
     action.RAW_FUNCTIONS.Move_pt,
+    action.RAW_FUNCTIONS.Effect_Stim_quick
 ]
 
 

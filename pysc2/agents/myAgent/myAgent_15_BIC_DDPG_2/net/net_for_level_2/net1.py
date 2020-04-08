@@ -3,7 +3,6 @@ from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.config import config
 import tensorflow.contrib.slim as slim
 
 
-
 class net1(object):
 
     def __init__(self, mu, sigma, learning_rate, action_dim, statedim, agents_number, enemy_number, valid_action_len, name):  # 初始化
@@ -60,8 +59,6 @@ class net1(object):
 
         self.reward = tf.placeholder("float", shape=[None, self.agents_number, 1], name='reward')
 
-
-
     def _build_graph_a(self, agents_local_observation, scope_name, train):
         # 环境和智能体本地的共同观察
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
@@ -98,7 +95,7 @@ class net1(object):
                 # bicnet_outputs[i] = tf.Print(bicnet_outputs[i], [bicnet_outputs[i]])
                 # fc1 = tf.Print(fc1, [fc1])
                 # fc1 = fc1 * 1 / 4096
-                fc1 = fc1 * 0.01
+                # fc1 = fc1 * 0.1
                 fc2 = slim.fully_connected(fc1, self.action_dim, activation_fn=tf.nn.tanh, scope='full_connected2' + '_agent_' + str(i))
                 # fc2 = fc2 / 2 + 1
                 # fc2 = tf.Print(fc2, [fc2])
@@ -150,7 +147,7 @@ class net1(object):
             lstm_bw_cell = tf.nn.rnn_cell.GRUCell(50, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             for i in range(agents_number):
-                fc1 = slim.fully_connected(bicnet_outputs[i], 1, scope='full_connected1' + '_agent_' + str(i))
+                fc1 = slim.fully_connected(bicnet_outputs[i], 1, activation_fn=None, scope='full_connected1' + '_agent_' + str(i))
                 # fc2 = slim.fully_connected(fc1, 1, scope='full_connected2')
                 outputs.append(fc1)
             outputs = tf.unstack(outputs, self.agents_number)  # (agents_number, batch_size,1)

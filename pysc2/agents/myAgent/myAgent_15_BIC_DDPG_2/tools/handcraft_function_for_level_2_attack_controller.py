@@ -29,17 +29,17 @@ def get_single_agent_closest_action(agent_number, agent_local_observation, all_v
     for i in range(action_tpye_len):
         action = agent_valid_actions[i]
         if len(action.args) == 0:
-            function_id_1 = [int(action.id)]
-
-            function_id_2 = [1e-10]
-            x_2 = [1e-10]
-            y_2 = [1e-10]
-
-            function_id_3 = [1e-10]
-            target_3 = [1e-10]
-
-            for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
-                actions.append(all_valid_action.index(item))
+            # function_id_1 = [int(action.id)]
+            #
+            # function_id_2 = [1e-10]
+            # x_2 = [1e-10]
+            # y_2 = [1e-10]
+            #
+            # function_id_3 = [1e-10]
+            # target_3 = [1e-10]
+            #
+            # for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
+            #     actions.append(all_valid_action.index(item))
             continue
         if len(action.args) == 2 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags':
             function_id_1 = [int(action.id)]
@@ -283,6 +283,7 @@ def assembly_action(init_obs, obs, action_numbers, vaild_action):
             parameter.append([my_unit_pos])
 
             parameter.append([vaild_action[action_numbers[i]][2] + my_unit.x, vaild_action[action_numbers[i]][3] + my_unit.y])
+            # print()
             actions.append(a.FunctionCall(function_id, parameter))
 
         elif np.all(np.array(vaild_action[action_numbers[i]])[0:4] == 1e-10):
@@ -311,7 +312,7 @@ def get_agent_state(unit):
     states = np.append(states, unit.unit_type / 2000)
     states = np.append(states, unit.x / config.MAP_SIZE)
     states = np.append(states, unit.y / config.MAP_SIZE)
-    states = np.append(states, unit.health / 100)
+    states = np.append(states, unit.health / 200)
     states = np.append(states, unit.shield / 100)
     states = np.append(states, unit.weapon_cooldown / 10)
     return states
@@ -370,7 +371,7 @@ def get_agents_obs(init_obs, obs):
                 agent_obs = np.append(agent_obs, my_target_unit.unit_type / 2000)
                 agent_obs = np.append(agent_obs, my_target_unit.x / config.MAP_SIZE)
                 agent_obs = np.append(agent_obs, my_target_unit.y / config.MAP_SIZE)
-                agent_obs = np.append(agent_obs, my_target_unit.health / 100)
+                agent_obs = np.append(agent_obs, my_target_unit.health / 200)
                 agent_obs = np.append(agent_obs, my_target_unit.shield / 100)
                 agent_obs = np.append(agent_obs, my_target_unit.weapon_cooldown / 10)
         for j in range(config.ENEMY_UNIT_NUMBER):

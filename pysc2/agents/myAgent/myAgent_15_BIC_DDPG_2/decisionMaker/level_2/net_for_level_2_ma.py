@@ -35,7 +35,7 @@ class net():
         self.name = name
         self.valid_action = valid_action
         self.KDTree = KDTree(np.array(range(len(valid_action)))[:, np.newaxis])
-        self.bound = (len(valid_action) - 1) / 2
+        self.bound = len(valid_action) / 2
 
         self.net = net1(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number, self.enemy_number, len(valid_action), self.name + '_net1')
 
@@ -177,6 +177,7 @@ class net():
         # action_out = np.clip(np.random.normal(action_out, 0), -1, 1)
         action_proto = action_out * self.bound
         action_proto += self.bound
+        print(np.squeeze(action_proto))
         # self.var = self.var * 0.995
 
         actions = []
@@ -184,6 +185,7 @@ class net():
         for i in range(self.agents_number):
             agent_valid_actions = get_single_agent_closest_action(i, current_state[1][i], self.valid_action)
             actions += agent_k_closest_action(agent_valid_actions, action_proto[i])
+        # print(actions)
 
         return actions
 
