@@ -21,7 +21,7 @@ class net():
         # 神经网络参数
         self.mu = mu
         self.sigma = sigma
-        self.var = 0.5
+        self.var = 0.6
         self.learning_rate = learning_rate
 
         # 动作维度数，动作参数维度数（默认为6）,状态维度数
@@ -174,11 +174,11 @@ class net():
 
         action_out = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[1][np.newaxis]})[0]
 
-        # action_out = np.clip(np.random.normal(action_out, 0), -1, 1)
+        # action_out = np.clip(np.random.normal(action_out, self.var), -1, 1)
         action_proto = action_out * self.bound
         action_proto += self.bound
         print(list(np.squeeze(action_proto)))
-        # self.var = self.var * 0.995
+        # self.var = self.var * 0.99995
 
         actions = []
 

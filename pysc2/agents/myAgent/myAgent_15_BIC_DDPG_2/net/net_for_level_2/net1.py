@@ -74,7 +74,7 @@ class net1(object):
         with tf.variable_scope(scope_name):
             encoder = []
             for i in range(agents_number):
-                fc1 = slim.fully_connected(agents_local_observation[:, i, :], 100, scope='full_connected1' )
+                fc1 = slim.fully_connected(agents_local_observation[:, i, :], 100, scope='full_connected1')
                 # fc2 = slim.fully_connected(fc1, 50, scope='full_connected2')
                 encoder.append(fc1)
             encoder = tf.transpose(encoder, [1, 0, 2])
@@ -95,7 +95,7 @@ class net1(object):
                 # bicnet_outputs[i] = tf.Print(bicnet_outputs[i], [bicnet_outputs[i]])
                 # fc1 = tf.Print(fc1, [fc1])
                 # fc1 = fc1 * 1 / 4096
-                # fc1 = fc1 * 0.1
+                fc1 = fc1 * 0.01
                 fc2 = slim.fully_connected(fc1, self.action_dim, activation_fn=tf.nn.tanh, scope='full_connected2')
                 # fc2 = fc2 / 2 + 1
                 # fc2 = tf.Print(fc2, [fc2])

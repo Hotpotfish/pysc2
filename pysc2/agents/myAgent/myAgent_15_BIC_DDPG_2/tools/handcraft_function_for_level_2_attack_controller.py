@@ -75,11 +75,18 @@ def get_single_agent_closest_action(agent_number, agent_local_observation, all_v
 
             function_id_3 = [int(action.id)]
             target_3 = []
-            for j in range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER):
-                if j == agent_number or np.all(agent_local_observation[(j * 8):(j * 8 + 8)] == 0) or agent_local_observation[j * 8] * (config.MAP_SIZE * 1.41) <= config.ATTACK_RANGE:
-                    continue
-                else:
-                    target_3.append(j)
+            if int(action.id) == 386:
+                for j in range(config.MY_UNIT_NUMBER):
+                    if j == agent_number or np.all(agent_local_observation[(j * 8):(j * 8 + 8)] == 0) or agent_local_observation[j * 8] * (config.MAP_SIZE * 1.41) >= config.ATTACK_RANGE:
+                        continue
+                    else:
+                        target_3.append(j)
+            else:
+                for j in range(config.MY_UNIT_NUMBER, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER):
+                    if j == agent_number or np.all(agent_local_observation[(j * 8):(j * 8 + 8)] == 0) or agent_local_observation[j * 8] * (config.MAP_SIZE * 1.41) >= config.ATTACK_RANGE:
+                        continue
+                    else:
+                        target_3.append(j)
             if len(target_3) == 0:
                 continue
 
@@ -167,7 +174,10 @@ def get_all_vaild_action():
             y_2 = [1e-10]
 
             function_id_3 = [int(int(action.id))]
-            target_3 = range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)
+            if int(action.id) == 386:
+                target_3 = range(config.MY_UNIT_NUMBER)
+            else:
+                target_3 = range(config.MY_UNIT_NUMBER, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)
             for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
                 actions.append(item)
             continue
