@@ -76,7 +76,7 @@ def get_single_agent_closest_action(agent_number, agent_local_observation, all_v
             function_id_3 = [int(action.id)]
             target_3 = []
             for j in range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER):
-                if j == agent_number or np.all(agent_local_observation[(j * 8):(j * 8 + 8)] == 0):
+                if j == agent_number or np.all(agent_local_observation[(j * 8):(j * 8 + 8)] == 0) or agent_local_observation[j * 8] * (config.MAP_SIZE * 1.41) <= config.ATTACK_RANGE:
                     continue
                 else:
                     target_3.append(j)
@@ -408,7 +408,7 @@ def get_reward(obs, pre_obs):
         else:
 
             reward += sum(my_units[:, 2]) + sum(my_units[:, 3]) + 200
-            return float(reward) / 200
+            return float(reward) / 400
     elif len(my_units) == 0:
         # reward = -sum(enemy_units[:, 2]) - sum(enemy_units[:, 3]) - 200
         return 0
@@ -424,11 +424,11 @@ def get_reward(obs, pre_obs):
     # if len(my_units) < len(my_units_health_pre):
     #     reward -= ((len(my_units_health_pre) - len(my_units)) * 10) / 200
     if len(enemy_units) < len(enemy_units_health_pre):
-        reward += ((len(enemy_units_health_pre) - len(enemy_units)) * 10) / 200
+        reward += ((len(enemy_units_health_pre) - len(enemy_units)) * 10) / 400
 
     # 血量与护盾变化
-    reward += ((sum(my_units[:, 2]) - sum(my_units_health_pre[:, 2])) / 2 - (sum(enemy_units[:, 2]) - sum(enemy_units_health_pre[:, 2]))) / 200
-    reward += ((sum(my_units[:, 3]) - sum(my_units_health_pre[:, 3])) / 2 - (sum(enemy_units[:, 3]) - sum(enemy_units_health_pre[:, 3]))) / 200
+    reward += ((sum(my_units[:, 2]) - sum(my_units_health_pre[:, 2])) / 2 - (sum(enemy_units[:, 2]) - sum(enemy_units_health_pre[:, 2]))) / 400
+    reward += ((sum(my_units[:, 3]) - sum(my_units_health_pre[:, 3])) / 2 - (sum(enemy_units[:, 3]) - sum(enemy_units_health_pre[:, 3]))) / 400
 
     return reward
 

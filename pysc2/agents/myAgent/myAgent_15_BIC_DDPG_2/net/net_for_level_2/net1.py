@@ -57,7 +57,7 @@ class net1(object):
         # self.state_input_next = tf.placeholder("float", shape=self.state_dim, name='state_input_next')  # 全局状态
         self.agents_local_observation_next = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation_next')
 
-        self.reward = tf.placeholder("float", shape=[None, self.agents_number, 1], name='reward')
+        self.reward = tf.placeholder("float", shape=[None, 1], name='reward')
 
     def _build_graph_a(self, agents_local_observation, scope_name, train):
         # 环境和智能体本地的共同观察
@@ -65,7 +65,7 @@ class net1(object):
             with slim.arg_scope([slim.fully_connected],
                                 trainable=train,
                                 # normalizer_fn=slim.batch_norm,
-                                activation_fn=tf.nn.relu):
+                                activation_fn=None):
                 encoder_outputs = self._observation_encoder_a(agents_local_observation, self.agents_number, '_observation_encoder')
                 bicnet_outputs = self._bicnet_build_a(encoder_outputs, self.agents_number, '_bicnet_build')
                 return bicnet_outputs
@@ -74,7 +74,7 @@ class net1(object):
         with tf.variable_scope(scope_name):
             encoder = []
             for i in range(agents_number):
-                fc1 = slim.fully_connected(agents_local_observation[:, i, :], 100, scope='full_connected1' + '_agent_' + str(i))
+                fc1 = slim.fully_connected(agents_local_observation[:, i, :], 100, scope='full_connected1' )
                 # fc2 = slim.fully_connected(fc1, 50, scope='full_connected2')
                 encoder.append(fc1)
             encoder = tf.transpose(encoder, [1, 0, 2])
@@ -88,7 +88,7 @@ class net1(object):
             lstm_bw_cell = tf.nn.rnn_cell.GRUCell(50, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             for i in range(agents_number):
-                fc1 = slim.fully_connected(bicnet_outputs[i], 25, scope='full_connected1' + '_agent_' + str(i))
+                fc1 = slim.fully_connected(bicnet_outputs[i], 25, scope='full_connected1')
                 # fc1 = fc1 * 0.1
                 # fc1 = tf.Print(fc1, [fc1])
                 # bicnet_outputs[i] = bicnet_outputs[i] * 0.1
@@ -96,7 +96,7 @@ class net1(object):
                 # fc1 = tf.Print(fc1, [fc1])
                 # fc1 = fc1 * 1 / 4096
                 # fc1 = fc1 * 0.1
-                fc2 = slim.fully_connected(fc1, self.action_dim, activation_fn=tf.nn.tanh, scope='full_connected2' + '_agent_' + str(i))
+                fc2 = slim.fully_connected(fc1, self.action_dim, activation_fn=tf.nn.tanh, scope='full_connected2')
                 # fc2 = fc2 / 2 + 1
                 # fc2 = tf.Print(fc2, [fc2])
 
@@ -117,7 +117,7 @@ class net1(object):
                                 trainable=train,
                                 # normalizer_fn=slim.batch_norm,
 
-                                activation_fn=tf.nn.relu):
+                                activation_fn=None):
                 encoder_outputs = self._observation_encoder_c(state_input, action_input, self.agents_number, '_observation_encoder')
                 bicnet_outputs = self._bicnet_build_c(encoder_outputs, self.agents_number, '_bicnet_build')
                 return bicnet_outputs
@@ -129,7 +129,7 @@ class net1(object):
                 # state_input = tf.Print( state_input, [ state_input])
                 input_data = tf.concat([state_input[:, i], action_input[:, i]], 1)
                 # input_data = tf.Print(input_data, [input_data])
-                fc1 = slim.fully_connected(input_data, 100, scope='full_connected1' + '_agent_' + str(i))
+                fc1 = slim.fully_connected(input_data, 100, scope='full_connected1')
                 # fc2 = slim.fully_connected(fc1, 50, scope='full_connected2')
                 # fc1_s = slim.fully_connected(state_input, 100, scope='full_connected_s1')
                 # fc1_a = slim.fully_connected(action_input[:, i], 100, scope='full_connected_a1')
@@ -147,16 +147,16 @@ class net1(object):
             lstm_bw_cell = tf.nn.rnn_cell.GRUCell(50, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             for i in range(agents_number):
-                fc1 = slim.fully_connected(bicnet_outputs[i], 1, activation_fn=None, scope='full_connected1' + '_agent_' + str(i))
+                fc1 = slim.fully_connected(bicnet_outputs[i], 1, scope='full_connected1')
                 # fc2 = slim.fully_connected(fc1, 1, scope='full_connected2')
                 outputs.append(fc1)
             outputs = tf.unstack(outputs, self.agents_number)  # (agents_number, batch_size,1)
             outputs = tf.transpose(outputs, [1, 0, 2])  # (batch_size,agents_number,1)
             # outputs= tf.Print(outputs, [outputs])
-            # outputs = slim.flatten(outputs)
+            outputs = slim.flatten(outputs)
 
-            # fc3 = slim.fully_connected(outputs, 1, activation_fn=None, scope='full_connected3')
+            fc3 = slim.fully_connected(outputs, 1, activation_fn=tf.nn.tanh, scope='full_connected3')
             # fc3 = tf.clip_by_value(fc3, 0, 1)
             # fc3 = tf.Print(fc3, [fc3])
 
-            return outputs
+            return fc3
