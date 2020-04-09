@@ -177,7 +177,7 @@ class net():
         # action_out = np.clip(np.random.normal(action_out, 0), -1, 1)
         action_proto = action_out * self.bound
         action_proto += self.bound
-        print(np.squeeze(action_proto))
+        print(list(np.squeeze(action_proto)))
         # self.var = self.var * 0.995
 
         actions = []
