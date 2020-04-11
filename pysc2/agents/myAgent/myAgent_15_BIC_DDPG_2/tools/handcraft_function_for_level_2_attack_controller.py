@@ -14,6 +14,104 @@ from pysc2.lib import actions as a
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.unit_actions import inquire_action as inquire_action
 
 
+def get_init_obs(obs, init_static_agent_type):
+    init_obs = []
+    sorted_tag = []
+    for i in range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER):
+        if i < config.MY_UNIT_NUMBER:
+            for unit in obs.observation['raw_units']:
+                if unit.alliance == features.PlayerRelative.SELF and unit.unit_type == init_static_agent_type[i] and unit.tag not in sorted_tag:
+                    init_obs.append(unit)
+                    sorted_tag.append(unit.tag)
+                    break
+                    # np.delete(obs.observation['raw_units'], np.argwhere(obs.observation['raw_units'] == unit))
+        else:
+            for unit in obs.observation['raw_units']:
+                if unit.alliance == features.PlayerRelative.ENEMY and unit.unit_type == init_static_agent_type[i] and unit.tag not in sorted_tag:
+                    init_obs.append(unit)
+                    sorted_tag.append(unit.tag)
+                    break
+                    # np.delete(obs.observation['raw_units'], np.argwhere(obs.observation['raw_units'] == unit))
+    obs.observation['raw_units'] = init_obs
+    return obs
+
+    # init_obs += [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF and unit.unit_type == init_static_agent_type[i]]
+    # init_my_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
+    # init_enemy_units = [unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
+
+
+def get_init_static_agent_type(obs):
+    init_my_units_type = [unit.unit_type for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF]
+    init_enemy_units_type = [unit.unit_type for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY]
+    all_agent_type = init_my_units_type + init_enemy_units_type
+    return all_agent_type
+
+
+def get_specified_agent_all_valid_action(all_agent_type):
+    all_agent_valid_action = []
+    bound = []
+
+    for i in range(config.MY_UNIT_NUMBER):
+        action_tpye_len = len(inquire_action(all_agent_type[i]))
+        agent_valid_action = []
+        for j in range(action_tpye_len):
+            action = inquire_action(all_agent_type[i])[j]
+            if len(action.args) == 0:
+                function_id_1 = [int(action.id)]
+
+                function_id_2 = [1e-10]
+                x_2 = [1e-10]
+                y_2 = [1e-10]
+
+                function_id_3 = [1e-10]
+                target_3 = [1e-10]
+
+                for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
+                    agent_valid_action.append(item)
+
+            elif len(action.args) == 2 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags':
+                function_id_1 = [int(action.id)]
+
+                function_id_2 = [1e-10]
+                x_2 = [1e-10]
+                y_2 = [1e-10]
+
+                function_id_3 = [1e-10]
+                target_3 = [1e-10]
+
+                for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
+                    agent_valid_action.append(item)
+
+            elif len(action.args) == 3 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags' and action.args[2].name == 'world':
+                function_id_1 = [1e-10]
+
+                function_id_2 = [int(action.id)]
+                x_2 = [-1, 1]
+                y_2 = [-1, 1]
+
+                function_id_3 = [1e-10]
+                target_3 = [1e-10]
+                for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
+                    agent_valid_action.append(item)
+
+            elif len(action.args) == 3 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags' and action.args[2].name == 'target_unit_tag':
+                function_id_1 = [1e-10]
+                function_id_2 = [1e-10]
+                x_2 = [1e-10]
+                y_2 = [1e-10]
+
+                function_id_3 = [int(int(action.id))]
+                if int(action.id) == 386:
+                    target_3 = range(config.MY_UNIT_NUMBER)
+                else:
+                    target_3 = range(config.MY_UNIT_NUMBER, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)
+                for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
+                    agent_valid_action.append(item)
+        bound.append(len(agent_valid_action))
+        all_agent_valid_action.append(agent_valid_action)
+    return np.array(all_agent_valid_action), np.array(bound)
+
+
 def get_single_agent_closest_action(agent_number, agent_local_observation, all_valid_action):
     # all_valid_action = np.array(all_valid_action)
     if np.all(agent_local_observation[(agent_number * 8):(agent_number * 8 + 8)] == 0):
@@ -277,9 +375,9 @@ def assembly_action(init_obs, obs, action_numbers, vaild_action):
         queued = 0
         parameter.append([queued])
         # print(action_numbers[i])
-        if np.all(np.array(vaild_action[action_numbers[i]])[1:] == 1e-10):
+        if np.all(np.array(vaild_action[i][action_numbers[i]])[1:] == 1e-10):
 
-            function_id = int(vaild_action[action_numbers[i]][0])
+            function_id = int(vaild_action[i][action_numbers[i]][0])
             parameter.append([my_unit_pos])
             # parameter.append([action_numbers[i][1], action_numbers[i][2]])
 
@@ -288,21 +386,21 @@ def assembly_action(init_obs, obs, action_numbers, vaild_action):
             else:
                 actions.append(a.FunctionCall(function_id, parameter))
 
-        elif np.all(np.array(vaild_action[action_numbers[i]])[[0, 4, 5]] == 1e-10):
-            function_id = int(vaild_action[action_numbers[i]][1])
+        elif np.all(np.array(vaild_action[i][action_numbers[i]])[[0, 4, 5]] == 1e-10):
+            function_id = int(vaild_action[i][action_numbers[i]][1])
             parameter.append([my_unit_pos])
 
-            parameter.append([vaild_action[action_numbers[i]][2] + my_unit.x, vaild_action[action_numbers[i]][3] + my_unit.y])
+            parameter.append([vaild_action[i][action_numbers[i]][2] + my_unit.x, vaild_action[i][action_numbers[i]][3] + my_unit.y])
             # print()
             actions.append(a.FunctionCall(function_id, parameter))
 
-        elif np.all(np.array(vaild_action[action_numbers[i]])[0:4] == 1e-10):
-            function_id = int(vaild_action[action_numbers[i]][4])
+        elif np.all(np.array(vaild_action[i][action_numbers[i]])[0:4] == 1e-10):
+            function_id = int(vaild_action[i][action_numbers[i]][4])
             parameter.append([my_unit_pos])
-            if np.array(vaild_action[action_numbers[i]])[5] < config.MY_UNIT_NUMBER:
-                target_unit_pos = find_unit_pos(obs, init_my_units[vaild_action[action_numbers[i]][5]].tag)
+            if np.array(vaild_action[i][action_numbers[i]])[5] < config.MY_UNIT_NUMBER:
+                target_unit_pos = find_unit_pos(obs, init_my_units[vaild_action[i][action_numbers[i]][5]].tag)
             else:
-                target_unit_pos = find_unit_pos(obs, init_enemy_units[vaild_action[action_numbers[i]][5] - config.MY_UNIT_NUMBER].tag)
+                target_unit_pos = find_unit_pos(obs, init_enemy_units[vaild_action[i][action_numbers[i]][5] - config.MY_UNIT_NUMBER].tag)
             if target_unit_pos is None:
                 continue
             else:
@@ -404,7 +502,7 @@ def get_agents_obs(init_obs, obs):
 
 
 def get_reward(obs, pre_obs):
-    reward = 0
+    reward = -obs.observation['game_loop'][0] / 500
     my_units = np.array([unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF])
     enemy_units = np.array([unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY])
 
@@ -416,12 +514,12 @@ def get_reward(obs, pre_obs):
             reward += 0
             return reward
         else:
-
             reward += sum(my_units[:, 2]) + sum(my_units[:, 3]) + 200
             return float(reward) / 400
     elif len(my_units) == 0:
+        reward += 0
         # reward = -sum(enemy_units[:, 2]) - sum(enemy_units[:, 3]) - 200
-        return 0
+        return reward
 
     # 距离变化
     # my_coord = np.array(list(zip(my_units[:, 12], my_units[:, 13])))

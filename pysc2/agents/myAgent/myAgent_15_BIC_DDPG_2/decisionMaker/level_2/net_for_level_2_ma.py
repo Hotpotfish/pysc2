@@ -14,7 +14,7 @@ from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.handcraft_function_for_lev
 
 class net():
 
-    def __init__(self, mu, sigma, learning_rate, action_dim, statedim, agents_number, enemy_number, valid_action, name):  # 初始化
+    def __init__(self, mu, sigma, learning_rate, action_dim, statedim, agents_number, enemy_number, name):  # 初始化
         # 初始化回放缓冲区，用REPLAY_SIZE定义其最大长度
         self.replay_buffer = SqQueue(config.REPLAY_SIZE)
 
@@ -33,11 +33,12 @@ class net():
 
         # 网络结构初始化
         self.name = name
-        self.valid_action = valid_action
-        self.KDTree = KDTree(np.array(range(len(valid_action)))[:, np.newaxis])
-        self.bound = len(valid_action) / 2
+        self.valid_action = None
+        self.bound = None
+        # self.KDTree = KDTree(np.array(range(len(valid_action)))[:, np.newaxis])
+        # self.bound = len(valid_action) / 2
 
-        self.net = net1(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number, self.enemy_number, len(valid_action), self.name + '_net1')
+        self.net = net1(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number, self.enemy_number, self.name + '_net1')
 
         # Init session
         self.session = tf.Session()
@@ -133,12 +134,12 @@ class net():
             # a_ = np.reshape(a_, (config.BATCH_SIZE, self.agents_number))
             action_next_temp = []
             for i in range(config.BATCH_SIZE):
-                action_proto = a_[i] * self.bound
-                action_proto += self.bound
+                action_proto = np.multiply(np.array(a_[i]), np.array(self.bound)[:, np.newaxis])
+                action_proto = action_proto + np.array(self.bound)[:, np.newaxis]
                 actions = []
 
                 for j in range(self.agents_number):
-                    agent_valid_actions = get_single_agent_closest_action(j, agents_local_observation_next[i][j], self.valid_action)
+                    agent_valid_actions = get_single_agent_closest_action(j, agents_local_observation_next[i][j], self.valid_action[j])
 
                     # if len(agent_k_closest_action(agent_valid_actions, action_proto[j])) > 1:
                     #     print()
@@ -157,17 +158,18 @@ class net():
                 #     temp_qs = np.sum(temp_qs, axis=1)
                 #     a_[i] = action_k[np.argmax(temp_qs)][:, np.newaxis]
 
-            a_input_next = (np.array(action_next_temp) - self.bound) / self.bound
-            action_batch = (np.array(action_batch) - self.bound) / self.bound
+            a_input_next = (np.array(action_next_temp) - np.array(self.bound)) / np.array(self.bound)
+            action_batch = (np.array(action_batch) - np.array(self.bound)) / np.array(self.bound)
 
             _ = self.session.run(self.net.atrain, {self.net.agents_local_observation: agents_local_observation})
 
             __, self.td_error = self.session.run([self.net.ctrain, self.net.td_error],
                                                  {self.net.agents_local_observation: agents_local_observation,
                                                   self.net.a: action_batch[:, :, np.newaxis],
-                                                  self.net.reward: np.reshape(reward_batch, (config.BATCH_SIZE, 1)),
+                                                  self.net.reward: np.reshape(reward_batch, (config.BATCH_SIZE,  1)),
                                                   self.net.agents_local_observation_next: agents_local_observation_next,
                                                   self.net.a_: a_input_next[:, :, np.newaxis]})
+
             self.session.run(self.net.soft_replace)
 
     def egreedy_action(self, current_state):  # 输出带随机的动作
@@ -175,15 +177,15 @@ class net():
         action_out = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[1][np.newaxis]})[0]
 
         # action_out = np.clip(np.random.normal(action_out, self.var), -1, 1)
-        action_proto = action_out * self.bound
-        action_proto += self.bound
+        action_proto = np.multiply(np.array(action_out), np.array(self.bound)[:, np.newaxis])
+        action_proto = action_proto + np.array(self.bound)[:, np.newaxis]
         print(list(np.squeeze(action_proto)))
         # self.var = self.var * 0.99995
 
         actions = []
 
         for i in range(self.agents_number):
-            agent_valid_actions = get_single_agent_closest_action(i, current_state[1][i], self.valid_action)
+            agent_valid_actions = get_single_agent_closest_action(i, current_state[1][i], self.valid_action[i])
             actions += agent_k_closest_action(agent_valid_actions, action_proto[i])
         # print(actions)
 
