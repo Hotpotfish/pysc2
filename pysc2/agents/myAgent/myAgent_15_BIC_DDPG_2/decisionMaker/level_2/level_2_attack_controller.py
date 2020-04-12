@@ -6,27 +6,36 @@ from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.decisionMaker.level_2.net_for_le
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools import handcraft_function, handcraft_function_for_level_2_attack_controller
 
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.handcraft_function_for_level_2_attack_controller import get_reward, get_state, win_or_loss, get_clusters_test, get_bounds_and_states, assembly_action_test, get_agents_obs, \
-    get_all_vaild_action
+    get_all_vaild_action, get_init_static_agent_type, get_specified_agent_all_valid_action, get_init_obs
 from pysc2.lib.actions import RAW_FUNCTIONS
 
 
 class level_2_attack_controller:
     def __init__(self):
         self.state_data_shape = (None, config.COOP_AGENTS_OBDIM)
-        self.vaild_action = get_all_vaild_action()
+        self.vaild_action = None
         self.controller = decision_maker(
             net(config.MU, config.SIGMA, config.LEARING_RATE, len(self.vaild_action),
                 self.state_data_shape, config.MY_UNIT_NUMBER,
-                config.ENEMY_UNIT_NUMBER, self.vaild_action, 'attack_controller'))
+                config.ENEMY_UNIT_NUMBER, 'attack_controller'))
 
         self.index = handcraft_function.find_controller_index(sa.attack_controller)
+
         self.init_obs = None
+        self.init_static_agent_type = None
+
         self.pre_obs = None
         self.current_obs = None
 
     def train_action(self, obs, save_path):
+        if self.init_static_agent_type is None:
+            self.init_static_agent_type = get_init_static_agent_type(obs)
+            self.vaild_action, bound = get_specified_agent_all_valid_action(self.init_static_agent_type)
+            self.controller.network.valid_action = self.vaild_action
+            self.controller.network.bound = (bound - 1) / 2
+
         if obs.first():
-            self.init_obs = obs
+            self.init_obs = get_init_obs(obs, self.init_static_agent_type)
 
         self.controller.current_state = [np.array(get_state(self.init_obs, obs)), np.array(get_agents_obs(self.init_obs, obs))]
         self.current_obs = obs
