@@ -151,12 +151,14 @@ class net():
 
         action_out = self.session.run(self.net.q_value, {self.net.agents_local_observation: current_state[1][np.newaxis]})[0]
         actions = []
-        self.EPSILON = (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 100000
+        self.EPSILON = -(config.INITIAL_EPSILON - config.FINAL_EPSILON) / 100000
+        if self.EPSILON <= 0:
+            self.EPSILON = 0
         for i in range(self.agents_number):
             agent_valid_actions = get_single_agent_valid_action(i, current_state[1][i], self.valid_action)
             action_out[i] = action_out[i] * agent_valid_actions
             action_out[i] = action_out[i] / np.sum(action_out[i])
-            print(action_out[i])
+            # print(action_out[i])
 
             if np.random.normal() > self.EPSILON:
                 actions.append(np.argmax(action_out[i]))
