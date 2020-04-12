@@ -9,7 +9,7 @@ from scipy.spatial import KDTree
 import pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.config.config as config
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.SqQueue import SqQueue
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.net.net_for_level_2.net1 import net1
-from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.handcraft_function_for_level_2_attack_controller import get_action_combination, get_single_agent_closest_action, agent_k_closest_action
+from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.handcraft_function_for_level_2_attack_controller import get_action_combination, agent_k_closest_action, get_single_agent_valid_action
 
 
 class net():
@@ -21,7 +21,7 @@ class net():
         # 神经网络参数
         self.mu = mu
         self.sigma = sigma
-        self.var = 0.6
+        self.EPSILON = config.INITIAL_EPSILON
         self.learning_rate = learning_rate
 
         # 动作维度数，动作参数维度数（默认为6）,状态维度数
@@ -34,10 +34,8 @@ class net():
         # 网络结构初始化
         self.name = name
         self.valid_action = valid_action
-        self.KDTree = KDTree(np.array(range(len(valid_action)))[:, np.newaxis])
-        self.bound = len(valid_action) / 2
 
-        self.net = net1(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number, self.enemy_number, len(valid_action), self.name + '_net1')
+        self.net = net1(self.mu, self.sigma, self.learning_rate, self.action_dim, self.state_dim, self.agents_number, self.enemy_number, self.name + '_net1')
 
         # Init session
         self.session = tf.Session()
@@ -115,95 +113,56 @@ class net():
             self.saveRewardAvg(save_path)
             self.saveWinRate(save_path)
 
-        # action = (np.array(action) - self.bound) / self.bound
         self.replay_buffer.inQueue([state, action, reward, next_state, done])
 
     def train_Q_network(self):  # 训练网络
         if self.replay_buffer.real_size > config.BATCH_SIZE:
             minibatch = random.sample(self.replay_buffer.queue, config.BATCH_SIZE)
             agents_local_observation = np.array([data[0][1] for data in minibatch])
-            # state = np.array([data[0][0] for data in minibatch])
 
             action_batch = np.array([data[1] for data in minibatch])
             reward_batch = np.array([data[2] for data in minibatch])
             agents_local_observation_next = np.array([data[3][1] for data in minibatch])
-            # state_next = np.array([data[3][0] for data in minibatch])
 
-            a_ = self.session.run(self.net.a_, {self.net.agents_local_observation_next: agents_local_observation_next})
-            # a_ = np.reshape(a_, (config.BATCH_SIZE, self.agents_number))
-            action_next_temp = []
+            action_batch_input = []
+            Q_value_batch = self.session.run(self.net.q_value, {self.net.agents_local_observation: agents_local_observation})
             for i in range(config.BATCH_SIZE):
-                action_proto = a_[i] * self.bound
-                action_proto += self.bound
-                actions = []
+                action_one_hot = np.eye(self.action_dim)[action_batch[i]]
+                action_batch_input.append(action_one_hot)
 
                 for j in range(self.agents_number):
-                    agent_valid_actions = get_single_agent_closest_action(j, agents_local_observation_next[i][j], self.valid_action)
+                    agent_valid_actions = get_single_agent_valid_action(j, agents_local_observation[i][j], self.valid_action)
+                    Q_value_batch[i][j] = Q_value_batch[i][j] * agent_valid_actions
 
-                    # if len(agent_k_closest_action(agent_valid_actions, action_proto[j])) > 1:
-                    #     print()
-                    actions += agent_k_closest_action(agent_valid_actions, action_proto[j])
-                # if i == 31:
-                #     print()
-                action_next_temp.append(actions)
-                # action_k = get_action_combination(self.KDTree, actio_proto)
-                # action = None
-                # if config.K == 1:
-                #     a_[i] = action_k[0][:, np.newaxis]
-                # else:
-                #     ob_input = np.repeat(agents_local_observation_next, len(action_k), axis=0)
-                #     action_k_input = (np.array(action_k) - self.bound) / self.bound
-                #     temp_qs = self.session.run(self.net.q, {self.net.agents_local_observation: ob_input, self.net.a: np.array(action_k_input)[:, :, np.newaxis]})
-                #     temp_qs = np.sum(temp_qs, axis=1)
-                #     a_[i] = action_k[np.argmax(temp_qs)][:, np.newaxis]
+            y_batch = []
 
-            a_input_next = (np.array(action_next_temp) - self.bound) / self.bound
-            action_batch = (np.array(action_batch) - self.bound) / self.bound
+            for i in range(0, config.BATCH_SIZE):
+                done = minibatch[i][4]
+                if done:
+                    y_batch.append(reward_batch[i])
+                else:
+                    y_batch.append(reward_batch[i] + config.GAMMA * np.sum(np.max(Q_value_batch[i], axis=1)))
 
-            _ = self.session.run(self.net.atrain, {self.net.agents_local_observation: agents_local_observation})
-
-            __, self.td_error = self.session.run([self.net.ctrain, self.net.td_error],
-                                                 {self.net.agents_local_observation: agents_local_observation,
-                                                  self.net.a: action_batch[:, :, np.newaxis],
-                                                  self.net.reward: np.reshape(reward_batch, (config.BATCH_SIZE, 1)),
-                                                  self.net.agents_local_observation_next: agents_local_observation_next,
-                                                  self.net.a_: a_input_next[:, :, np.newaxis]})
-            self.session.run(self.net.soft_replace)
+            _, self.loss = self.session.run([self.net.trian_op, self.net.loss], {self.net.action_input: np.array(action_batch_input),
+                                                                                 self.net.y_input: y_batch,
+                                                                                 self.net.agents_local_observation: agents_local_observation_next})
 
     def egreedy_action(self, current_state):  # 输出带随机的动作
 
-        action_out = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[1][np.newaxis]})[0]
-
-        # action_out = np.clip(np.random.normal(action_out, self.var), -1, 1)
-        action_proto = action_out * self.bound
-        action_proto += self.bound
-        print(list(np.squeeze(action_proto)))
-        # self.var = self.var * 0.99995
-
+        action_out = self.session.run(self.net.q_value, {self.net.agents_local_observation: current_state[1][np.newaxis]})[0]
         actions = []
-
+        self.EPSILON = (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 100000
         for i in range(self.agents_number):
-            agent_valid_actions = get_single_agent_closest_action(i, current_state[1][i], self.valid_action)
-            actions += agent_k_closest_action(agent_valid_actions, action_proto[i])
-        # print(actions)
+            agent_valid_actions = get_single_agent_valid_action(i, current_state[1][i], self.valid_action)
+            action_out[i] = action_out[i] * agent_valid_actions
+            action_out[i] = action_out[i] / np.sum(action_out[i])
+            print(action_out[i])
 
+            if np.random.normal() > self.EPSILON:
+                actions.append(np.argmax(action_out[i]))
+            else:
+                actions.append(np.random.choice(range(len(self.valid_action)), p=action_out[i]))
         return actions
-
-        # for i in range(self.agents_number):
-
-        # # print(self.var)
-        # action_k = get_action_combination(self.KDTree, actio_proto)
-        # if config.K == 1:
-        #
-        #     return action_k[0]
-        # else:
-        #     ob_input = np.repeat(current_state[1][np.newaxis], len(action_k), axis=0)
-        #     action_k_input = (np.array(action_k) - self.bound) / self.bound
-        #     temp_qs = self.session.run(self.net.q, {self.net.agents_local_observation: ob_input, self.net.a: np.array(action_k_input)[:, :, np.newaxis]})
-        #     temp_qs = np.sum(temp_qs, axis=1)
-        #
-        #     action = action_k[np.argmax(temp_qs)]
-        #     return action
 
     def action(self, current_state):
         actio_out = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[1][np.newaxis]})[0]

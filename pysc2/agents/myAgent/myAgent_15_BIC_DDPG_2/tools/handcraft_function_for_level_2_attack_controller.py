@@ -14,11 +14,13 @@ from pysc2.lib import actions as a
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.unit_actions import inquire_action as inquire_action
 
 
-def get_single_agent_closest_action(agent_number, agent_local_observation, all_valid_action):
+def get_single_agent_valid_action(agent_number, agent_local_observation, all_valid_action):
     # all_valid_action = np.array(all_valid_action)
     if np.all(agent_local_observation[(agent_number * 8):(agent_number * 8 + 8)] == 0):
         actions = np.array([0])
-        return actions
+        valid_action_one_hot = np.zeros(len(all_valid_action))
+        valid_action_one_hot[actions] = 1
+        return valid_action_one_hot
     agent_tpye = int(agent_local_observation[8 * agent_number + 2] * 2000)
     agent_valid_actions = inquire_action(agent_tpye)
     # if  agent_valid_actions is None:
@@ -29,17 +31,6 @@ def get_single_agent_closest_action(agent_number, agent_local_observation, all_v
     for i in range(action_tpye_len):
         action = agent_valid_actions[i]
         if len(action.args) == 0:
-            # function_id_1 = [int(action.id)]
-            #
-            # function_id_2 = [1e-10]
-            # x_2 = [1e-10]
-            # y_2 = [1e-10]
-            #
-            # function_id_3 = [1e-10]
-            # target_3 = [1e-10]
-            #
-            # for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
-            #     actions.append(all_valid_action.index(item))
             continue
         if len(action.args) == 2 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags':
             function_id_1 = [int(action.id)]
@@ -96,12 +87,15 @@ def get_single_agent_closest_action(agent_number, agent_local_observation, all_v
             continue
 
     actions = np.array(actions)
+
+    valid_action_one_hot = np.zeros(len(all_valid_action))
+    valid_action_one_hot[actions] = 1
     # agent_valid_actions_number = np.where((all_valid_action == actions[None]).all(-1))[1]
     # kdtree = KDTree(range(len(actions))[:, np.newaxis])
 
     # print()
 
-    return actions
+    return valid_action_one_hot
 
 
 def agent_k_closest_action(agent_valid_actions, proto_action):
