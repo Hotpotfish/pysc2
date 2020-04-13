@@ -101,7 +101,7 @@ def get_specified_agent_all_valid_action(all_agent_type):
                 y_2 = [1e-10]
 
                 function_id_3 = [int(int(action.id))]
-                if int(action.id) == 386:
+                if int(action.id) == 311:
                     target_3 = range(config.MY_UNIT_NUMBER)
                 else:
                     target_3 = range(config.MY_UNIT_NUMBER, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)
@@ -109,15 +109,18 @@ def get_specified_agent_all_valid_action(all_agent_type):
                     agent_valid_action.append(item)
         bound.append(len(agent_valid_action))
         all_agent_valid_action.append(agent_valid_action)
-    return np.array(all_agent_valid_action), np.array(bound)
+    return all_agent_valid_action, np.array(bound)
 
 
 def get_single_agent_closest_action(agent_number, agent_local_observation, all_valid_action):
     # all_valid_action = np.array(all_valid_action)
+    all_valid_action = list(all_valid_action)
     if np.all(agent_local_observation[(agent_number * 8):(agent_number * 8 + 8)] == 0):
         actions = np.array([0])
         return actions
     agent_tpye = int(agent_local_observation[8 * agent_number + 2] * 2000)
+    # if  agent_tpye == 54:
+    #     print()
     agent_valid_actions = inquire_action(agent_tpye)
     # if  agent_valid_actions is None:
     #     print()
@@ -173,7 +176,7 @@ def get_single_agent_closest_action(agent_number, agent_local_observation, all_v
 
             function_id_3 = [int(action.id)]
             target_3 = []
-            if int(action.id) == 386:
+            if int(action.id) == 311:
                 for j in range(config.MY_UNIT_NUMBER):
                     if j == agent_number or np.all(agent_local_observation[(j * 8):(j * 8 + 8)] == 0) or agent_local_observation[j * 8] * (config.MAP_SIZE * 1.41) >= config.ATTACK_RANGE:
                         continue
@@ -272,7 +275,7 @@ def get_all_vaild_action():
             y_2 = [1e-10]
 
             function_id_3 = [int(int(action.id))]
-            if int(action.id) == 386:
+            if int(action.id) == 311:
                 target_3 = range(config.MY_UNIT_NUMBER)
             else:
                 target_3 = range(config.MY_UNIT_NUMBER, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)
@@ -371,6 +374,8 @@ def assembly_action(init_obs, obs, action_numbers, vaild_action):
         if my_unit_pos is None:
             continue
         my_unit = find_unit_by_tag(obs, init_my_units[i].tag)
+        # if my_unit.unit_type == 54:
+        #     print()
         parameter = []
         queued = 0
         parameter.append([queued])
@@ -396,6 +401,8 @@ def assembly_action(init_obs, obs, action_numbers, vaild_action):
 
         elif np.all(np.array(vaild_action[i][action_numbers[i]])[0:4] == 1e-10):
             function_id = int(vaild_action[i][action_numbers[i]][4])
+            # if function_id == 311:
+            #     print()
             parameter.append([my_unit_pos])
             if np.array(vaild_action[i][action_numbers[i]])[5] < config.MY_UNIT_NUMBER:
                 target_unit_pos = find_unit_pos(obs, init_my_units[vaild_action[i][action_numbers[i]][5]].tag)
@@ -440,8 +447,8 @@ def get_state(init_obs, obs):
             state = np.append(state, np.zeros(config.COOP_AGENT_OBDIM))
 
     for i in range(config.ENEMY_UNIT_NUMBER):
-        if i >= len(init_enemy_units_tag):
-            print()
+        # if i >= len(init_enemy_units_tag):
+        #     print()
         enemy_unit = find_unit_by_tag(obs, init_enemy_units_tag[i])
         if enemy_unit is not None:
             my_unit_state = get_agent_state(enemy_unit)
@@ -509,12 +516,13 @@ def get_reward(obs, pre_obs):
     my_units_health_pre = np.array([unit for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF])
     enemy_units_health_pre = np.array([unit for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY])
     # 是否胜利
-    if len(enemy_units) == 0:
-        reward += sum(my_units[:, 2]) + sum(my_units[:, 3]) + 200
-        return float(reward) / 200
-    elif len(my_units) == 0:
-        # reward = -sum(enemy_units[:, 2]) - sum(enemy_units[:, 3]) - 200
-        return 0
+    if obs.last():
+        if len(enemy_units) == 0:
+            reward += sum(my_units[:, 2]) + sum(my_units[:, 3]) + 200
+            return float(reward) / 200
+        elif len(my_units) == 0:
+            # reward = -sum(enemy_units[:, 2]) - sum(enemy_units[:, 3]) - 200
+            return 0
 
     # 距离变化
     # my_coord = np.array(list(zip(my_units[:, 12], my_units[:, 13])))
