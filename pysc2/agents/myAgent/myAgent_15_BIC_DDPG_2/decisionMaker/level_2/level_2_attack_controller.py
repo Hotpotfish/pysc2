@@ -15,7 +15,7 @@ class level_2_attack_controller:
         self.state_data_shape = (None, config.COOP_AGENTS_OBDIM)
         self.vaild_action = None
         self.controller = decision_maker(
-            net(config.MU, config.SIGMA, config.LEARING_RATE, config.ACTION_DIM,
+            net(config.MU, config.SIGMA, config.LEARING_RATE, len(self.vaild_action),
                 self.state_data_shape, config.MY_UNIT_NUMBER,
                 config.ENEMY_UNIT_NUMBER, 'attack_controller'))
 
