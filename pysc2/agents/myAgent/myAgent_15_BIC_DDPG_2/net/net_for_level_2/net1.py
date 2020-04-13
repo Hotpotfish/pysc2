@@ -55,7 +55,7 @@ class net1(object):
         # self.state_input_next = tf.placeholder("float", shape=self.state_dim, name='state_input_next')  # 全局状态
         self.agents_local_observation_next = tf.placeholder("float", shape=[None, self.agents_number, config.COOP_AGENTS_OBDIM], name='agents_local_observation_next')
 
-        self.reward = tf.placeholder("float", shape=[None, 1], name='reward')
+        self.reward = tf.placeholder("float", shape=[None, self.agents_number, 1], name='reward')
 
     def _build_graph_a(self, agents_local_observation, scope_name, train):
         # 环境和智能体本地的共同观察
@@ -151,10 +151,10 @@ class net1(object):
             outputs = tf.unstack(outputs, self.agents_number)  # (agents_number, batch_size,1)
             outputs = tf.transpose(outputs, [1, 0, 2])  # (batch_size,agents_number,1)
             # outputs= tf.Print(outputs, [outputs])
-            outputs = slim.flatten(outputs)
-
-            fc3 = slim.fully_connected(outputs, 1, activation_fn=None, scope='full_connected3')
+            # outputs = slim.flatten(outputs)
+            #
+            # fc3 = slim.fully_connected(outputs, 1, activation_fn=None, scope='full_connected3')
             # fc3 = tf.clip_by_value(fc3, 0, 1)
             # fc3 = tf.Print(fc3, [fc3])
 
-            return  fc3
+            return outputs

@@ -502,7 +502,7 @@ def get_agents_obs(init_obs, obs):
 
 
 def get_reward(obs, pre_obs):
-    reward = -obs.observation['game_loop'][0] / 500
+    reward = 0
     my_units = np.array([unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF])
     enemy_units = np.array([unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY])
 
@@ -510,16 +510,11 @@ def get_reward(obs, pre_obs):
     enemy_units_health_pre = np.array([unit for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY])
     # 是否胜利
     if len(enemy_units) == 0:
-        if len(my_units) == 0:
-            reward += 0
-            return reward
-        else:
-            reward += sum(my_units[:, 2]) + sum(my_units[:, 3]) + 200
-            return float(reward) / 400
+        reward += sum(my_units[:, 2]) + sum(my_units[:, 3]) + 200
+        return float(reward) / 200
     elif len(my_units) == 0:
-        reward += 0
         # reward = -sum(enemy_units[:, 2]) - sum(enemy_units[:, 3]) - 200
-        return reward
+        return 0
 
     # 距离变化
     # my_coord = np.array(list(zip(my_units[:, 12], my_units[:, 13])))
@@ -532,11 +527,11 @@ def get_reward(obs, pre_obs):
     # if len(my_units) < len(my_units_health_pre):
     #     reward -= ((len(my_units_health_pre) - len(my_units)) * 10) / 200
     if len(enemy_units) < len(enemy_units_health_pre):
-        reward += ((len(enemy_units_health_pre) - len(enemy_units)) * 10) / 400
+        reward += ((len(enemy_units_health_pre) - len(enemy_units)) * 10) / 200
 
     # 血量与护盾变化
-    reward += ((sum(my_units[:, 2]) - sum(my_units_health_pre[:, 2])) / 2 - (sum(enemy_units[:, 2]) - sum(enemy_units_health_pre[:, 2]))) / 400
-    reward += ((sum(my_units[:, 3]) - sum(my_units_health_pre[:, 3])) / 2 - (sum(enemy_units[:, 3]) - sum(enemy_units_health_pre[:, 3]))) / 400
+    reward += ((sum(my_units[:, 2]) - sum(my_units_health_pre[:, 2])) / 2 - (sum(enemy_units[:, 2]) - sum(enemy_units_health_pre[:, 2]))) / 200
+    reward += ((sum(my_units[:, 3]) - sum(my_units_health_pre[:, 3])) / 2 - (sum(enemy_units[:, 3]) - sum(enemy_units_health_pre[:, 3]))) / 200
 
     return reward
 
