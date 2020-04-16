@@ -113,34 +113,18 @@ def get_specified_agent_all_valid_action(all_agent_type):
 
 
 def get_single_agent_closest_action(agent_number, agent_local_observation, all_valid_action):
-    # all_valid_action = np.array(all_valid_action)
     all_valid_action = list(all_valid_action)
     if np.all(agent_local_observation[(agent_number * 8):(agent_number * 8 + 8)] == 0):
         actions = np.array([0])
         return actions
     agent_tpye = int(agent_local_observation[8 * agent_number + 2] * 2000)
-    # if  agent_tpye == 54:
-    #     print()
     agent_valid_actions = inquire_action(agent_tpye)
-    # if  agent_valid_actions is None:
-    #     print()
     actions = []
     action_tpye_len = len(agent_valid_actions)
 
     for i in range(action_tpye_len):
         action = agent_valid_actions[i]
         if len(action.args) == 0:
-            # function_id_1 = [int(action.id)]
-            #
-            # function_id_2 = [1e-10]
-            # x_2 = [1e-10]
-            # y_2 = [1e-10]
-            #
-            # function_id_3 = [1e-10]
-            # target_3 = [1e-10]
-            #
-            # for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
-            #     actions.append(all_valid_action.index(item))
             continue
         if len(action.args) == 2 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags':
             function_id_1 = [int(action.id)]
@@ -356,6 +340,8 @@ def find_unit_by_tag(obs, tag):
 def find_unit_pos(obs, tag):
     for i in range(len(obs.observation['raw_units'])):
         if obs.observation['raw_units'][i].tag == tag:
+            # if obs.observation['raw_units'][i].alliance == features.PlayerRelative.SELF:
+            #     print()
             return i
     else:
         return None
@@ -373,6 +359,7 @@ def assembly_action(init_obs, obs, action_numbers, vaild_action):
         my_unit_pos = find_unit_pos(obs, init_my_units[i].tag)
         if my_unit_pos is None:
             continue
+        my_unit_pos = obs.observation['raw_units'][my_unit_pos].tag
         my_unit = find_unit_by_tag(obs, init_my_units[i].tag)
         # if my_unit.unit_type == 54:
         #     print()
@@ -411,7 +398,7 @@ def assembly_action(init_obs, obs, action_numbers, vaild_action):
             if target_unit_pos is None:
                 continue
             else:
-                parameter.append([target_unit_pos])
+                parameter.append([obs.observation['raw_units'][target_unit_pos].tag])
 
             actions.append(a.FunctionCall(function_id, parameter))
     # print(actions)
@@ -486,7 +473,7 @@ def get_agents_obs(init_obs, obs):
                 agent_obs = np.append(agent_obs, my_target_unit.unit_type / 2000)
                 agent_obs = np.append(agent_obs, my_target_unit.x / config.MAP_SIZE)
                 agent_obs = np.append(agent_obs, my_target_unit.y / config.MAP_SIZE)
-                agent_obs = np.append(agent_obs, my_target_unit.health / 200)
+                agent_obs = np.append(agent_obs, my_target_unit.health / 100)
                 agent_obs = np.append(agent_obs, my_target_unit.shield / 100)
                 agent_obs = np.append(agent_obs, my_target_unit.weapon_cooldown / 10)
         for j in range(config.ENEMY_UNIT_NUMBER):
@@ -508,40 +495,48 @@ def get_agents_obs(init_obs, obs):
     return agents_obs
 
 
-
-
+# def get_reward(obs, pre_obs):
+#     reward = 0
+#     my_units = np.array([unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF])
+#     enemy_units = np.array([unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY])
+#
+#     my_units_health_pre = np.array([unit for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF])
+#     enemy_units_health_pre = np.array([unit for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY])
+#     # 是否胜利
+#     if obs.last():
+#         if len(enemy_units) == 0:
+#             reward += sum(my_units[:, 2]) + sum(my_units[:, 3]) + 200
+#             return float(reward) / 200
+#         elif len(my_units) == 0:
+#             reward = -sum(enemy_units[:, 2]) - sum(enemy_units[:, 3]) - 200
+#             return float(reward) / 200
+#
+#     # 距离变化
+#     # my_coord = np.array(list(zip(my_units[:, 12], my_units[:, 13])))
+#     # emey_coord = np.array(list(zip(enemy_units[:, 12], enemy_units[:, 13])))
+#     # kdtree = KDTree(emey_coord)
+#     # distance_avg = kdtree.query(my_coord)
+#     # reward -= (abs(sum(distance_avg[0]) / len(my_units) - 4) / (config.MAP_SIZE * 1.41)) * 5
+#
+#     # 人数变化
+#     if len(my_units) < len(my_units_health_pre):
+#         reward -= ((len(my_units_health_pre) - len(my_units)) * 10) / 200
+#     if len(enemy_units) < len(enemy_units_health_pre):
+#         reward += ((len(enemy_units_health_pre) - len(enemy_units)) * 10) / 200
+#
+#     # 血量与护盾变化
+#     reward += ((sum(my_units[:, 2]) - sum(my_units_health_pre[:, 2])) / 2 - (sum(enemy_units[:, 2]) - sum(enemy_units_health_pre[:, 2]))) / 200
+#     reward += ((sum(my_units[:, 3]) - sum(my_units_health_pre[:, 3])) / 2 - (sum(enemy_units[:, 3]) - sum(enemy_units_health_pre[:, 3]))) / 200
+#
+#     return reward
 def get_reward(obs, pre_obs):
-    reward = 0
-    my_units = np.array([unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF])
-    enemy_units = np.array([unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY])
+    health_change = obs[:, [j * 8 + 5 for j in range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)]] - pre_obs[:, [j * 8 + 5 for j in range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)]]
+    shield_change = obs[:, [j * 8 + 6 for j in range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)]] - pre_obs[:, [j * 8 + 6 for j in range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)]]
 
-    my_units_health_pre = np.array([unit for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF])
-    enemy_units_health_pre = np.array([unit for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY])
-    # 是否胜利
-    if obs.last():
-        if len(enemy_units) == 0:
-            reward += sum(my_units[:, 2]) + sum(my_units[:, 3]) + 200
-            return float(reward) / 200
-        elif len(my_units) == 0:
-            reward = -sum(enemy_units[:, 2]) - sum(enemy_units[:, 3]) - 200
-            return float(reward) / 200
+    change = health_change + shield_change
+    reward = np.sum(change[:, 0:config.MY_UNIT_NUMBER], axis=1) - np.sum(change[:, config.MY_UNIT_NUMBER:config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER], axis=1) / 3
 
-    # 距离变化
-    # my_coord = np.array(list(zip(my_units[:, 12], my_units[:, 13])))
-    # emey_coord = np.array(list(zip(enemy_units[:, 12], enemy_units[:, 13])))
-    # kdtree = KDTree(emey_coord)
-    # distance_avg = kdtree.query(my_coord)
-    # reward -= (abs(sum(distance_avg[0]) / len(my_units) - 4) / (config.MAP_SIZE * 1.41)) * 5
-
-    # 人数变化
-    if len(my_units) < len(my_units_health_pre):
-        reward -= ((len(my_units_health_pre) - len(my_units)) * 10) / 200
-    if len(enemy_units) < len(enemy_units_health_pre):
-        reward += ((len(enemy_units_health_pre) - len(enemy_units)) * 10) / 200
-
-    # 血量与护盾变化
-    reward += ((sum(my_units[:, 2]) - sum(my_units_health_pre[:, 2])) / 2 - (sum(enemy_units[:, 2]) - sum(enemy_units_health_pre[:, 2]))) / 200
-    reward += ((sum(my_units[:, 3]) - sum(my_units_health_pre[:, 3])) / 2 - (sum(enemy_units[:, 3]) - sum(enemy_units_health_pre[:, 3]))) / 200
+    # for i in range(config.MY_UNIT_NUMBER):
 
     return reward
 
