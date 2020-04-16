@@ -105,7 +105,7 @@ class net():
         self.rewardSaver.close()
 
     def perceive(self, state, action, reward, next_state, done, save_path):  # 感知存储信息
-        self.rewardAdd += reward
+        self.rewardAdd += sum(reward)
         self.timeStep += 1
 
         if done != 0:
@@ -117,7 +117,7 @@ class net():
             self.saveWinRate(save_path)
 
         # action = (np.array(action) - self.bound) / self.bound
-        self.replay_buffer.inQueue([state, action, np.repeat(reward, self.agents_number), next_state, done])
+        self.replay_buffer.inQueue([state, action, reward, next_state, done])
 
     def train_Q_network(self):  # 训练网络
         if self.replay_buffer.real_size > config.BATCH_SIZE:
@@ -131,7 +131,7 @@ class net():
             # state_next = np.array([data[3][0] for data in minibatch])
 
             a_ = self.session.run(self.net.a_, {self.net.agents_local_observation_next: agents_local_observation_next})
-            # a_ = np.reshape(a_, (config.BATCH_SIZE, self.agents_number))
+
             action_next_temp = []
             for i in range(config.BATCH_SIZE):
                 action_proto = np.multiply(np.array(a_[i]), np.array(self.bound)[:, np.newaxis])
@@ -141,22 +141,9 @@ class net():
                 for j in range(self.agents_number):
                     agent_valid_actions = get_single_agent_closest_action(j, agents_local_observation_next[i][j], self.valid_action[j])
 
-                    # if len(agent_k_closest_action(agent_valid_actions, action_proto[j])) > 1:
-                    #     print()
                     actions += agent_k_closest_action(agent_valid_actions, action_proto[j])
-                # if i == 31:
-                #     print()
+
                 action_next_temp.append(actions)
-                # action_k = get_action_combination(self.KDTree, actio_proto)
-                # action = None
-                # if config.K == 1:
-                #     a_[i] = action_k[0][:, np.newaxis]
-                # else:
-                #     ob_input = np.repeat(agents_local_observation_next, len(action_k), axis=0)
-                #     action_k_input = (np.array(action_k) - self.bound) / self.bound
-                #     temp_qs = self.session.run(self.net.q, {self.net.agents_local_observation: ob_input, self.net.a: np.array(action_k_input)[:, :, np.newaxis]})
-                #     temp_qs = np.sum(temp_qs, axis=1)
-                #     a_[i] = action_k[np.argmax(temp_qs)][:, np.newaxis]
 
             a_input_next = (np.array(action_next_temp) - np.array(self.bound)) / np.array(self.bound)
             action_batch = (np.array(action_batch) - np.array(self.bound)) / np.array(self.bound)
@@ -179,7 +166,7 @@ class net():
         # action_out = np.clip(np.random.normal(action_out, self.var), -1, 1)
         action_proto = np.multiply(np.array(action_out), np.array(self.bound)[:, np.newaxis])
         action_proto = action_proto + np.array(self.bound)[:, np.newaxis]
-        # print(list(np.squeeze(action_proto)))
+        print(list(np.squeeze(action_proto)))
         # self.var = self.var * 0.99995
 
         actions = []
@@ -191,21 +178,6 @@ class net():
 
         return actions
 
-        # for i in range(self.agents_number):
-
-        # # print(self.var)
-        # action_k = get_action_combination(self.KDTree, actio_proto)
-        # if config.K == 1:
-        #
-        #     return action_k[0]
-        # else:
-        #     ob_input = np.repeat(current_state[1][np.newaxis], len(action_k), axis=0)
-        #     action_k_input = (np.array(action_k) - self.bound) / self.bound
-        #     temp_qs = self.session.run(self.net.q, {self.net.agents_local_observation: ob_input, self.net.a: np.array(action_k_input)[:, :, np.newaxis]})
-        #     temp_qs = np.sum(temp_qs, axis=1)
-        #
-        #     action = action_k[np.argmax(temp_qs)]
-        #     return action
 
     def action(self, current_state):
         actio_out = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[1][np.newaxis]})[0]
