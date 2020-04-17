@@ -39,8 +39,9 @@ class net1(object):
                              for t, e in zip(self.at_params + self.ct_params, self.ae_params + self.ce_params)]
 
         q_target = self.reward + config.GAMMA * self.q_
+        self.td_error = tf.reduce_mean(tf.square(q_target - self.q))
 
-        self.td_error = tf.losses.mean_squared_error(labels=q_target, predictions=self.q)
+        # self.td_error = tf.losses.mean_squared_error(labels=q_target, predictions=self.q)
         self.ctrain = tf.train.AdamOptimizer(self.learning_rate).minimize(self.td_error, var_list=self.ce_params)
 
         self.a_loss = - tf.reduce_mean(self.q)  # maximize the q
@@ -147,7 +148,7 @@ class net1(object):
             lstm_bw_cell = tf.nn.rnn_cell.GRUCell(50, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             for i in range(agents_number):
-                fc1 = slim.fully_connected(bicnet_outputs[i], 1,activation_fn = None, scope='full_connected1' + '_agent_' + str(i))
+                fc1 = slim.fully_connected(bicnet_outputs[i], 1, activation_fn=None, scope='full_connected1' + '_agent_' + str(i))
                 # fc2 = slim.fully_connected(fc1, 1, scope='full_connected2')
                 outputs.append(fc1)
             outputs = tf.unstack(outputs, self.agents_number)  # (agents_number, batch_size,1)
