@@ -9,7 +9,7 @@ GAMMA = 0.99  # discount factor for target Q
 INITIAL_EPSILON = 0.6  # starting value of epsilon
 FINAL_EPSILON = 0.01  # final value of epsilon
 REPLAY_SIZE = 600000  # experience replay buffer size
-BATCH_SIZE =64# size of minibatch
+BATCH_SIZE =32# size of minibatch
 
 # 神经网络初始化参数
 MU = 0
@@ -33,5 +33,5 @@ ACTION_DIM = 1  # （4为上下左右）
 COOP_AGENT_OBDIM = 8
 COOP_AGENTS_OBDIM = (MY_UNIT_NUMBER + ENEMY_UNIT_NUMBER) * COOP_AGENT_OBDIM
 
-OB_RANGE = 20
+OB_RANGE = 20000000000
 ATTACK_RANGE = 10

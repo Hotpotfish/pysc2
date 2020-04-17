@@ -105,7 +105,7 @@ class net():
         self.rewardSaver.close()
 
     def perceive(self, state, action, reward, next_state, done, save_path):  # 感知存储信息
-        self.rewardAdd += sum(reward)
+        self.rewardAdd += reward
         self.timeStep += 1
 
         if done != 0:
@@ -117,7 +117,7 @@ class net():
             self.saveWinRate(save_path)
 
         # action = (np.array(action) - self.bound) / self.bound
-        self.replay_buffer.inQueue([state, action, reward, next_state, done])
+        self.replay_buffer.inQueue([state, action, np.repeat(reward, config.MY_UNIT_NUMBER), next_state, done])
 
     def train_Q_network(self):  # 训练网络
         if self.replay_buffer.real_size > config.BATCH_SIZE:
@@ -130,31 +130,31 @@ class net():
             agents_local_observation_next = np.array([data[3][1] for data in minibatch])
             # state_next = np.array([data[3][0] for data in minibatch])
 
-            # a_ = self.session.run(self.net.a_, {self.net.agents_local_observation_next: agents_local_observation_next})
-            #
-            # action_next_temp = []
-            # for i in range(config.BATCH_SIZE):
-            #     action_proto = np.multiply(np.array(a_[i]), np.array(self.bound)[:, np.newaxis])
-            #     action_proto = action_proto + np.array(self.bound)[:, np.newaxis]
-            #     actions = []
-            #
-            #     for j in range(self.agents_number):
-            #         agent_valid_actions = get_single_agent_closest_action(j, agents_local_observation_next[i][j], self.valid_action[j])
-            #         actions += agent_k_closest_action(agent_valid_actions, action_proto[j])
-            #
-            #     action_next_temp.append(actions)
-            #
-            # a_input_next = (np.array(action_next_temp) - np.array(self.bound)) / np.array(self.bound)
-            # action_batch = (np.array(action_batch) - np.array(self.bound)) / np.array(self.bound)
+            a_ = self.session.run(self.net.a_, {self.net.agents_local_observation_next: agents_local_observation_next})
+
+            action_next_temp = []
+            for i in range(config.BATCH_SIZE):
+                action_proto = np.multiply(np.array(a_[i]), np.array(self.bound)[:, np.newaxis])
+                action_proto = action_proto + np.array(self.bound)[:, np.newaxis]
+                actions = []
+
+                for j in range(self.agents_number):
+                    agent_valid_actions = get_single_agent_closest_action(j, agents_local_observation_next[i][j], self.valid_action[j])
+                    actions += agent_k_closest_action(agent_valid_actions, action_proto[j])
+
+                action_next_temp.append(actions)
+
+            a_input_next = (np.array(action_next_temp) - np.array(self.bound)) / np.array(self.bound)
+            action_batch = (np.array(action_batch) - np.array(self.bound)) / np.array(self.bound)
 
             _ = self.session.run(self.net.atrain, {self.net.agents_local_observation: agents_local_observation})
 
             __, self.td_error = self.session.run([self.net.ctrain, self.net.td_error],
                                                  {self.net.agents_local_observation: agents_local_observation,
-                                                  self.net.a: action_batch,
+                                                  self.net.a: action_batch[:, :, np.newaxis],
                                                   self.net.reward: np.reshape(reward_batch, (config.BATCH_SIZE, self.agents_number, 1)),
                                                   self.net.agents_local_observation_next: agents_local_observation_next,
-                                                  # self.net.a_: a_input_next[:, :, np.newaxis]
+                                                  self.net.a_: a_input_next[:, :, np.newaxis]
                                                   })
 
             self.session.run(self.net.soft_replace)
@@ -180,7 +180,7 @@ class net():
         # print('--------------------------------------')
         # print(actions)
 
-        return actions, action_out
+        return actions
 
     def action(self, current_state):
         actio_out = self.session.run(self.net.a, {self.net.agents_local_observation: current_state[1][np.newaxis]})[0]

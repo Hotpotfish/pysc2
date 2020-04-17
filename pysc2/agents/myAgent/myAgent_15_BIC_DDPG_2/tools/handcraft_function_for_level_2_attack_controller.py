@@ -159,19 +159,21 @@ def get_single_agent_closest_action(agent_number, agent_local_observation, all_v
             y_2 = [1e-10]
 
             function_id_3 = [int(action.id)]
-            target_3 = []
+
             if int(action.id) == 311:
-                for j in range(config.MY_UNIT_NUMBER):
-                    if j == agent_number or np.all(agent_local_observation[(j * 8):(j * 8 + 8)] == 0) or agent_local_observation[j * 8] * (config.MAP_SIZE * 1.41) >= config.ATTACK_RANGE:
-                        continue
-                    else:
-                        target_3.append(j)
+                target_3 = range(config.MY_UNIT_NUMBER)
+                # for j in range(config.MY_UNIT_NUMBER):
+                #     if j == agent_number or np.all(agent_local_observation[(j * 8):(j * 8 + 8)] == 0) or agent_local_observation[j * 8] * (config.MAP_SIZE * 1.41) >= config.ATTACK_RANGE:
+                #         continue
+                #     else:
+                #         target_3.append(j)
             else:
-                for j in range(config.MY_UNIT_NUMBER, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER):
-                    if j == agent_number or np.all(agent_local_observation[(j * 8):(j * 8 + 8)] == 0) or agent_local_observation[j * 8] * (config.MAP_SIZE * 1.41) >= config.ATTACK_RANGE:
-                        continue
-                    else:
-                        target_3.append(j)
+                target_3 = range(config.MY_UNIT_NUMBER, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)
+                # for j in range(config.MY_UNIT_NUMBER, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER):
+                #     if j == agent_number or np.all(agent_local_observation[(j * 8):(j * 8 + 8)] == 0) or agent_local_observation[j * 8] * (config.MAP_SIZE * 1.41) >= config.ATTACK_RANGE:
+                #         continue
+                #     else:
+                #         target_3.append(j)
             if len(target_3) == 0:
                 continue
 
@@ -495,50 +497,52 @@ def get_agents_obs(init_obs, obs):
     return agents_obs
 
 
-# def get_reward(obs, pre_obs):
-#     reward = 0
-#     my_units = np.array([unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF])
-#     enemy_units = np.array([unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY])
-#
-#     my_units_health_pre = np.array([unit for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF])
-#     enemy_units_health_pre = np.array([unit for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY])
-#     # 是否胜利
-#     if obs.last():
-#         if len(enemy_units) == 0:
-#             reward += sum(my_units[:, 2]) + sum(my_units[:, 3]) + 200
-#             return float(reward) / 200
-#         elif len(my_units) == 0:
-#             reward = -sum(enemy_units[:, 2]) - sum(enemy_units[:, 3]) - 200
-#             return float(reward) / 200
-#
-#     # 距离变化
-#     # my_coord = np.array(list(zip(my_units[:, 12], my_units[:, 13])))
-#     # emey_coord = np.array(list(zip(enemy_units[:, 12], enemy_units[:, 13])))
-#     # kdtree = KDTree(emey_coord)
-#     # distance_avg = kdtree.query(my_coord)
-#     # reward -= (abs(sum(distance_avg[0]) / len(my_units) - 4) / (config.MAP_SIZE * 1.41)) * 5
-#
-#     # 人数变化
-#     if len(my_units) < len(my_units_health_pre):
-#         reward -= ((len(my_units_health_pre) - len(my_units)) * 10) / 200
-#     if len(enemy_units) < len(enemy_units_health_pre):
-#         reward += ((len(enemy_units_health_pre) - len(enemy_units)) * 10) / 200
-#
-#     # 血量与护盾变化
-#     reward += ((sum(my_units[:, 2]) - sum(my_units_health_pre[:, 2])) / 2 - (sum(enemy_units[:, 2]) - sum(enemy_units_health_pre[:, 2]))) / 200
-#     reward += ((sum(my_units[:, 3]) - sum(my_units_health_pre[:, 3])) / 2 - (sum(enemy_units[:, 3]) - sum(enemy_units_health_pre[:, 3]))) / 200
-#
-#     return reward
 def get_reward(obs, pre_obs):
-    health_change = obs[:, [j * 8 + 5 for j in range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)]] - pre_obs[:, [j * 8 + 5 for j in range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)]]
-    shield_change = obs[:, [j * 8 + 6 for j in range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)]] - pre_obs[:, [j * 8 + 6 for j in range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)]]
+    reward = 0
+    my_units = np.array([unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF])
+    enemy_units = np.array([unit for unit in obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY])
 
-    change = health_change + shield_change
-    reward = np.sum(change[:, 0:config.MY_UNIT_NUMBER], axis=1) - np.sum(change[:, config.MY_UNIT_NUMBER:config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER], axis=1) / 3
+    my_units_health_pre = np.array([unit for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.SELF])
+    enemy_units_health_pre = np.array([unit for unit in pre_obs.observation['raw_units'] if unit.alliance == features.PlayerRelative.ENEMY])
+    # 是否胜利
+    if obs.last():
+        if len(enemy_units) == 0:
+            reward += sum(my_units[:, 2]) + sum(my_units[:, 3]) + 200
+            return float(reward) / 200
+        elif len(my_units) == 0:
+            reward = -sum(enemy_units[:, 2]) - sum(enemy_units[:, 3]) - 200
+            return float(reward) / 200
 
-    # for i in range(config.MY_UNIT_NUMBER):
+    # 距离变化
+    # my_coord = np.array(list(zip(my_units[:, 12], my_units[:, 13])))
+    # emey_coord = np.array(list(zip(enemy_units[:, 12], enemy_units[:, 13])))
+    # kdtree = KDTree(emey_coord)
+    # distance_avg = kdtree.query(my_coord)
+    # reward -= (abs(sum(distance_avg[0]) / len(my_units) - 4) / (config.MAP_SIZE * 1.41)) * 5
+
+    # 人数变化
+    if len(my_units) < len(my_units_health_pre):
+        reward -= ((len(my_units_health_pre) - len(my_units)) * 10) / 200
+    if len(enemy_units) < len(enemy_units_health_pre):
+        reward += ((len(enemy_units_health_pre) - len(enemy_units)) * 10) / 200
+
+    # 血量与护盾变化
+    reward += ((sum(my_units[:, 2]) - sum(my_units_health_pre[:, 2])) / 2 - (sum(enemy_units[:, 2]) - sum(enemy_units_health_pre[:, 2]))) / 200
+    reward += ((sum(my_units[:, 3]) - sum(my_units_health_pre[:, 3])) / 2 - (sum(enemy_units[:, 3]) - sum(enemy_units_health_pre[:, 3]))) / 200
 
     return reward
+
+
+# def get_reward(obs, pre_obs):
+#     health_change = obs[:, [j * 8 + 5 for j in range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)]] - pre_obs[:, [j * 8 + 5 for j in range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)]]
+#     shield_change = obs[:, [j * 8 + 6 for j in range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)]] - pre_obs[:, [j * 8 + 6 for j in range(config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)]]
+#
+#     change = health_change + shield_change
+#     reward = np.sum(change[:, 0:config.MY_UNIT_NUMBER], axis=1) - np.sum(change[:, config.MY_UNIT_NUMBER:config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER], axis=1) / 3
+#
+#     # for i in range(config.MY_UNIT_NUMBER):
+#
+#     return reward
 
 
 def win_or_loss(obs):

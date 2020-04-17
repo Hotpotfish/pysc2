@@ -41,7 +41,7 @@ class level_2_attack_controller:
         self.current_obs = obs
 
         if self.controller.previous_action is not None:
-            self.controller.previous_reward = get_reward(self.controller.current_state[1], self.controller.previous_state[1])
+            self.controller.previous_reward = get_reward(obs, self.pre_obs)
             self.controller.network.perceive(self.controller.previous_state,
                                              self.controller.previous_action,
                                              self.controller.previous_reward,
@@ -58,10 +58,10 @@ class level_2_attack_controller:
             self.current_obs = None
             return RAW_FUNCTIONS.no_op()
         else:
-            action, action_out = self.controller.network.egreedy_action(self.controller.current_state)
+            action = self.controller.network.egreedy_action(self.controller.current_state)
             actions = handcraft_function_for_level_2_attack_controller.assembly_action(self.init_obs, obs, action, self.vaild_action)
             self.controller.previous_state = self.controller.current_state
-            self.controller.previous_action =  action_out
+            self.controller.previous_action = action
             self.pre_obs = self.current_obs
 
         return actions
