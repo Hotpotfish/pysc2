@@ -112,13 +112,13 @@ def get_specified_agent_all_valid_action(all_agent_type):
     return all_agent_valid_action, np.array(bound)
 
 
-def get_single_agent_closest_action(agent_number, agent_local_observation, all_valid_action):
+def get_single_agent_closest_action(agent_type, agent_local_observation, all_valid_action):
     all_valid_action = list(all_valid_action)
-    if np.all(agent_local_observation[(agent_number * 8):(agent_number * 8 + 8)] == 0):
-        actions = np.array([0])
-        return actions
-    agent_tpye = int(agent_local_observation[8 * agent_number + 2] * 2000)
-    agent_valid_actions = inquire_action(agent_tpye)
+    # if np.all(agent_local_observation[(agent_number * 8):(agent_number * 8 + 8)] == 0):
+    #     actions = np.array([0])
+    #     return actions
+    # agent_tpye = int(agent_local_observation[8 * agent_number + 2] * 2000)
+    agent_valid_actions = inquire_action(agent_type)
     actions = []
     action_tpye_len = len(agent_valid_actions)
 

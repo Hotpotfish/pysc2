@@ -33,6 +33,7 @@ class level_2_attack_controller:
             self.vaild_action, bound = get_specified_agent_all_valid_action(self.init_static_agent_type)
             self.controller.network.valid_action = self.vaild_action
             self.controller.network.bound = (bound - 1) / 2
+            self.controller.network.init_static_agent_type = self.init_static_agent_type
 
         if obs.first():
             self.init_obs = get_init_obs(obs, self.init_static_agent_type)

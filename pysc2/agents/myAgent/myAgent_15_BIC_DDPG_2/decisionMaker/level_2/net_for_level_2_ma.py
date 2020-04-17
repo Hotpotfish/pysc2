@@ -35,6 +35,7 @@ class net():
         self.name = name
         self.valid_action = None
         self.bound = None
+        self.init_static_agent_type = None
         # self.KDTree = KDTree(np.array(range(len(valid_action)))[:, np.newaxis])
         # self.bound = len(valid_action) / 2
 
@@ -139,7 +140,7 @@ class net():
                 actions = []
 
                 for j in range(self.agents_number):
-                    agent_valid_actions = get_single_agent_closest_action(j, agents_local_observation_next[i][j], self.valid_action[j])
+                    agent_valid_actions = get_single_agent_closest_action(self.init_static_agent_type [j], agents_local_observation_next[i][j], self.valid_action[j])
                     actions += agent_k_closest_action(agent_valid_actions, action_proto[j])
 
                 action_next_temp.append(actions)
@@ -172,7 +173,7 @@ class net():
         actions = []
         # print('--------------------------------------')
         for i in range(self.agents_number):
-            agent_valid_actions = get_single_agent_closest_action(i, current_state[1][i], self.valid_action[i])
+            agent_valid_actions = get_single_agent_closest_action(self.init_static_agent_type[i], current_state[1][i], self.valid_action[i])
 
             actions += agent_k_closest_action(agent_valid_actions, action_proto[i])
 
