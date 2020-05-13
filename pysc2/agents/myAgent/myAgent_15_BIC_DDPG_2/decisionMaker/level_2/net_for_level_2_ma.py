@@ -118,7 +118,7 @@ class net():
             self.saveWinRate(save_path)
 
         # action = (np.array(action) - self.bound) / self.bound
-        self.replay_buffer.inQueue([state, action, np.repeat(reward, config.MY_UNIT_NUMBER), next_state, done])
+        self.replay_buffer.inQueue([state, action, np.repeat(reward, 1), next_state, done])
 
     def train_Q_network(self):  # 训练网络
         if self.replay_buffer.real_size > config.BATCH_SIZE:
@@ -140,7 +140,7 @@ class net():
                 actions = []
 
                 for j in range(self.agents_number):
-                    agent_valid_actions = get_single_agent_closest_action(self.init_static_agent_type [j], agents_local_observation_next[i][j], self.valid_action[j])
+                    agent_valid_actions = get_single_agent_closest_action(self.init_static_agent_type[j], agents_local_observation_next[i][j], j, self.valid_action[j])
                     actions += agent_k_closest_action(agent_valid_actions, action_proto[j])
 
                 action_next_temp.append(actions)
@@ -153,7 +153,7 @@ class net():
             __, self.td_error = self.session.run([self.net.ctrain, self.net.td_error],
                                                  {self.net.agents_local_observation: agents_local_observation,
                                                   self.net.a: action_batch[:, :, np.newaxis],
-                                                  self.net.reward: np.reshape(reward_batch, (config.BATCH_SIZE, self.agents_number, 1)),
+                                                  self.net.reward: np.reshape(reward_batch, (config.BATCH_SIZE, 1)),
                                                   self.net.agents_local_observation_next: agents_local_observation_next,
                                                   self.net.a_: a_input_next[:, :, np.newaxis]
                                                   })
@@ -167,14 +167,13 @@ class net():
         # action_out = np.clip(np.random.normal(action_out, self.var), -1, 1)
         action_proto = np.multiply(np.array(action_out), np.array(self.bound)[:, np.newaxis])
         action_proto = action_proto + np.array(self.bound)[:, np.newaxis]
-        print(list(np.squeeze(action_proto)))
+        # print(list(np.squeeze(action_proto)))
         # self.var = self.var * 0.99995
 
         actions = []
         # print('--------------------------------------')
         for i in range(self.agents_number):
-            agent_valid_actions = get_single_agent_closest_action(self.init_static_agent_type[i], current_state[1][i], self.valid_action[i])
-
+            agent_valid_actions = get_single_agent_closest_action(self.init_static_agent_type[i], current_state[1][i], i, self.valid_action[i])
             actions += agent_k_closest_action(agent_valid_actions, action_proto[i])
 
         #     print(action_proto[i], '    ', agent_valid_actions, '      ', agent_k_closest_action(agent_valid_actions, action_proto[i]))

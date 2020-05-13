@@ -112,11 +112,11 @@ def get_specified_agent_all_valid_action(all_agent_type):
     return all_agent_valid_action, np.array(bound)
 
 
-def get_single_agent_closest_action(agent_type, agent_local_observation, all_valid_action):
+def get_single_agent_closest_action(agent_type, agent_local_observation, agent_number, all_valid_action):
     all_valid_action = list(all_valid_action)
-    # if np.all(agent_local_observation[(agent_number * 8):(agent_number * 8 + 8)] == 0):
-    #     actions = np.array([0])
-    #     return actions
+    if np.all(agent_local_observation[(agent_number * 8):(agent_number * 8 + 8)] == 0):
+        actions = np.array([0])
+        return actions
     # agent_tpye = int(agent_local_observation[8 * agent_number + 2] * 2000)
     agent_valid_actions = inquire_action(agent_type)
     actions = []
@@ -160,20 +160,21 @@ def get_single_agent_closest_action(agent_type, agent_local_observation, all_val
 
             function_id_3 = [int(action.id)]
 
+
             if int(action.id) == 311:
-                target_3 = range(config.MY_UNIT_NUMBER)
-                # for j in range(config.MY_UNIT_NUMBER):
-                #     if j == agent_number or np.all(agent_local_observation[(j * 8):(j * 8 + 8)] == 0) or agent_local_observation[j * 8] * (config.MAP_SIZE * 1.41) >= config.ATTACK_RANGE:
-                #         continue
-                #     else:
-                #         target_3.append(j)
+                target_3 = list(range(config.MY_UNIT_NUMBER))
+                for j in range(config.MY_UNIT_NUMBER):
+                    if j == agent_number or np.all(agent_local_observation[(j * 8):(j * 8 + 8)] == 0) or agent_local_observation[j * 8] * (config.MAP_SIZE * 1.41) >= config.ATTACK_RANGE:
+                        continue
+                    else:
+                        target_3.append(j)
             else:
-                target_3 = range(config.MY_UNIT_NUMBER, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)
-                # for j in range(config.MY_UNIT_NUMBER, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER):
-                #     if j == agent_number or np.all(agent_local_observation[(j * 8):(j * 8 + 8)] == 0) or agent_local_observation[j * 8] * (config.MAP_SIZE * 1.41) >= config.ATTACK_RANGE:
-                #         continue
-                #     else:
-                #         target_3.append(j)
+                target_3 = list(range(config.MY_UNIT_NUMBER, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER))
+                for j in range(config.MY_UNIT_NUMBER, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER):
+                    if j == agent_number or np.all(agent_local_observation[(j * 8):(j * 8 + 8)] == 0) or agent_local_observation[j * 8] * (config.MAP_SIZE * 1.41) >= config.ATTACK_RANGE:
+                        continue
+                    else:
+                        target_3.append(j)
             if len(target_3) == 0:
                 continue
 
@@ -403,7 +404,7 @@ def assembly_action(init_obs, obs, action_numbers, vaild_action):
                 parameter.append([obs.observation['raw_units'][target_unit_pos].tag])
 
             actions.append(a.FunctionCall(function_id, parameter))
-    # print(actions)
+    print(actions)
 
     return actions
 
