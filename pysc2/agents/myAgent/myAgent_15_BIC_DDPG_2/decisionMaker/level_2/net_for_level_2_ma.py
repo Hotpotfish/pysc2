@@ -14,7 +14,7 @@ from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.handcraft_function_for_lev
 
 class net():
 
-    def __init__(self, mu, sigma, learning_rate, statedim, agents_number, enemy_number, name):  # 初始化
+    def __init__(self, mu, sigma, learning_rate, action_dim, statedim, agents_number, enemy_number, name):  # 初始化
         # 初始化回放缓冲区，用REPLAY_SIZE定义其最大长度
         self.replay_buffer = SqQueue(config.REPLAY_SIZE)
 
@@ -25,7 +25,7 @@ class net():
         self.learning_rate = learning_rate
 
         # 动作维度数，动作参数维度数（默认为6）,状态维度数
-        self.action_dim = None
+        self.action_dim =action_dim
         self.state_dim = statedim
 
         self.agents_number = agents_number
@@ -123,11 +123,13 @@ class net():
     def train_Q_network(self):  # 训练网络
         if self.replay_buffer.real_size > config.BATCH_SIZE:
             minibatch = random.sample(self.replay_buffer.queue, config.BATCH_SIZE)
-            agents_local_observation = np.array([data[0][2] for data in minibatch])
+            agents_local_observation = np.array([data[0][1] for data in minibatch])
+            bounds = np.array([data[0][0] for data in minibatch])
             # state = np.array([data[0][1] for data in minibatch])
             action_batch = np.array([data[1] for data in minibatch])
             reward_batch = np.array([data[2] for data in minibatch])
-            agents_local_observation_next = np.array([data[3][2] for data in minibatch])
+            agents_local_observation_next = np.array([data[3][1] for data in minibatch])
+            bounds_next = np.array([data[3][0] for data in minibatch])
             # state_next = np.array([data[3][1] for data in minibatch])
             action_batch_input = []
             for i in range(config.BATCH_SIZE):
@@ -136,6 +138,8 @@ class net():
 
             y_batch = []
             Q_value_batch = self.session.run(self.net.q_value, {self.net.agents_local_observation: agents_local_observation})
+            Q_value_batch = np.multiply(bounds,Q_value_batch)
+
             for i in range(0, config.BATCH_SIZE):
                 done = minibatch[i][4]
                 if done:
@@ -150,7 +154,7 @@ class net():
 
     def egreedy_action(self, current_state):  # 输出带随机的动作
 
-        Q_value = self.session.run(self.net.q_value, {self.net.agents_local_observation: current_state[2][np.newaxis]})[0]
+        Q_value = self.session.run(self.net.q_value, {self.net.agents_local_observation: current_state[1][np.newaxis]})[0]
         Q_value = np.multiply(current_state[0], Q_value)
         self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 50000
         if random.random() <= self.epsilon:

@@ -6,7 +6,7 @@ from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.decisionMaker.level_2.net_for_le
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools import handcraft_function, handcraft_function_for_level_2_attack_controller
 
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.handcraft_function_for_level_2_attack_controller import get_reward, get_state, win_or_loss, get_clusters_test, get_bounds_and_states, assembly_action_test, get_agents_obs, \
-    get_all_vaild_action, get_init_static_agent_type, get_specified_agent_all_valid_action, get_init_obs, get_bound, get_init_tags
+    get_init_static_agent_type, get_specified_agent_all_valid_action, get_bound, get_init_tags
 from pysc2.lib.actions import RAW_FUNCTIONS
 
 
@@ -14,8 +14,9 @@ class level_2_attack_controller:
     def __init__(self):
         self.state_data_shape = (None, config.COOP_AGENTS_OBDIM)
         self.vaild_action = None
+        self.action_dim = 8
         self.controller = decision_maker(
-            net(config.MU, config.SIGMA, config.LEARING_RATE,
+            net(config.MU, config.SIGMA, config.LEARING_RATE, self.action_dim,
                 self.state_data_shape, config.MY_UNIT_NUMBER,
                 config.ENEMY_UNIT_NUMBER, 'attack_controller'))
 
@@ -30,16 +31,22 @@ class level_2_attack_controller:
     def train_action(self, obs, save_path):
         if self.init_static_agent_type is None:
             self.init_static_agent_type = get_init_static_agent_type(obs)
-            self.vaild_action, self.action_dim = get_specified_agent_all_valid_action(self.init_static_agent_type)
-            self.controller.network.action_dim = self.action_dim
+            self.vaild_action = get_specified_agent_all_valid_action(self.init_static_agent_type)
+            # self.controller.network.action_dim = self.action_dim
+            # self.controller.network.net.action_dim = self.action_dim
+            # self.controller = decision_maker(
+            #     net(config.MU, config.SIGMA, config.LEARING_RATE, self.action_dim,
+            #         self.state_data_shape, config.MY_UNIT_NUMBER,
+            #         config.ENEMY_UNIT_NUMBER, 'attack_controller'))
+
             # self.controller.network.valid_action = self.vaild_action
 
             self.controller.network.init_static_agent_type = self.init_static_agent_type
 
         if obs.first():
             self.init_tags = get_init_tags(obs, self.init_static_agent_type)
-
-        self.controller.current_state = [np.array(get_bound(self.init_tags, obs, self.init_static_agent_type, self.action_dim)), np.array(get_agents_obs(self.init_tags, obs))]
+        agents_obs = np.array(get_agents_obs(self.init_tags, obs))
+        self.controller.current_state = [np.array(get_bound(agents_obs, self.init_static_agent_type, self.action_dim)), agents_obs]
         self.current_obs = obs
 
         if self.controller.previous_action is not None:

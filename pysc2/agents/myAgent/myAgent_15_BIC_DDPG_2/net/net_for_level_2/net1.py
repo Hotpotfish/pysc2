@@ -6,7 +6,7 @@ import numpy as np
 
 class net1(object):
 
-    def __init__(self, mu, sigma, learning_rate, action_dim, statedim, agents_number, enemy_number, name):  # 初始化
+    def __init__(self, mu, sigma, learning_rate,action_dim, statedim, agents_number, enemy_number, name):  # 初始化
         # 神经网络参数
         self.mu = mu
         self.sigma = sigma
@@ -14,7 +14,7 @@ class net1(object):
 
         # 动作维度数，动作参数维度数,状态维度数
         self.statedim = statedim
-        self.action_dim = action_dim
+        self.action_dim =action_dim
         self.state_dim = statedim
         self.agents_number = agents_number
         self.enemy_number = enemy_number
@@ -38,7 +38,7 @@ class net1(object):
         self.y_input = tf.placeholder("float", shape=[None], name='y_input')
         self.action_input = tf.placeholder("float", [None, self.agents_number, self.action_dim], name='action_input')
 
-    def _build_graph_q(self,  agents_local_observation, scope_name, train):
+    def _build_graph_q(self, agents_local_observation, scope_name, train):
         # 环境和智能体本地的共同观察
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
             with slim.arg_scope([slim.conv2d, slim.fully_connected],
@@ -47,7 +47,7 @@ class net1(object):
                                 # normalizer_fn=slim.batch_norm,
                                 weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
                                 weights_regularizer=slim.l2_regularizer(0.05)):
-                encoder_outputs = self._observation_encoder_q( agents_local_observation, self.agents_number, '_observation_encoder')
+                encoder_outputs = self._observation_encoder_q(agents_local_observation, self.agents_number, '_observation_encoder')
                 bicnet_outputs = self._bicnet_build_q(encoder_outputs, self.agents_number, '_bicnet_build')
                 return bicnet_outputs
 

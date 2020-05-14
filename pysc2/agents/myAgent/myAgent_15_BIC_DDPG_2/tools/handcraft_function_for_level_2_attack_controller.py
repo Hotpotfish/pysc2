@@ -14,7 +14,7 @@ from pysc2.lib import actions as a
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.unit_actions import inquire_action as inquire_action
 
 
-def get_bound(init_tags, obs, init_static_agent_type, action_dim):
+def get_bound(agents_obs, init_static_agent_type, action_dim):
     # all_agent_valid_action = []
     # bound = []
     # max_len = 0
@@ -22,8 +22,9 @@ def get_bound(init_tags, obs, init_static_agent_type, action_dim):
 
     for i in range(config.MY_UNIT_NUMBER):
         bound = np.zeros(action_dim)
-        my_unit_pos = find_unit_pos(obs, init_tags[i])
-        if my_unit_pos is None:
+        point = 0
+
+        if np.all(np.array(agents_obs[i] == 0)):
             bound[0] = 1
             bounds.append(bound)
             continue
@@ -33,62 +34,44 @@ def get_bound(init_tags, obs, init_static_agent_type, action_dim):
         for j in range(action_tpye_len):
             action = inquire_action(init_static_agent_type[i])[j]
             if len(action.args) == 0:
+                point += 1
                 continue
-                # function_id_1 = [int(action.id)]
-                #
-                # function_id_2 = [1e-10]
-                # x_2 = [1e-10]
-                # y_2 = [1e-10]
-                #
-                # function_id_3 = [1e-10]
-                # target_3 = [1e-10]
-                #
-                # for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
-                #     agent_valid_action.append(item)
 
-            elif len(action.args) == 2 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags':
-                function_id_1 = [int(action.id)]
-
-                function_id_2 = [1e-10]
-                x_2 = [1e-10]
-                y_2 = [1e-10]
-
-                function_id_3 = [1e-10]
-                target_3 = [1e-10]
-
-                for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
-                    agent_valid_action.append(item)
+            if len(action.args) == 2 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags':
+                bound[point] = 1
+                point += 1
 
             elif len(action.args) == 3 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags' and action.args[2].name == 'world':
-                function_id_1 = [1e-10]
-
-                function_id_2 = [int(action.id)]
-                x_2 = [-1, 1]
-                y_2 = [-1, 1]
-
-                function_id_3 = [1e-10]
-                target_3 = [1e-10]
-                for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
-                    agent_valid_action.append(item)
+                for k in range(4):
+                    bound[point] = 1
+                    point += 1
 
             elif len(action.args) == 3 and action.args[0].name == 'queued' and action.args[1].name == 'unit_tags' and action.args[2].name == 'target_unit_tag':
-                function_id_1 = [1e-10]
-                function_id_2 = [1e-10]
-                x_2 = [1e-10]
-                y_2 = [1e-10]
-
-                function_id_3 = [int(int(action.id))]
                 if int(action.id) == 311:
-                    target_3 = range(config.MY_UNIT_NUMBER)
+                    # target_3 = list(range(config.MY_UNIT_NUMBER))
+                    for k in range(config.MY_UNIT_NUMBER):
+                        if k == i or np.all(agents_obs[i][(k * 8):(k * 8 + 8)] == 0) or agents_obs[i][k * 8] * (config.MAP_SIZE * 1.41) >= config.ATTACK_RANGE:
+                            point += 1
+                            continue
+                        else:
+                            bound[point] = 1
+                            point += 1
                 else:
-                    target_3 = range(config.MY_UNIT_NUMBER, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER)
-                for item in itertools.product(function_id_1, function_id_2, x_2, y_2, function_id_3, target_3):
-                    agent_valid_action.append(item)
-        # bound.append(len(agent_valid_action))
-        if len(agent_valid_action) > max_len:
-            max_len = len(agent_valid_action)
-        all_agent_valid_action.append(agent_valid_action)
-    return all_agent_valid_action, max_len
+                    # target_3 = list(range(config.MY_UNIT_NUMBER, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER))
+                    for k in range(config.MY_UNIT_NUMBER, config.MY_UNIT_NUMBER + config.ENEMY_UNIT_NUMBER):
+                        if k == i or np.all(agents_obs[i][(k * 8):(k * 8 + 8)] == 0) or agents_obs[i][k * 8] * (config.MAP_SIZE * 1.41) >= config.ATTACK_RANGE:
+                            point += 1
+                            continue
+                        else:
+                            bound[point] = 1
+        bounds.append(bound)
+
+            # agent_valid_actions_number = np.where((all_valid_action == actions[None]).all(-1))[1]
+            # kdtree = KDTree(range(len(actions))[:, np.newaxis])
+
+            # print()
+
+    return bounds
 
 
 def get_init_tags(obs, init_static_agent_type):
@@ -103,11 +86,9 @@ def get_init_tags(obs, init_static_agent_type):
         else:
             for unit in obs.observation['raw_units']:
                 if unit.alliance == features.PlayerRelative.ENEMY and unit.unit_type == init_static_agent_type[i] and unit.tag not in sorted_tag:
-
                     sorted_tag.append(unit.tag)
                     break
     return sorted_tag
-
 
 
 def get_init_static_agent_type(obs):
@@ -182,7 +163,7 @@ def get_specified_agent_all_valid_action(all_agent_type):
         if len(agent_valid_action) > max_len:
             max_len = len(agent_valid_action)
         all_agent_valid_action.append(agent_valid_action)
-    return all_agent_valid_action, max_len
+    return all_agent_valid_action
 
 
 def get_single_agent_closest_action(agent_type, agent_local_observation, agent_number, all_valid_action):
@@ -473,7 +454,7 @@ def assembly_action(init_tags, obs, action_numbers, vaild_action):
                 parameter.append([obs.observation['raw_units'][target_unit_pos].tag])
 
             actions.append(a.FunctionCall(function_id, parameter))
-    print(actions)
+    # print(actions)
 
     return actions
 
