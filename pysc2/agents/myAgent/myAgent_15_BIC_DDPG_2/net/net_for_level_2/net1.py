@@ -1,5 +1,5 @@
 import tensorflow as tf
-from pysc2.agents.myAgent.myAgent_16_BIC_DQN_2.config import config
+from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.config import config
 import tensorflow.contrib.slim as slim
 import numpy as np
 

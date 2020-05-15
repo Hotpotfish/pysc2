@@ -4,12 +4,11 @@ import random
 
 import numpy as np
 import tensorflow as tf
-from scipy.spatial import KDTree
 
 import pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.config.config as config
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.SqQueue import SqQueue
 from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.net.net_for_level_2.net1 import net1
-from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.tools.handcraft_function_for_level_2_attack_controller import get_action_combination, get_single_agent_closest_action, agent_k_closest_action
+
 
 
 class net():
@@ -156,7 +155,8 @@ class net():
 
         Q_value = self.session.run(self.net.q_value, {self.net.agents_local_observation: current_state[1][np.newaxis]})[0]
         Q_value = np.multiply(current_state[0], Q_value)
-        self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 50000
+        self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 500000
+        print(self.epsilon)
         if random.random() <= self.epsilon:
             actions = []
             for i in range(config.MY_UNIT_NUMBER):
