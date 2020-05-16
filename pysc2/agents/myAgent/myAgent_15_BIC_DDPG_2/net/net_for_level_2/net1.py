@@ -1,12 +1,12 @@
 import tensorflow as tf
-from pysc2.agents.myAgent.myAgent_16_BIC_DQN_2.config import config
+from pysc2.agents.myAgent.myAgent_15_BIC_DDPG_2.config import config
 import tensorflow.contrib.slim as slim
 import numpy as np
 
 
 class net1(object):
 
-    def __init__(self, mu, sigma, learning_rate,action_dim, statedim, agents_number, enemy_number, name):  # 初始化
+    def __init__(self, mu, sigma, learning_rate, action_dim, statedim, agents_number, enemy_number, name):  # 初始化
         # 神经网络参数
         self.mu = mu
         self.sigma = sigma
@@ -14,7 +14,7 @@ class net1(object):
 
         # 动作维度数，动作参数维度数,状态维度数
         self.statedim = statedim
-        self.action_dim =action_dim
+        self.action_dim = action_dim
         self.state_dim = statedim
         self.agents_number = agents_number
         self.enemy_number = enemy_number
@@ -45,8 +45,7 @@ class net1(object):
                                 trainable=train,
                                 activation_fn=tf.nn.selu,
                                 # normalizer_fn=slim.batch_norm,
-                                weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
-                                weights_regularizer=slim.l2_regularizer(0.05)):
+                                ):
                 encoder_outputs = self._observation_encoder_q(agents_local_observation, self.agents_number, '_observation_encoder')
                 bicnet_outputs = self._bicnet_build_q(encoder_outputs, self.agents_number, '_bicnet_build')
                 return bicnet_outputs
@@ -67,8 +66,8 @@ class net1(object):
     def _bicnet_build_q(self, encoder_outputs, agents_number, scope_name):
         with tf.variable_scope(scope_name):
             outputs = []
-            lstm_fw_cell = tf.nn.rnn_cell.LSTMCell(30, name="lstm_fw_cell")
-            lstm_bw_cell = tf.nn.rnn_cell.LSTMCell(30, name="lstm_bw_cell")
+            lstm_fw_cell = tf.nn.rnn_cell.GRUCell(30, name="lstm_fw_cell")
+            lstm_bw_cell = tf.nn.rnn_cell.GRUCell(30, name="lstm_bw_cell")
             bicnet_outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, encoder_outputs, dtype=tf.float32)
             for i in range(agents_number):
                 fc1 = slim.fully_connected(bicnet_outputs[i], self.action_dim, activation_fn=tf.nn.softmax, scope='full_connected1')

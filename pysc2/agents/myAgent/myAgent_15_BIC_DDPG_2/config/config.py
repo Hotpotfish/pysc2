@@ -7,7 +7,7 @@ EPISODES = 50000
 # Hyper Parameters for DQN
 GAMMA = 0.99  # discount factor for target Q
 INITIAL_EPSILON = 0.6  # starting value of epsilon
-FINAL_EPSILON = 0.01  # final value of epsilon
+FINAL_EPSILON =  0.05  # final value of epsilon
 REPLAY_SIZE = 600000  # experience replay buffer size
 BATCH_SIZE =32# size of minibatch
 
@@ -25,13 +25,13 @@ MODEL_SAVE_EPISODE = 1000
 ROW = 4
 COLUMN = 4
 
-MY_UNIT_NUMBER = 3
-ENEMY_UNIT_NUMBER = 3 # 选择敌方智能体的空间
+MY_UNIT_NUMBER = 8
+ENEMY_UNIT_NUMBER =7 # 选择敌方智能体的空间
 
-ACTION_DIM = 1  # （4为上下左右）
+ACTION_DIM = 13  # （4为上下左右）
 
 COOP_AGENT_OBDIM = 8
 COOP_AGENTS_OBDIM = (MY_UNIT_NUMBER + ENEMY_UNIT_NUMBER) * COOP_AGENT_OBDIM
 
-OB_RANGE = 10
-ATTACK_RANGE = 6
+OB_RANGE = 30
+ATTACK_RANGE = 10

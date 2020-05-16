@@ -64,6 +64,7 @@ def get_bound(agents_obs, init_static_agent_type, action_dim):
                             continue
                         else:
                             bound[point] = 1
+                            point += 1
         bounds.append(bound)
 
             # agent_valid_actions_number = np.where((all_valid_action == actions[None]).all(-1))[1]

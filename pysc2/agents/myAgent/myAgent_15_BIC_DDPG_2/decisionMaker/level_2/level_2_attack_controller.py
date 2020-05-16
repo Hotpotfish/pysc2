@@ -14,7 +14,7 @@ class level_2_attack_controller:
     def __init__(self):
         self.state_data_shape = (None, config.COOP_AGENTS_OBDIM)
         self.vaild_action = None
-        self.action_dim = 8
+        self.action_dim = config.ACTION_DIM
         self.controller = decision_maker(
             net(config.MU, config.SIGMA, config.LEARING_RATE, self.action_dim,
                 self.state_data_shape, config.MY_UNIT_NUMBER,
