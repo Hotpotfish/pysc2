@@ -404,7 +404,7 @@ def assembly_action(init_obs, obs, action_numbers, vaild_action):
                 parameter.append([obs.observation['raw_units'][target_unit_pos].tag])
 
             actions.append(a.FunctionCall(function_id, parameter))
-    print(actions)
+    # print(actions)
 
     return actions
 
