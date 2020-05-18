@@ -38,7 +38,7 @@ def main(unused_argv):
 
     try:
         with sc2_env.SC2Env(
-                map_name="3m_vs_3m",
+                map_name="8m_vs_8m",
                 players=[sc2_env.Agent(sc2_env.Race.terran), ],
                 agent_interface_format=features.AgentInterfaceFormat(
                     feature_dimensions=features.Dimensions(screen=config.MAP_SIZE,
