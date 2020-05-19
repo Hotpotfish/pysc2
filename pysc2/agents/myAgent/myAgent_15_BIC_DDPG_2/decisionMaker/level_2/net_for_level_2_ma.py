@@ -156,7 +156,7 @@ class net():
 
         Q_value = self.session.run(self.net.q_value, {self.net.agents_local_observation: current_state[1][np.newaxis]})[0]
         Q_value = np.multiply(current_state[0], Q_value)
-        self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 500000
+        self.epsilon -= (config.INITIAL_EPSILON - config.FINAL_EPSILON) / 1000000
         print(self.epsilon)
         if random.random() <= self.epsilon:
             actions = []
